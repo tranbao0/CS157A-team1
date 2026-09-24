@@ -17,7 +17,7 @@
 			request.getSession().invalidate();
 			request.getSession(true).setAttribute("email", email);
 
-			response.sendRedirect(request.getContextPath() + "/");
+			response.sendRedirect(request.getContextPath() + "/catalog.jsp");
 			return;
 		}
 	}

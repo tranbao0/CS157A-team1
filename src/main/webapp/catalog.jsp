@@ -77,7 +77,7 @@
 <header class="topbar">
 	<a class="topbar__brand" href="<%= context %>/">CourseCraft</a>
 	<nav class="topbar__nav" aria-label="Main">
-		<a class="nav-link is-active" aria-current="page" href="<%= context %>/">Catalog</a>
+		<a class="nav-link is-active" aria-current="page" href="<%= context %>/catalog.jsp">Catalog</a>
 		<%-- TODO: no pages yet --%>
 		<span class="nav-link is-disabled" aria-disabled="true">Roadmap</span>
 		<span class="nav-link is-disabled" aria-disabled="true">My plan</span>
@@ -138,7 +138,7 @@
 		<%-- TODO: show scrape date --%>
 		<p class="pagehead__meta"><%= rows.size() %> sections &middot; sample data, read from MySQL</p>
 	</div>
-	<form class="pagehead__tools" method="get" action="<%= context %>/">
+	<form class="pagehead__tools" method="get" action="<%= context %>/catalog.jsp">
 		<label class="visually-hidden" for="q">Search courses</label>
 		<input class="search-input" id="q" name="q" type="search"
 		       placeholder="Search course, title, or instructor"
@@ -154,7 +154,7 @@
 	<%-- TODO: use the term table --%>
 	<span class="chip is-on">Fall 2026</span>
 	<a class="chip<%= openOnly ? " is-on" : "" %>"
-	   href="<%= context %>/?<%= openOnly ? "" : "open=1&amp;" %>q=<%= esc(query) %>">Open seats only</a>
+	   href="<%= context %>/catalog.jsp?<%= openOnly ? "" : "open=1&amp;" %>q=<%= esc(query) %>">Open seats only</a>
 </div>
 
 <main class="layout" id="catalog">
