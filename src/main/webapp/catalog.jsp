@@ -36,25 +36,26 @@
 	// Filters are fixed text. User input is bound, never concatenated.
 	StringBuilder sql = new StringBuilder(
 		"SELECT s.class_number, c.subject, c.course_number, s.section_code, "
-		+ "       c.title, c.units, s.days, s.start_time, s.end_time, "
-		+ "       s.instructor, s.open_seats "
-		+ "FROM course c "
-		+ "JOIN section s ON c.course_id = s.course_id "
+		+ "       c.title, c.units, s.mode_of_instruction, s.type, "
+		+ "       (SELECT e.open_seats FROM enrollment_snapshots e "
+		+ "        WHERE e.section_id = s.section_id "
+		+ "        ORDER BY e.captured_at DESC LIMIT 1) AS open_seats "
+		+ "FROM courses c "
+		+ "JOIN sections s ON c.course_id = s.course_id "
 		+ "WHERE 1 = 1");
 
 	List<String> params = new ArrayList<>();
 
 	if (!query.isEmpty()) {
 		sql.append(" AND (CONCAT(c.subject, ' ', c.course_number) LIKE ?"
-				+ " OR c.title LIKE ? OR s.instructor LIKE ?)");
+				+ " OR c.title LIKE ?)");
 		String like = "%" + query + "%";
-		params.add(like);
 		params.add(like);
 		params.add(like);
 	}
 
 	if (openOnly) {
-		sql.append(" AND s.open_seats > 0");
+		sql.append(" HAVING open_seats > 0");
 	}
 
 	sql.append(" ORDER BY c.subject, c.course_number, s.section_code");
@@ -108,20 +109,15 @@
 
 		try (ResultSet result = statement.executeQuery()) {
 			while (result.next()) {
-				// Trim seconds.
-				String meeting = result.getString("days") + " "
-						+ result.getString("start_time").substring(0, 5) + "-"
-						+ result.getString("end_time").substring(0, 5);
-
 				rows.add(new String[] {
 					result.getString("subject") + " " + result.getString("course_number"),
 					result.getString("section_code"),
 					String.valueOf(result.getInt("class_number")),
 					result.getString("title"),
 					String.valueOf(result.getDouble("units")),
-					meeting,
-					result.getString("instructor"),
-					String.valueOf(result.getInt("open_seats"))
+					result.getString("mode_of_instruction"),
+					result.getString("type"),
+					result.getString("open_seats") // null if no snapshot yet
 				});
 			}
 		}
@@ -141,7 +137,7 @@
 	<form class="pagehead__tools" method="get" action="<%= context %>/catalog.jsp">
 		<label class="visually-hidden" for="q">Search courses</label>
 		<input class="search-input" id="q" name="q" type="search"
-		       placeholder="Search course, title, or instructor"
+		       placeholder="Search course or title"
 		       value="<%= esc(query) %>">
 <% if (openOnly) { %>
 		<input type="hidden" name="open" value="1">
@@ -172,8 +168,8 @@
 				<tr>
 					<th class="col-section" scope="col">Section</th>
 					<th class="col-title" scope="col">Course title</th>
-					<th class="col-when" scope="col">Days &amp; times</th>
-					<th class="col-instructor" scope="col">Instructor</th>
+					<th class="col-when" scope="col">Mode</th>
+					<th class="col-instructor" scope="col">Type</th>
 					<th class="col-seats" scope="col">Seats</th>
 					<th class="col-risk" scope="col">Risk</th>
 					<th class="col-action" scope="col"><span class="visually-hidden">Add</span></th>
