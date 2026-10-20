@@ -9,7 +9,7 @@ USE coursecraft;
 -- GE areas, and the titles and GE areas of GE courses, follow
 -- the SJSU 2026-2027 catalog. Other data is sample data, not
 -- verified against the live SJSU catalog.
--- Students are invented. Password hashes are fake placeholders.
+-- Students are invented. Every sample student signs in with password123.
 -- ============================================================
 
 INSERT INTO terms (term_id, year, season) VALUES
@@ -272,20 +272,20 @@ INSERT INTO requires_ge_area (roadmap_id, ge_area_code) VALUES
   (8, '1A'), (8, '1B'), (8, '1C'), (8, '5A'), (8, '5B'), (8, '5C'),
   (11, '1A'), (11, '1C'), (11, '2'), (11, '4');
 
--- Fake bcrypt-style placeholders. None is a real hash.
+-- bcrypt hashes (cost 10) of password123, each with its own salt.
 INSERT INTO students (student_id, email, password_hash, roadmap_id, expected_grad_term_id) VALUES
-  (1,  'jordan.lee@example.com',     '$2a$10$SAMPLEPLACEHOLDERnotarealhash.student01aaaaaaaaaaaaaa', 2,    12),
-  (2,  'maya.patel@example.com',     '$2a$10$SAMPLEPLACEHOLDERnotarealhash.student02aaaaaaaaaaaaaa', 2,    11),
-  (3,  'sam.nguyen@example.com',     '$2a$10$SAMPLEPLACEHOLDERnotarealhash.student03aaaaaaaaaaaaaa', NULL, 12),
-  (4,  'alex.garcia@example.com',    '$2a$10$SAMPLEPLACEHOLDERnotarealhash.student04aaaaaaaaaaaaaa', 4,    12),
-  (5,  'riley.chen@example.com',     '$2a$10$SAMPLEPLACEHOLDERnotarealhash.student05aaaaaaaaaaaaaa', 6,    NULL),
-  (6,  'taylor.kim@example.com',     '$2a$10$SAMPLEPLACEHOLDERnotarealhash.student06aaaaaaaaaaaaaa', 2,    9),
-  (7,  'casey.brown@example.com',    '$2a$10$SAMPLEPLACEHOLDERnotarealhash.student07aaaaaaaaaaaaaa', 7,    11),
-  (8,  'morgan.davis@example.com',   '$2a$10$SAMPLEPLACEHOLDERnotarealhash.student08aaaaaaaaaaaaaa', 9,    12),
-  (9,  'jamie.wilson@example.com',   '$2a$10$SAMPLEPLACEHOLDERnotarealhash.student09aaaaaaaaaaaaaa', 2,    12),
-  (10, 'drew.martinez@example.com',  '$2a$10$SAMPLEPLACEHOLDERnotarealhash.student10aaaaaaaaaaaaaa', 1,    9),
-  (11, 'avery.lopez@example.com',    '$2a$10$SAMPLEPLACEHOLDERnotarealhash.student11aaaaaaaaaaaaaa', 3,    12),
-  (12, 'quinn.harris@example.com',   '$2a$10$SAMPLEPLACEHOLDERnotarealhash.student12aaaaaaaaaaaaaa', 10,   11);
+  (1,  'jordan.lee@example.com',     '$2a$10$h9lsr0tAogrc2FQFM4ApEOE2aMJxVa9FUhzKQ.SQ1turxU/vxGi7i', 2,    12),
+  (2,  'maya.patel@example.com',     '$2a$10$bMEZsfPBfRq7g2.OubnhPOtw6dv/GLijIlYb5Zj.k.xbT6DYHXkfK', 2,    11),
+  (3,  'sam.nguyen@example.com',     '$2a$10$YFoFhHE1yPESvHd7g0RtmeTwMG0V5/cCNxJ69LzRmRLt1mmLtIW36', NULL, 12),
+  (4,  'alex.garcia@example.com',    '$2a$10$0Z.qbnHOz4MvnxcVp7rp/eVwjm6S7PFcHtMDsgEQ6wOFSDu5ac.oy', 4,    12),
+  (5,  'riley.chen@example.com',     '$2a$10$mlXmg8IPNECkKIK/kRWKoOXNEKSj6slGrSQCuHq4rNp/buvXEsG8.', 6,    NULL),
+  (6,  'taylor.kim@example.com',     '$2a$10$s9C4bYccbn1ZqxXOPAXL9uSYYICFvSV9dm5gUvuIT/pmhISgPsvk2', 2,    9),
+  (7,  'casey.brown@example.com',    '$2a$10$jC2oj37vr/yMStOyH6EmNexEAv9Q.A.uVfRFgdSpE00QL7N77q7dW', 7,    11),
+  (8,  'morgan.davis@example.com',   '$2a$10$sd06pWppkeFkilr/mmZUZuBl5bTK5gsd8kCpFjy5llzl9EhBkdrly', 9,    12),
+  (9,  'jamie.wilson@example.com',   '$2a$10$7kFpX5lYE76LpnE7RtngAe7l.GbI83SnxwegIRlqhwckXJHLryDKu', 2,    12),
+  (10, 'drew.martinez@example.com',  '$2a$10$NtvoQdP/tObQkeYs.bEw0u68y1lwVwPA2XvGlDcbarQ6M/0eKI2X2', 1,    9),
+  (11, 'avery.lopez@example.com',    '$2a$10$PYZnMF.6gv./lzXgS4kMpOO2l9Ng42/hgFbENpzwHhfxoPITrMYUq', 3,    12),
+  (12, 'quinn.harris@example.com',   '$2a$10$.rsb7EMjdTL5wqByCRvRTOUqYMZP.PRdySQSkw4/fkfOzfi1ziM8e', 10,   11);
 
 -- Catalog year 2025 unless noted.
 INSERT INTO prerequisite_groups (group_id, course_id, catalog_year) VALUES
