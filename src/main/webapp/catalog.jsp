@@ -86,11 +86,13 @@
 	<div class="topbar__actions">
 <% if (signedIn) { %>
 		<span class="topbar__user">Signed in as <%= esc(email) %></span>
-		<a class="btn btn--ghost" href="<%= context %>/logout.jsp">Sign out</a>
+		<%-- form not link, LogoutServlet only accepts POST --%>
+		<form method="post" action="<%= context %>/logout">
+			<button type="submit" class="btn btn--ghost">Sign out</button>
+		</form>
 <% } else { %>
-		<a class="btn btn--ghost" href="<%= context %>/login.jsp">Sign in</a>
-		<%-- TODO: no register page --%>
-		<a class="btn btn--primary" href="<%= context %>/login.jsp">Create account</a>
+		<a class="btn btn--ghost" href="<%= context %>/login">Sign in</a>
+		<a class="btn btn--primary" href="<%= context %>/register">Create account</a>
 <% } %>
 	</div>
 </header>
@@ -226,14 +228,14 @@
 				Sign in to save sections, upload a transcript and get a term-by-term
 				plan that respects prerequisites and your unit cap.
 			</p>
-			<a class="btn btn--primary btn--block" href="<%= context %>/login.jsp">Create account</a>
-			<a class="btn btn--block" href="<%= context %>/login.jsp">Sign in</a>
+			<a class="btn btn--primary btn--block" href="<%= context %>/register">Create account</a>
+			<a class="btn btn--block" href="<%= context %>/login">Sign in</a>
 		</div>
 <% } %>
 		<div class="card card--dashed">
 			<h2 class="card__title">Upload transcript</h2>
 			<p class="card__body">Filters the catalog down to the courses you still need.</p>
-			<a class="btn btn--block" href="<%= context %>/login.jsp">Sign in to upload</a>
+			<a class="btn btn--block" href="<%= context %>/login">Sign in to upload</a>
 		</div>
 	</aside>
 </main>

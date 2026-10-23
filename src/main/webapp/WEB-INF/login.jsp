@@ -1,27 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%-- Sign-in form. Handles its own POST. --%>
-<%-- TODO: check the password --%>
-<%
-	String error = null;
-	String email = "";
-
-	if ("POST".equalsIgnoreCase(request.getMethod())) {
-		email = request.getParameter("email");
-		email = email == null ? "" : email.trim();
-
-		// Password not checked.
-		if (email.isEmpty()) {
-			error = "Enter your email address.";
-		} else {
-			// New session, so a pre-login ID cannot be reused.
-			request.getSession().invalidate();
-			request.getSession(true).setAttribute("email", email);
-
-			response.sendRedirect(request.getContextPath() + "/catalog.jsp");
-			return;
-		}
-	}
-%>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%-- Sign-in form, LoginServlet handles POST and sends back error and email --%>
+<%-- c:out escapes HTML, so typed email cant inject tags into page --%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -42,26 +22,26 @@
 <main class="narrow">
 	<h1 class="pagehead__title">Sign in</h1>
 
-<% if (error != null) { %>
-	<div class="banner banner--error" role="alert"><%= error %></div>
-<% } %>
+<c:if test="${not empty error}">
+	<div class="banner banner--error" role="alert"><c:out value="${error}"/></div>
+</c:if>
 
-	<form method="post" action="<%= request.getContextPath() %>/login.jsp" class="stack">
+	<form method="post" action="<%= request.getContextPath() %>/login" class="stack">
 		<div class="field">
 			<label for="email">Email</label>
 			<input type="email" id="email" name="email" autocomplete="username"
-			       value="<%= email %>" required>
+			       value="<c:out value='${email}'/>" required>
 		</div>
 
 		<div class="field">
 			<label for="password">Password</label>
-			<input type="password" id="password" name="password" autocomplete="current-password">
+			<input type="password" id="password" name="password" autocomplete="current-password" required>
 		</div>
 
 		<button type="submit" class="btn btn--primary btn--block">Sign in</button>
 	</form>
 
-	<p class="note">Passwords are not checked yet. Any email signs you in.</p>
+	<p class="note">No account yet? <a href="<%= request.getContextPath() %>/register">Create account</a></p>
 </main>
 
 </body>

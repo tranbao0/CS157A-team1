@@ -133,8 +133,9 @@ CREATE TABLE requires_ge_area (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- Registered user. Password never stored, only its hash.
+-- student_id is AUTO_INCREMENT so sign-up gets new ID from MySQL.
 CREATE TABLE students (
-  student_id            INT,
+  student_id            INT AUTO_INCREMENT,
   email                 VARCHAR(160) NOT NULL,
   password_hash         VARCHAR(255) NOT NULL,
   roadmap_id            INT,
