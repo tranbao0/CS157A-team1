@@ -27,6 +27,10 @@
 </c:if>
 
 	<form method="post" action="<%= request.getContextPath() %>/login" class="stack">
+		<%-- page student wanted before login, LoginServlet only sets it when path is safe --%>
+		<c:if test="${not empty next}">
+			<input type="hidden" name="next" value="<c:out value='${next}'/>">
+		</c:if>
 		<div class="field">
 			<label for="email">Email</label>
 			<input type="email" id="email" name="email" autocomplete="username"
