@@ -32,12 +32,18 @@ public class LoginServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
+		// AuthFilter sends ?next=/plan, form keeps it in hidden field for POST
+		request.setAttribute("next", safeNext(request.getParameter("next")));
 		request.getRequestDispatcher(LOGIN_VIEW).forward(request, response);
 	}
 
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
+		// set early so form keeps it when it comes back with error
+		String next = safeNext(request.getParameter("next"));
+		request.setAttribute("next", next);
+
 		// field missing gives null, so treat it as empty
 		String email = request.getParameter("email");
 		if (email == null) {
@@ -80,7 +86,33 @@ public class LoginServlet extends HttpServlet {
 		}
 
 		LoginSession.start(request, student);
-		response.sendRedirect(request.getContextPath() + "/catalog.jsp");
+
+		// back to page student wanted before login, catalog when there was none
+		if (next != null) {
+			response.sendRedirect(request.getContextPath() + next);
+		} else {
+			response.sendRedirect(request.getContextPath() + "/catalog.jsp");
+		}
+	}
+
+	/*
+	 * Only accepts path inside this app like /plan, anything else gives null.
+	 * Without this, link like /login?next=https://evil.example could send student
+	 * to other site right after login (open redirect).
+	 */
+	private String safeNext(String next) {
+		if (next == null || !next.startsWith("/")) {
+			return null;
+		}
+		// browsers read //evil.example and /\evil.example as other website
+		if (next.startsWith("//") || next.startsWith("/\\")) {
+			return null;
+		}
+		// line break could sneak extra header into redirect reply
+		if (next.contains("\r") || next.contains("\n")) {
+			return null;
+		}
+		return next;
 	}
 
 	// back to form with error and typed email kept

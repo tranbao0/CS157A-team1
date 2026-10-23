@@ -2,3 +2,4 @@
 .vscode/
 *.class
 db.properties
+/.metadata/
