@@ -92,8 +92,7 @@
 		</form>
 <% } else { %>
 		<a class="btn btn--ghost" href="<%= context %>/login">Sign in</a>
-		<%-- TODO: no register page --%>
-		<a class="btn btn--primary" href="<%= context %>/login">Create account</a>
+		<a class="btn btn--primary" href="<%= context %>/register">Create account</a>
 <% } %>
 	</div>
 </header>
@@ -229,7 +228,7 @@
 				Sign in to save sections, upload a transcript and get a term-by-term
 				plan that respects prerequisites and your unit cap.
 			</p>
-			<a class="btn btn--primary btn--block" href="<%= context %>/login">Create account</a>
+			<a class="btn btn--primary btn--block" href="<%= context %>/register">Create account</a>
 			<a class="btn btn--block" href="<%= context %>/login">Sign in</a>
 		</div>
 <% } %>

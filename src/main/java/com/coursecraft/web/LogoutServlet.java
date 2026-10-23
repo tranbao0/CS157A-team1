@@ -9,10 +9,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-/*
- * POST only, so link, image tag or browser prefetch cant sign someone out.
- * No doGet here, so GET /logout gets 405 Method Not Allowed from HttpServlet.
- */
+// POST only, so link, image tag or browser prefetch cant sign someone out
+// no doGet here, so GET /logout gets 405 Method Not Allowed from HttpServlet
 @WebServlet("/logout")
 public class LogoutServlet extends HttpServlet {
 

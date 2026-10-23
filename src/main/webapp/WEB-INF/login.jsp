@@ -40,6 +40,8 @@
 
 		<button type="submit" class="btn btn--primary btn--block">Sign in</button>
 	</form>
+
+	<p class="note">No account yet? <a href="<%= request.getContextPath() %>/register">Create account</a></p>
 </main>
 
 </body>

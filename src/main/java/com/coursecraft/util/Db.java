@@ -25,7 +25,7 @@ public final class Db {
 
 	/*
 	 * Pool class comes from Tomcat's own lib (tomcat-dbcp.jar), so no extra JAR.
-	 * Pool keeps a few connections open and lends them out,
+	 * Pool keeps some connections open and lends them out,
 	 * instead of opening new connection on every request.
 	 */
 	private static BasicDataSource createPool() {

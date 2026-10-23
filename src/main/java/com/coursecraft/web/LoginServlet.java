@@ -3,17 +3,15 @@ package com.coursecraft.web;
 import java.io.IOException;
 import java.sql.SQLException;
 
-import org.mindrot.jbcrypt.BCrypt;
-
 import com.coursecraft.dao.StudentDao;
 import com.coursecraft.model.Student;
+import com.coursecraft.util.Passwords;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 
 // GET shows form, POST checks it
 @WebServlet("/login")
@@ -27,9 +25,9 @@ public class LoginServlet extends HttpServlet {
 	/*
 	 * Real bcrypt hash of value no student has. Unknown email still runs checkpw on this,
 	 * so both paths take same time and timing cant reveal which emails exist.
-	 * Cost 10 must match cost of stored hashes (seed.sql uses 10).
+	 * Made with Passwords.hash, so it uses same cost as real hashes.
 	 */
-	private static final String DUMMY_HASH = BCrypt.hashpw("no-such-student", BCrypt.gensalt(10));
+	private static final String DUMMY_HASH = Passwords.hash("no-such-student");
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -73,8 +71,7 @@ public class LoginServlet extends HttpServlet {
 		} else {
 			hashToCheck = student.getPasswordHash();
 		}
-		// checkpw hashes typed password with salt stored in hash and compares
-		boolean passwordMatches = BCrypt.checkpw(password, hashToCheck);
+		boolean passwordMatches = Passwords.matches(password, hashToCheck);
 
 		// same message for both cases, otherwise anyone could test which emails have accounts
 		if (student == null || !passwordMatches) {
@@ -82,20 +79,8 @@ public class LoginServlet extends HttpServlet {
 			return;
 		}
 
-		startSession(request, student);
+		LoginSession.start(request, student);
 		response.sendRedirect(request.getContextPath() + "/catalog.jsp");
-	}
-
-	// any login type (password now, Google later) ends here
-	private void startSession(HttpServletRequest request, Student student) {
-		HttpSession oldSession = request.getSession(false);
-		if (oldSession != null) {
-			// fresh session so pre-login ID cant be reused
-			oldSession.invalidate();
-		}
-		HttpSession session = request.getSession(true);
-		session.setAttribute("studentId", student.getStudentId());
-		session.setAttribute("email", student.getEmail());
 	}
 
 	// back to form with error and typed email kept

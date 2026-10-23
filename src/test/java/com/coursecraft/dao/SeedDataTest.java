@@ -18,6 +18,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mindrot.jbcrypt.BCrypt;
 
+import com.coursecraft.util.Passwords;
+
 /*
  * Reads sql/seed.sql as plain text, no database needed.
  * Run from repo root (Eclipse does this by default).
@@ -56,6 +58,15 @@ class SeedDataTest {
 	void everyHashMatchesDemoPassword() {
 		for (String hash : hashes) {
 			assertTrue(BCrypt.checkpw("password123", hash), "does not match password123: " + hash);
+		}
+	}
+
+	// login's dummy hash uses app cost, seed hashes must match or timing leaks again
+	@Test
+	void everyHashUsesAppCost() {
+		String expectedStart = String.format("$2a$%02d$", Passwords.BCRYPT_COST);
+		for (String hash : hashes) {
+			assertTrue(hash.startsWith(expectedStart), "different cost: " + hash);
 		}
 	}
 
