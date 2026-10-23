@@ -9,6 +9,8 @@ public final class Passwords {
 	 * Work factor, 10 means 2^10 rounds of hashing.
 	 * seed.sql hashes use 10 too. If this changes, regenerate seed hashes,
 	 * otherwise LoginServlet's dummy hash and real hashes take different time.
+	 * Slow on purpose, about 0.1s per login. 100 logins in same second take 1-2s,
+	 * team accepted that to keep 10 (OWASP minimum for bcrypt).
 	 */
 	public static final int BCRYPT_COST = 10;
 

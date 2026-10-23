@@ -36,7 +36,10 @@
 		<div class="field">
 			<label for="password">Password</label>
 			<%-- server checks too, these only give quicker feedback --%>
-			<input type="password" id="password" name="password" autocomplete="new-password" minlength="8" required>
+			<%-- aria-describedby makes screen readers read hint together with field --%>
+			<input type="password" id="password" name="password" autocomplete="new-password" minlength="8" required
+			       aria-describedby="password-hint">
+			<p class="field__hint" id="password-hint">Use 8 to 72 characters.</p>
 		</div>
 
 		<button type="submit" class="btn btn--primary btn--block">Create account</button>

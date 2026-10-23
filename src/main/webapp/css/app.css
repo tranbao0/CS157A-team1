@@ -9,6 +9,8 @@
   --line:         #D9DAD6;
   --line-2:       #E4E3DE;
   --line-3:       #C9CAC4;
+  /* text field edge, 3.4:1 on canvas for WCAG 1.4.11, other lines are decoration */
+  --field-line:   #86888C;
   --surface:      #FFFFFF;
   --canvas:       #FAF9F5;
   --chip:         #F2F1EC;
@@ -211,7 +213,7 @@ a:hover { color: var(--high-ink); }
   font-size: .875rem;
   color: var(--ink);
   background: var(--canvas);
-  border: 1px solid var(--line);
+  border: 1px solid var(--field-line);
   border-radius: var(--r-md);
 }
 .search-input::placeholder { color: var(--ink-4); }
@@ -475,6 +477,7 @@ a:hover { color: var(--high-ink); }
 .field { display: flex; flex-direction: column; gap: .35rem; }
 
 .field label { font-size: .85rem; font-weight: 600; }
+.field__hint { margin: 0; font-size: .8125rem; color: var(--ink-3); }
 
 .field input {
   height: 2.75rem;
@@ -482,7 +485,7 @@ a:hover { color: var(--high-ink); }
   font: inherit;
   font-size: .875rem;
   background: var(--surface);
-  border: 1px solid var(--line);
+  border: 1px solid var(--field-line);
   border-radius: var(--r-md);
 }
 
