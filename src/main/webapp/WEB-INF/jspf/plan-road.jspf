@@ -1,0 +1,9 @@
+<%-- small road for empty plan card: you at start, open stops ahead, gold star at end --%>
+<svg class="mini-road" viewBox="0 0 280 56" aria-hidden="true" focusable="false">
+  <path class="mini-road__path" d="M 14 36 C 56 36, 70 16, 112 18 C 154 20, 162 42, 204 40 C 234 38, 244 22, 262 21"/>
+  <circle class="mini-road__todo" cx="112" cy="18" r="6"/>
+  <circle class="mini-road__todo" cx="204" cy="40" r="6"/>
+  <path class="mini-road__goal" transform="translate(264 21)" d="M 0 -10 Q 1.6 -1.6 10 0 Q 1.6 1.6 0 10 Q -1.6 1.6 -10 0 Q -1.6 -1.6 0 -10 Z"/>
+  <circle class="mini-road__halo" cx="14" cy="36" r="7"/>
+  <circle class="mini-road__you" cx="14" cy="36" r="7"/>
+</svg>

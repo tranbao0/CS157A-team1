@@ -11,13 +11,17 @@
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
 	<link rel="stylesheet" href="<%= request.getContextPath() %>/css/app.css">
 	<link rel="stylesheet" href="<%= request.getContextPath() %>/css/motion.css">
+	<script src="<%= request.getContextPath() %>/js/header.js" defer></script>
 </head>
 <body>
 
 <a class="skip-link" href="#main">Skip to main content</a>
 
-<header class="topbar">
-	<a class="topbar__brand" href="<%= request.getContextPath() %>/">CourseCraft</a>
+<%@ include file="/WEB-INF/jspf/road.jspf" %>
+
+<% request.setAttribute("navPage", "plan"); %>
+<header class="site-header">
+<%@ include file="/WEB-INF/jspf/topbar.jspf" %>
 </header>
 
 <main class="narrow" id="main">
