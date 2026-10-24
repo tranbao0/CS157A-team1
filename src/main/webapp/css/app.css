@@ -510,3 +510,50 @@ a:hover { color: var(--high-ink); }
   .topbar { gap: 1rem; }
   .topbar__nav { display: none; }
 }
+
+/* Links from the catalog to the course page.*/
+.course-link,
+.course-link .section-code,
+.course-link .course-title { color: var(--ink); text-decoration: none; }
+.course-link:hover,
+.course-link:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
+.course-link:hover .section-code,
+.course-link:hover .course-title,
+.course-link:focus-visible .section-code,
+.course-link:focus-visible .course-title { color: var(--ink-3); }
+
+/* Course detail page. */
+.pagehead__back { margin: 0 0 .75rem; }
+.titlerow { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem 1rem; }
+.titlerow .pagehead__title { margin: 0; }
+.detail-desc { max-width: 60rem; margin: .5rem 0 0; font-size: 1rem; line-height: 1.55; color: var(--ink-2); }
+
+.detail-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 1rem 2rem; margin: 0; font-size: 1rem; line-height: 1.6; }
+.detail-facts dt { font-weight: 600; }
+.detail-facts dd { margin: 0; color: var(--ink-2); }
+
+.card__row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .5rem 0; font-size: .875rem; border-top: 1px solid var(--line-2); }
+.card__row:first-of-type { border-top: 0; }
+.card__row > span:first-child { color: var(--ink-3); }
+
+/* Completed checkbox and + Plan, bottom right. */
+.detail-actions { display: flex; align-items: center; justify-content: flex-end; gap: .75rem; padding: 0 var(--gutter) 2.5rem; }
+.detail-actions__hint { margin-right: auto; font-size: .8125rem; color: var(--ink-3); }
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  min-height: 2.125rem;
+  padding: 0 .75rem;
+  font-size: .8125rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  cursor: pointer;
+}
+.check:hover { background: var(--chip); }
+.check input { width: 1rem; height: 1rem; margin: 0; accent-color: var(--ink); cursor: inherit; }
+.check.is-disabled { opacity: .45; cursor: not-allowed; }
+.check.is-disabled:hover { background: var(--surface); }

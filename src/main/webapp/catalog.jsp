@@ -35,11 +35,15 @@
 
 	// Filters are fixed text. User input is bound, never concatenated.
 	StringBuilder sql = new StringBuilder(
-		"SELECT s.class_number, c.subject, c.course_number, s.section_code, "
+		"SELECT c.course_id, s.section_id, s.class_number, c.subject, c.course_number, s.section_code, "
 		+ "       c.title, c.units, s.mode_of_instruction, s.type, "
 		+ "       (SELECT e.open_seats FROM enrollment_snapshots e "
 		+ "        WHERE e.section_id = s.section_id "
-		+ "        ORDER BY e.captured_at DESC LIMIT 1) AS open_seats "
+		+ "        ORDER BY e.captured_at DESC LIMIT 1) AS open_seats, "
+		+ "       (SELECT b.risk_level FROM bottleneck_scores b "
+		+ "        JOIN terms t ON t.term_id = b.term_id "
+		+ "        WHERE b.course_id = c.course_id "
+		+ "        ORDER BY t.term_id DESC, b.computed_at DESC LIMIT 1) AS risk_level "
 		+ "FROM courses c "
 		+ "JOIN sections s ON c.course_id = s.course_id "
 		+ "WHERE 1 = 1");
@@ -117,7 +121,10 @@
 					String.valueOf(result.getDouble("units")),
 					result.getString("mode_of_instruction"),
 					result.getString("type"),
-					result.getString("open_seats") // null if no snapshot yet
+					result.getString("open_seats"), // null if no snapshot yet
+					String.valueOf(result.getInt("course_id")),
+					String.valueOf(result.getInt("section_id")),
+					result.getString("risk_level") // null if the course is not scored
 				});
 			}
 		}
@@ -182,11 +189,15 @@
 %>
 				<tr>
 					<td class="col-section">
-						<span class="section-code"><%= esc(row[0]) %> (<%= esc(row[1]) %>)</span>
+						<a class="course-link" href="<%= context %>/course.jsp?id=<%= esc(row[8]) %>&amp;section=<%= esc(row[9]) %>">
+							<span class="section-code"><%= esc(row[0]) %> (<%= esc(row[1]) %>)</span>
+						</a>
 						<span class="section-num"><%= esc(row[2]) %></span>
 					</td>
 					<td class="col-title">
-						<span class="course-title"><%= esc(row[3]) %></span>
+						<a class="course-link" href="<%= context %>/course.jsp?id=<%= esc(row[8]) %>&amp;section=<%= esc(row[9]) %>">
+							<span class="course-title"><%= esc(row[3]) %></span>
+						</a>
 						<span class="course-meta"><%= esc(row[4]) %> units</span>
 					</td>
 					<td class="col-when cell-muted"><%= esc(row[5]) %></td>
@@ -196,7 +207,11 @@
 					</td>
 					<td class="col-risk">
 						<div class="risk-cell">
-							<span class="risk risk--locked">Locked</span>
+<% if (row[10] == null) { %>
+							<span class="cell-muted">Not scored</span>
+<% } else { %>
+							<span class="risk risk--<%= esc(row[10].toLowerCase()) %>"><%= esc(row[10]) %></span>
+<% } %>
 						</div>
 					</td>
 					<td class="col-action">
