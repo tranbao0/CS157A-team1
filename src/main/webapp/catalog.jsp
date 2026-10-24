@@ -60,44 +60,8 @@
 
 	sql.append(" ORDER BY c.subject, c.course_number, s.section_code");
 %>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Course catalog - CourseCraft</title>
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
-	<link rel="stylesheet" href="<%= context %>/css/app.css">
-</head>
-<body>
-
-<a class="skip-link" href="#catalog">Skip to catalog</a>
-
-<header class="topbar">
-	<a class="topbar__brand" href="<%= context %>/">CourseCraft</a>
-	<nav class="topbar__nav" aria-label="Main">
-		<a class="nav-link is-active" aria-current="page" href="<%= context %>/catalog.jsp">Catalog</a>
-		<%-- TODO: no pages yet --%>
-		<span class="nav-link is-disabled" aria-disabled="true">Roadmap</span>
-		<span class="nav-link is-disabled" aria-disabled="true">My plan</span>
-	</nav>
-	<div class="topbar__actions">
-<% if (signedIn) { %>
-		<span class="topbar__user">Signed in as <%= esc(email) %></span>
-		<%-- form not link, LogoutServlet only accepts POST --%>
-		<form method="post" action="<%= context %>/logout">
-			<button type="submit" class="btn btn--ghost">Sign out</button>
-		</form>
-<% } else { %>
-		<a class="btn btn--ghost" href="<%= context %>/login">Sign in</a>
-		<a class="btn btn--primary" href="<%= context %>/register">Create account</a>
-<% } %>
-	</div>
-</header>
-
 <%
+	// runs before HTML, site header shows row count
 	List<String[]> rows = new ArrayList<>();
 	String loadError = null;
 
@@ -129,31 +93,40 @@
 				+ "schema.sql and seed.sql have both been loaded.";
 	}
 %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Course catalog - CourseCraft</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
+	<link rel="stylesheet" href="<%= context %>/css/app.css">
+	<link rel="stylesheet" href="<%= context %>/css/motion.css">
+</head>
+<body>
 
-<div class="pagehead">
-	<div class="pagehead__text">
-		<h1 class="pagehead__title">Fall 2026 course catalog</h1>
-		<%-- TODO: show scrape date --%>
-		<p class="pagehead__meta"><%= rows.size() %> sections &middot; sample data, read from MySQL</p>
+<a class="skip-link" href="#catalog">Skip to catalog</a>
+
+<%-- site header: shared top bar plus this page's head, slides away together on scroll (header.js) --%>
+<% request.setAttribute("navPage", "catalog"); %>
+<header class="site-header">
+<%@ include file="/WEB-INF/jspf/topbar.jspf" %>
+	<div class="pagehead">
+		<div class="pagehead__text">
+			<h1 class="pagehead__title"><span class="pagehead__term">Fall 2026</span> course catalog</h1>
+			<%-- TODO: show scrape date --%>
+			<p class="pagehead__meta"><%= rows.size() %> sections &middot; sample data, read from MySQL</p>
+		</div>
+		<div class="filterbar">
+			<%-- TODO: use the term table --%>
+			<span class="chip is-on">Fall 2026</span>
+			<a class="chip<%= openOnly ? " is-on" : "" %>"
+			   href="<%= context %>/catalog.jsp?<%= openOnly ? "" : "open=1&amp;" %>q=<%= esc(query) %>">Open seats only</a>
+		</div>
 	</div>
-	<form class="pagehead__tools" method="get" action="<%= context %>/catalog.jsp">
-		<label class="visually-hidden" for="q">Search courses</label>
-		<input class="search-input" id="q" name="q" type="search"
-		       placeholder="Search course or title"
-		       value="<%= esc(query) %>">
-<% if (openOnly) { %>
-		<input type="hidden" name="open" value="1">
-<% } %>
-		<button class="btn" type="submit">Search</button>
-	</form>
-</div>
-
-<div class="filterbar">
-	<%-- TODO: use the term table --%>
-	<span class="chip is-on">Fall 2026</span>
-	<a class="chip<%= openOnly ? " is-on" : "" %>"
-	   href="<%= context %>/catalog.jsp?<%= openOnly ? "" : "open=1&amp;" %>q=<%= esc(query) %>">Open seats only</a>
-</div>
+</header>
 
 <main class="layout" id="catalog">
 	<div class="catalog-wrap">
@@ -214,15 +187,32 @@
 	</div>
 
 	<aside class="rail">
+		<%-- stack keeps search, cards and art together, so they center as one group in right column --%>
+		<div class="rail__stack">
+<%@ include file="/WEB-INF/jspf/rail-art.jspf" %>
+		<%-- search sits on top of right column so it stays on screen while table scrolls --%>
+		<form class="search-form" role="search" method="get" action="<%= context %>/catalog.jsp">
+			<label class="visually-hidden" for="q">Search courses</label>
+			<input class="search-input" id="q" name="q" type="search"
+			       placeholder="Search course or title"
+			       value="<%= esc(query) %>">
+<% if (openOnly) { %>
+			<input type="hidden" name="open" value="1">
+<% } %>
+			<button class="btn" type="submit">Search</button>
+		</form>
+		<div class="rail__cards">
 <% if (signedIn) { %>
 		<div class="card">
 			<span class="card__eyebrow">Your plan</span>
+<%@ include file="/WEB-INF/jspf/plan-road.jspf" %>
 			<h2 class="card__title">Nothing saved yet</h2>
 			<p class="card__body">Planning is not built yet. Adding sections comes next.</p>
 		</div>
 <% } else { %>
 		<div class="card">
 			<span class="card__eyebrow">Your plan</span>
+<%@ include file="/WEB-INF/jspf/plan-road.jspf" %>
 			<h2 class="card__title">Nothing saved yet</h2>
 			<p class="card__body">
 				Sign in to save sections, upload a transcript and get a term-by-term
@@ -237,9 +227,12 @@
 			<p class="card__body">Filters the catalog down to the courses you still need.</p>
 			<a class="btn btn--block" href="<%= context %>/login">Sign in to upload</a>
 		</div>
+		</div>
+		</div>
 	</aside>
 </main>
 
+<script src="<%= context %>/js/header.js" defer></script>
 <script src="<%= context %>/js/catalog.js" defer></script>
 </body>
 </html>

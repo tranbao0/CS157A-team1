@@ -1,0 +1,60 @@
+/* Page transitions, shared by every page including landing. */
+/* View Transitions API, browsers without it just load next page like normal. */
+
+/* page timing, easing curves come from app.css tokens */
+:root {
+  --page-out:   140ms;
+  --page-in:    380ms;
+  --page-delay: 40ms;
+  --page-chrome: 300ms;
+}
+
+/* opt in for same-site page loads, both old and new page need this rule */
+@view-transition {
+  navigation: auto;
+}
+
+/* each page has one top bar row, named so it holds still while content swaps */
+/* bar row only, not whole site header, page head under it (catalog) belongs to page and swaps with it */
+.topbar {
+  view-transition-name: site-header;
+}
+
+/* page color behind snapshots so no flash between pages */
+::view-transition {
+  background-color: var(--page-bg);
+}
+
+/* old page leaves quick, new page settles in slower */
+::view-transition-old(root) {
+  animation: var(--page-out) var(--ease-in) both page-out;
+}
+::view-transition-new(root) {
+  animation: var(--page-in) var(--ease-out) var(--page-delay) both page-in;
+}
+
+::view-transition-group(site-header),
+::view-transition-old(site-header),
+::view-transition-new(site-header) {
+  animation-duration: var(--page-chrome);
+  animation-timing-function: var(--ease-out);
+}
+
+@keyframes page-out {
+  to { opacity: 0; transform: translateY(-6px); }
+}
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(14px); }
+}
+@keyframes page-fade-out {
+  to { opacity: 0; }
+}
+@keyframes page-fade-in {
+  from { opacity: 0; }
+}
+
+/* reduced motion keeps crossfade but drops movement */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root) { animation-name: page-fade-out; }
+  ::view-transition-new(root) { animation-name: page-fade-in; }
+}
