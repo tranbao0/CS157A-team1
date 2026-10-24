@@ -19,8 +19,9 @@ public class LoginServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 1L;
 
-	// inside WEB-INF so browser cant open it directly, only this servlet can forward to it
-	private static final String LOGIN_VIEW = "/WEB-INF/login.jsp";
+	// inside WEB-INF so browser cant open it directly, only servlets can forward to it
+	// same page as sign-up, authMode tells it to show sign-in form first
+	private static final String AUTH_VIEW = "/WEB-INF/auth.jsp";
 
 	/*
 	 * Real bcrypt hash of value no student has. Unknown email still runs checkpw on this,
@@ -34,7 +35,8 @@ public class LoginServlet extends HttpServlet {
 			throws ServletException, IOException {
 		// AuthFilter sends ?next=/plan, form keeps it in hidden field for POST
 		request.setAttribute("next", safeNext(request.getParameter("next")));
-		request.getRequestDispatcher(LOGIN_VIEW).forward(request, response);
+		request.setAttribute("authMode", "login");
+		request.getRequestDispatcher(AUTH_VIEW).forward(request, response);
 	}
 
 	@Override
@@ -120,6 +122,7 @@ public class LoginServlet extends HttpServlet {
 			String email, String error) throws ServletException, IOException {
 		request.setAttribute("email", email);
 		request.setAttribute("error", error);
-		request.getRequestDispatcher(LOGIN_VIEW).forward(request, response);
+		request.setAttribute("authMode", "login");
+		request.getRequestDispatcher(AUTH_VIEW).forward(request, response);
 	}
 }

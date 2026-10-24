@@ -22,8 +22,9 @@ public class RegisterServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 1L;
 
-	// inside WEB-INF so browser cant open it directly, only this servlet can forward to it
-	private static final String REGISTER_VIEW = "/WEB-INF/register.jsp";
+	// inside WEB-INF so browser cant open it directly, only servlets can forward to it
+	// same page as sign-in, authMode tells it to show sign-up form first
+	private static final String AUTH_VIEW = "/WEB-INF/auth.jsp";
 
 	// same as students.email VARCHAR(160) in schema.sql, longer would fail on insert
 	private static final int MAX_EMAIL_LENGTH = 160;
@@ -35,7 +36,8 @@ public class RegisterServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		request.getRequestDispatcher(REGISTER_VIEW).forward(request, response);
+		request.setAttribute("authMode", "register");
+		request.getRequestDispatcher(AUTH_VIEW).forward(request, response);
 	}
 
 	@Override
@@ -101,6 +103,7 @@ public class RegisterServlet extends HttpServlet {
 			String email, String error) throws ServletException, IOException {
 		request.setAttribute("email", email);
 		request.setAttribute("error", error);
-		request.getRequestDispatcher(REGISTER_VIEW).forward(request, response);
+		request.setAttribute("authMode", "register");
+		request.getRequestDispatcher(AUTH_VIEW).forward(request, response);
 	}
 }
