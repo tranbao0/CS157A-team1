@@ -1,23 +1,53 @@
-/* CourseCraft catalog. rem sizes, so zoom works. */
+/* CourseCraft app pages. rem sizes, so zoom works. */
+/* Palette comes from landing page (index.html): navy ink, cream canvas, amber, SJSU blue. */
 
 /* 1. Tokens */
 :root {
-  --ink:          #17181C;
-  --ink-2:        #3E4148;
-  --ink-3:        #5C5F66;
-  --ink-4:        #9AA0A6;
-  --line:         #D9DAD6;
-  --line-2:       #E4E3DE;
-  --line-3:       #C9CAC4;
-  /* text field edge, 3.4:1 on canvas for WCAG 1.4.11, other lines are decoration */
-  --field-line:   #86888C;
+  --ink:          #16233F;
+  --ink-2:        #2E3A54;
+  --ink-3:        #4F5A70;
+  /* 5:1 on white, 4.7:1 on cream, 4.5:1 on band, lightest gray still ok for small text and placeholders */
+  --ink-4:        #667085;
+  --ink-off:      #A0A7B4;
+  --line:         #D5D8DE;
+  --line-2:       #E5E7EB;
+  --line-3:       #C2C7D0;
+  /* text field edge, 3.6:1 on white and 3.4:1 on cream for WCAG 1.4.11, other lines are decoration */
+  --field-line:   #7F8796;
   --surface:      #FFFFFF;
-  --canvas:       #FAF9F5;
-  --chip:         #F2F1EC;
+  /* canvas, band and band-2 are one butter family, light to deep */
+  --canvas:       #FFF8E5;
+  --band:         #FFF3D6;
+  --band-2:       #FBE8BE;
+  /* white page under white glass header, same on every page as landing */
+  --page-bg:      var(--surface);
+  --header-bg:    color-mix(in srgb, var(--surface) 72%, transparent);
+  --header-line:  var(--line-2);
+  /* dashed road and rings in background art, same values as landing animation */
+  --art-road:     rgba(22, 35, 63, .32);
+  --art-ring:     #DCE7F4;
+  --art-disc:     #E4EDF8;
+  --art-disc-2:   #F1F6FB;
+  /* primary button hover, a shade darker than ink */
+  --ink-deep:     #0B1428;
+  /* text on ink fills like primary button and skip link */
+  --on-ink:       #FFFFFF;
+
+  --amber:        #FDC23B;
+  --amber-hover:  #F8B41C;
+  /* SJSU gold, darker edge for amber shapes on cream */
+  --amber-deep:   #E5A823;
+
+  /* SJSU blue only marks links, focus, current page and selected filters */
+  --sjsu:         #0055A2;
+  --sjsu-dark:    #003F7A;
+  --sjsu-tint:    #E3EDF8;
+  --sjsu-line:    #B3CBE6;
 
   --high-ink:     #8E3521;
   --high-bg:      #F6E7E0;
   --high-line:    #E3C3B4;
+  --high-glyph:   #D9AE9C;
   --med-ink:      #7A5A14;
   --med-bg:       #F6EFDD;
   --med-line:     #E2D2AC;
@@ -25,50 +55,82 @@
   --low-bg:       #E6EFE8;
   --low-line:     #C3D8C9;
   --danger:       #B4462C;
-  --link:         #B4462C;
+  --link:         var(--sjsu);
 
-  --r-sm: 6px;
-  --r-md: 8px;
-  --r-lg: 14px;
-  --shadow-pop: 0 8px 22px rgba(23, 24, 28, .12);
+  --r-xs:    .25rem;
+  --r-sm:    .5rem;
+  --r-md:    .75rem;
+  --r-lg:    1.25rem;
+  --r-xl:    1.75rem;
+  /* pill on wide shapes, circle on square ones */
+  --r-round: 999rem;
+  --shadow-pop:  0 .625rem 1.75rem rgba(22, 35, 63, .14);
+  --shadow-soft: 0 .0625rem .125rem rgba(22, 35, 63, .04), 0 .875rem 2.25rem rgba(22, 35, 63, .07);
+
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --ease-in:  cubic-bezier(.4, 0, 1, 1);
+  --fast:   150ms;
+  --medium: 250ms;
 
   --gutter: 2.5rem;
-  --rail:   18.75rem;
+  --rail:   21rem;
+  /* gap between catalog table and right column */
+  --layout-gap: 1.75rem;
+  /* top bar row height, every page and landing */
+  --topbar-h: 5rem;
+  /* space left above things stuck to top of screen */
+  --stick-gap: 1.5rem;
+  /* real height of .site-header (top bar plus page head), header.js keeps it current */
+  --site-header-h: var(--topbar-h);
+
+  accent-color: var(--sjsu);
+  scrollbar-color: var(--line-3) transparent;
 }
 
 /* 2. Base */
 *, *::before, *::after { box-sizing: border-box; }
 
+/* page color lives on html only, so overscroll past top shows it too and body never paints over landing animation */
+html { background: var(--page-bg); }
+
 body {
   margin: 0;
-  font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
   font-size: 1rem;
   color: var(--ink);
-  background: var(--canvas);
   -webkit-font-smoothing: antialiased;
 }
 
-a { color: var(--link); }
-a:hover { color: var(--high-ink); }
+::selection { color: var(--ink); background: var(--sjsu-tint); }
+
+a {
+  color: var(--link);
+  text-decoration-thickness: 1px;
+  text-underline-offset: .2em;
+  transition: color var(--fast) ease-out;
+}
+a:hover { color: var(--sjsu-dark); }
 
 /* Keyboard navigation. Do not remove. */
 :focus-visible {
-  outline: 2px solid var(--ink);
-  outline-offset: 2px;
-  border-radius: 3px;
+  outline: 2px solid var(--sjsu);
+  outline-offset: 3px;
+  border-radius: var(--r-xs);
 }
 
 .skip-link {
   position: absolute;
-  left: -9999px;
+  left: -999rem;
   top: 0;
   z-index: 100;
   padding: .75rem 1rem;
   background: var(--ink);
-  color: #fff;
+  color: var(--on-ink);
   text-decoration: none;
 }
 .skip-link:focus { left: 0; }
+/* keep white text, plain a:hover would turn it blue on navy */
+.skip-link:hover { color: var(--on-ink); }
 
 .visually-hidden {
   position: absolute;
@@ -85,9 +147,9 @@ a:hover { color: var(--high-ink); }
   align-items: center;
   justify-content: center;
   min-height: 2.75rem;
-  padding: 0 1.125rem;
+  padding: 0 1.25rem;
   font: inherit;
-  font-size: .875rem;
+  font-size: .9375rem;
   font-weight: 600;
   color: var(--ink);
   background: var(--surface);
@@ -95,15 +157,17 @@ a:hover { color: var(--high-ink); }
   border-radius: var(--r-md);
   text-decoration: none;
   cursor: pointer;
+  transition: background-color var(--fast) ease-out, border-color var(--fast) ease-out, color var(--fast) ease-out;
 }
-.btn:hover { background: var(--chip); }
+/* :not(:disabled) so disabled buttons, primary too, keep their resting look */
+.btn:not(:disabled):hover { color: var(--ink); background: var(--band); border-color: var(--line-3); }
 
 .btn--primary {
-  color: #fff;
+  color: var(--on-ink);
   background: var(--ink);
   border-color: var(--ink);
 }
-.btn--primary:hover { background: #000; }
+.btn--primary:not(:disabled):hover { color: var(--on-ink); background: var(--ink-deep); border-color: var(--ink-deep); }
 
 .btn--ghost {
   font-weight: 500;
@@ -114,53 +178,89 @@ a:hover { color: var(--high-ink); }
 
 .btn--sm {
   min-height: 2.125rem;
-  padding: 0 .75rem;
+  padding: 0 .875rem;
   font-size: .8125rem;
-  border-radius: 7px;
+  border-radius: var(--r-sm);
 }
 
-.btn[disabled] { opacity: .45; cursor: not-allowed; }
-.btn[disabled]:hover { background: var(--surface); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
 
-/* 4. Top bar */
+/*
+  4. Site header, same rules on every page as landing.
+  <header class="site-header"> holds shared top bar (WEB-INF/jspf/topbar.jspf) and optional page head
+  (title, meta line, filters). Whole block is glass, sticks to top, slides away going down and comes back
+  going up (js/header.js). Landing keeps its own fixed .topbar driven by landing-loop.js, same look.
+*/
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  /* clip, so page head disc (section 5) never spills over content below header */
+  overflow: clip;
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--header-line);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  backdrop-filter: blur(12px) saturate(1.2);
+  transition: transform 300ms var(--ease-out);
+}
+.site-header.is-hidden { transform: translateY(-100%); }
+/* top bar inside site header: glass and edge come from header block, not bar */
+.site-header .topbar {
+  background: none;
+  border-bottom: 0;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-header { transition: none; }
+}
+
+/* top bar row, same size as landing nav so it holds still between pages */
 .topbar {
   display: flex;
   align-items: center;
-  gap: 2rem;
-  height: 4rem;
+  gap: 2.5rem;
+  height: var(--topbar-h);
   padding: 0 var(--gutter);
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--header-line);
+  /* glass, background art shows soft through header */
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  backdrop-filter: blur(12px) saturate(1.2);
 }
 
 .topbar__brand {
-  font-size: 1.1875rem;
+  font-size: 1.625rem;
   font-weight: 700;
-  letter-spacing: -.5px;
+  letter-spacing: -.01em;
   color: var(--ink);
   text-decoration: none;
 }
+.topbar__brand:hover { color: var(--ink); }
 
 .topbar__nav {
   display: flex;
-  gap: 1.5rem;
-  font-size: .875rem;
+  align-self: stretch;
+  gap: 2.125rem;
+  font-size: 1.0625rem;
 }
 
 .nav-link {
+  display: flex;
+  align-items: center;
+  padding-top: .125rem;
+  /* ink-3, not ink-4, so live links stand clear of disabled ones */
   color: var(--ink-3);
   text-decoration: none;
-  padding-bottom: .25rem;
   border-bottom: 2px solid transparent;
 }
 .nav-link:hover { color: var(--ink); }
 .nav-link.is-active {
   color: var(--ink);
-  font-weight: 600;
-  border-bottom-color: var(--ink);
+  border-bottom-color: var(--sjsu);
 }
 .nav-link.is-disabled {
-  color: var(--ink-4);
+  color: var(--ink-off);
   cursor: not-allowed;
 }
 
@@ -171,86 +271,142 @@ a:hover { color: var(--high-ink); }
   margin-left: auto;
 }
 
+.topbar .btn {
+  min-height: 3.1875rem;
+  padding: 0 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+/* white fill so ghost button reads as button on cream, hover still goes to band */
+.topbar .btn--ghost { background: var(--surface); }
+
 .topbar__user {
-  font-size: .875rem;
+  font-size: .9375rem;
   color: var(--ink-3);
 }
 
 /* 5. Page head and filters */
 .pagehead {
-  display: flex;
-  align-items: flex-end;
-  gap: 1.5rem;
-  padding: 1.625rem var(--gutter) 1.125rem;
-  background: var(--surface);
+  position: relative;
+  padding: 1.75rem var(--gutter) 1.125rem;
+  border-top: 1px solid var(--header-line);
 }
-.pagehead__text { flex: 1 1 auto; }
 
-.pagehead__title {
+/*
+  Soft blue disc and two rings from landing art, top right behind search and plan card, reaching up under glass header.
+  Rings stay right of table column, and fade out downward so they never run behind table rows.
+  Box ends at right edge of page, so disc never adds sideways scroll.
+*/
+.pagehead::before {
+  --disc-at: 24rem 9rem;
+  content: "";
+  position: absolute;
+  top: calc(-1 * var(--topbar-h));
+  right: 0;
+  z-index: -1;
+  width: 34rem;
+  height: 34rem;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at var(--disc-at), transparent 7.4rem, var(--art-ring) 7.5rem, var(--art-ring) 7.625rem, transparent 7.75rem),
+    radial-gradient(circle at var(--disc-at), transparent 11.4rem, var(--art-ring) 11.5rem, var(--art-ring) 11.625rem, transparent 11.75rem),
+    radial-gradient(circle at var(--disc-at), var(--art-disc) 0, var(--art-disc-2) 10rem, transparent 17rem);
+  -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 85%);
+  mask-image: linear-gradient(to bottom, #000 45%, transparent 85%);
+}
+
+/* term gets amber marker stroke, like hand highlight, drawn in once on load */
+.pagehead__term {
+  padding: 0 .12em;
+  margin: 0 -.12em;
+  background: linear-gradient(transparent 60%, color-mix(in srgb, var(--amber) 60%, transparent) 60%, color-mix(in srgb, var(--amber) 60%, transparent) 92%, transparent 92%) no-repeat;
+  background-size: 100% 100%;
+  border-radius: .2em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .pagehead__term { animation: term-mark 700ms var(--ease-out) 350ms both; }
+}
+@keyframes term-mark {
+  from { background-size: 0 100%; }
+}
+
+/* sign-in panel title shares this look */
+.pagehead__title,
+.narrow__title {
   margin: 0 0 .375rem;
-  font-size: 1.9375rem;
+  font-size: 2rem;
   font-weight: 700;
-  letter-spacing: -.7px;
+  letter-spacing: -.02em;
+  line-height: 1.15;
 }
 
 .pagehead__meta {
   margin: 0;
-  font-size: .84375rem;
+  font-size: .875rem;
   color: var(--ink-3);
 }
 
-.pagehead__tools {
+/* search form, top of right column (section 9) */
+.search-form {
   display: flex;
   gap: .625rem;
-  flex-shrink: 0;
 }
+.search-form .search-input { flex: 1 1 auto; min-width: 0; width: auto; }
 
 .search-input {
   width: 18.75rem;
   height: 2.75rem;
   padding: 0 .875rem;
   font: inherit;
-  font-size: .875rem;
+  font-size: .9375rem;
   color: var(--ink);
-  background: var(--canvas);
+  background: var(--surface);
   border: 1px solid var(--field-line);
   border-radius: var(--r-md);
+  caret-color: var(--sjsu);
+  transition: border-color var(--fast) ease-out;
 }
 .search-input::placeholder { color: var(--ink-4); }
+.search-input:hover { border-color: var(--ink-3); }
+.search-input:focus { border-color: var(--sjsu); }
 
 .filterbar {
   display: flex;
   flex-wrap: wrap;
   gap: .5rem;
-  padding: 0 var(--gutter) 1rem;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
+  margin-top: 1.25rem;
 }
 
 .chip {
   display: inline-flex;
   align-items: center;
-  height: 2rem;
-  padding: 0 .8125rem;
-  font-size: .8125rem;
-  color: var(--ink-3);
-  background: var(--chip);
-  border: 1px solid var(--line-2);
-  border-radius: 999px;
+  height: 2.125rem;
+  padding: 0 .9375rem;
+  font-size: .875rem;
+  font-weight: 500;
+  color: var(--ink-2);
+  background: var(--band);
+  border: 1px solid var(--band);
+  border-radius: var(--r-round);
   text-decoration: none;
+  transition: background-color var(--fast) ease-out, border-color var(--fast) ease-out, color var(--fast) ease-out;
 }
-.chip.is-on {
-  color: #fff;
-  background: var(--ink);
-  border-color: var(--ink);
+a.chip:hover { color: var(--ink); background: var(--band-2); border-color: var(--band-2); }
+.chip.is-on,
+a.chip.is-on:hover {
+  color: var(--sjsu-dark);
+  background: var(--sjsu-tint);
+  border-color: var(--sjsu-line);
 }
 
 /* 6. Two-column layout */
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--rail);
-  gap: 1.75rem;
-  padding: 1.25rem var(--gutter) 2.5rem;
+  gap: var(--layout-gap);
+  padding: 1.5rem var(--gutter) 3rem;
   align-items: start;
 }
 
@@ -261,44 +417,47 @@ a:hover { color: var(--high-ink); }
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  min-width: 60rem;
+  min-width: 50rem;
 }
 
 .catalog thead th {
   position: sticky;
   top: 0;
   z-index: 1;
-  padding: .625rem .4375rem;
-  font-size: .6875rem;
-  font-weight: 500;
-  letter-spacing: .9px;
+  padding: .625rem .5rem;
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .06em;
   text-transform: uppercase;
   text-align: left;
   color: var(--ink-3);
-  background: var(--canvas);
+  /* no fill: .catalog-wrap scrolls sideways so header never sticks, and white fill cut hard edge into page head disc */
+  background: transparent;
   border-bottom: 1px solid var(--line);
   white-space: nowrap;
 }
 
 .catalog tbody td {
-  padding: .75rem .4375rem;
+  padding: .625rem .5rem;
   vertical-align: middle;
   border-bottom: 1px solid var(--line-2);
 }
-.catalog tbody tr:hover { background: var(--surface); }
+.catalog tbody tr { transition: background-color var(--fast) ease-out; }
+/* cream tint, not band: band would swallow locked badge fill, and --ink-4 meta text keeps 4.7:1 here */
+.catalog tbody tr:hover { background: var(--canvas); }
 
 /* Column widths: section, title, days, instructor, seats, risk, action */
-.col-section    { width: 8.25rem; }
+.col-section    { width: 8rem; }
 .col-title      { width: auto; }
-.col-when       { width: 8.625rem; }
-.col-instructor { width: 8rem; }
+.col-when       { width: 7.25rem; }
+.col-instructor { width: 5rem; }
 .col-seats      { width: 4rem; text-align: right; }
-.col-risk       { width: 9.25rem; }
-.col-action     { width: 5.25rem; }
+.col-risk       { width: 7.5rem; }
+.col-action     { width: 5.75rem; }
 
 .section-code {
   display: block;
-  font-size: .875rem;
+  font-size: .9375rem;
   font-weight: 600;
   color: var(--ink);
   text-decoration: none;
@@ -307,35 +466,36 @@ a:hover { color: var(--high-ink); }
 .section-num,
 .course-meta {
   display: block;
-  font-size: .71875rem;
+  margin-top: .125rem;
+  font-size: .78125rem;
   color: var(--ink-4);
 }
-.section-num { letter-spacing: .2px; font-variant-numeric: tabular-nums; }
+.section-num { letter-spacing: .016em; font-variant-numeric: tabular-nums; }
 
-.course-title { display: block; font-size: .875rem; }
+.course-title { display: block; font-size: .9375rem; }
 
 .cell-muted {
-  font-size: .8125rem;
+  font-size: .875rem;
   color: var(--ink-3);
   font-variant-numeric: tabular-nums;
 }
 
 .seats {
-  font-size: .875rem;
+  font-size: .9375rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 .seats--none { color: var(--danger); }
 
 /* 8. Risk badge and info affordance */
-.risk-cell { display: flex; align-items: center; gap: 2px; }
+.risk-cell { display: flex; align-items: center; gap: .125rem; }
 
 .risk {
   display: inline-flex;
   align-items: center;
-  height: 1.625rem;
-  padding: 0 .625rem;
-  font-size: .75rem;
+  height: 1.75rem;
+  padding: 0 .6875rem;
+  font-size: .78125rem;
   font-weight: 600;
   border: 1px solid;
   border-radius: var(--r-sm);
@@ -349,7 +509,7 @@ a:hover { color: var(--high-ink); }
 .risk--locked {
   gap: .375rem;
   color: var(--ink-3);
-  background: var(--chip);
+  background: var(--band);
   border: 1px dashed var(--line-3);
   font-weight: 500;
 }
@@ -375,8 +535,9 @@ a:hover { color: var(--high-ink); }
   font-weight: 700;
   font-style: italic;
   color: var(--high-ink);
-  border: 1.4px solid #D9AE9C;
-  border-radius: 50%;
+  border: 1.4px solid var(--high-glyph);
+  border-radius: var(--r-round);
+  transition: background-color var(--fast) ease-out;
 }
 .risk-info:hover .risk-info__glyph { background: var(--high-bg); }
 
@@ -389,60 +550,91 @@ a:hover { color: var(--high-ink); }
   padding: .875rem 1rem;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   box-shadow: var(--shadow-pop);
 }
 .popover[hidden] { display: none; }
 .popover__title {
   display: block;
   margin-bottom: .375rem;
-  font-size: .75rem;
+  font-size: .8125rem;
   font-weight: 700;
   color: var(--high-ink);
 }
 .popover__body {
   display: block;
-  font-size: .75rem;
+  font-size: .8125rem;
   line-height: 1.55;
   color: var(--ink-3);
 }
 
 /* 9. Right rail */
-.rail { display: flex; flex-direction: column; gap: 1rem; }
+.rail,
+.rail__stack,
+.rail__cards { display: flex; flex-direction: column; gap: 1rem; }
 
 .card {
-  padding: 1.375rem;
-  background: var(--surface);
+  padding: 1.5rem;
+  /* same see-through glass as sign-in card, rail art (section 17) shows through */
+  background: color-mix(in srgb, var(--surface) 52%, transparent);
+  -webkit-backdrop-filter: blur(3px) saturate(1.1);
+  backdrop-filter: blur(3px) saturate(1.1);
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
+  box-shadow: var(--shadow-soft);
 }
 .card--dashed {
   background: transparent;
   border: 1px dashed var(--line-3);
-  padding: 1.25rem;
+  padding: 1.375rem;
 }
 
 .card__eyebrow {
   display: block;
-  font-size: .6875rem;
-  font-weight: 500;
-  letter-spacing: 1px;
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .06em;
   text-transform: uppercase;
   color: var(--ink-4);
 }
 
 .card__title {
   margin: .625rem 0 .5rem;
-  font-size: 1.1875rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  letter-spacing: -.3px;
+  letter-spacing: -.01em;
 }
-.card--dashed .card__title { margin-top: 0; font-size: .875rem; }
+.card--dashed .card__title { margin-top: 0; font-size: 1rem; }
+
+/* empty plan card: little road, you at start, open stops ahead, star at end */
+.mini-road {
+  display: block;
+  width: 100%;
+  max-width: 17.5rem;
+  height: auto;
+  margin: 1rem 0 .25rem;
+  overflow: visible;
+}
+.mini-road + .card__title { margin-top: .5rem; }
+.mini-road__path {
+  fill: none;
+  stroke: var(--art-road);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 5 7;
+}
+.mini-road__todo { fill: var(--surface); stroke: var(--art-road); stroke-width: 2; }
+.mini-road__goal { fill: var(--amber); stroke: var(--amber-deep); stroke-width: 1; stroke-linejoin: round; }
+.mini-road__you  { fill: var(--sjsu); stroke: var(--surface); stroke-width: 3; }
+.mini-road__halo { fill: var(--sjsu); opacity: 0; transform-box: fill-box; transform-origin: center; }
+@media (prefers-reduced-motion: no-preference) {
+  .mini-road__halo { animation: road-ping 2.4s var(--ease-out) infinite; }
+}
 
 .card__body {
-  margin: 0 0 1.125rem;
-  font-size: .8125rem;
-  line-height: 1.55;
+  margin: 0 0 1.25rem;
+  font-size: .875rem;
+  line-height: 1.6;
   color: var(--ink-3);
 }
 
@@ -455,8 +647,8 @@ a:hover { color: var(--high-ink); }
   border: 1px dashed var(--line-3);
   border-radius: var(--r-lg);
 }
-.state__title { margin: 0 0 .5rem; font-size: 1.0625rem; font-weight: 700; }
-.state__body  { margin: 0; font-size: .875rem; color: var(--ink-3); }
+.state__title { margin: 0 0 .5rem; font-size: 1.125rem; font-weight: 700; }
+.state__body  { margin: 0; font-size: .9375rem; color: var(--ink-3); }
 
 .banner {
   display: flex;
@@ -464,52 +656,1006 @@ a:hover { color: var(--high-ink); }
   gap: .625rem;
   padding: .75rem 1rem;
   margin-bottom: 1rem;
-  font-size: .8125rem;
+  font-size: .875rem;
   border: 1px solid;
-  border-radius: 9px;
+  border-radius: var(--r-md);
 }
 .banner--warn  { color: var(--ink); background: var(--med-bg);  border-color: var(--med-line); }
 .banner--error { color: var(--ink); background: var(--high-bg); border-color: var(--high-line); }
 
-/* 11. Sign-in form */
-.narrow { max-width: 24rem; margin: 0 auto; padding: 2.5rem var(--gutter); }
-.stack { display: flex; flex-direction: column; gap: 1rem; }
-.field { display: flex; flex-direction: column; gap: .35rem; }
+/* 11. Sign-in form, see-through glass panel over road art (section 15) */
+/*
+  Card sits in middle of screen: body turns into column, card takes auto margins,
+  and bottom padding same as 5rem header keeps it centered on whole screen, not just space under header.
+  Road art is centered on screen too, so card always lands in middle of its rings.
+*/
+body:has(> .narrow) {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-height: 100vh;
+  min-height: 100dvh;
+  /* same as top bar height, keeps card centered on whole screen */
+  padding-bottom: var(--topbar-h);
+}
+.narrow {
+  width: 100%;
+  max-width: 27rem;
+  margin: auto;
+  padding: 2.5rem 2.25rem 2.25rem;
+  /* light frost only, so road and dot stay readable behind card, fields keep solid white */
+  background: color-mix(in srgb, var(--surface) 52%, transparent);
+  -webkit-backdrop-filter: blur(3px) saturate(1.1);
+  backdrop-filter: blur(3px) saturate(1.1);
+  border: 1px solid color-mix(in srgb, var(--line-2) 85%, transparent);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-soft);
+}
+.narrow__title { margin-bottom: 1.5rem; }
 
-.field label { font-size: .85rem; font-weight: 600; }
-.field__hint { margin: 0; font-size: .8125rem; color: var(--ink-3); }
+.stack { display: flex; flex-direction: column; gap: 1.125rem; }
+.field { display: flex; flex-direction: column; gap: .4rem; }
 
-.field input {
-  height: 2.75rem;
-  padding: 0 .875rem;
+.field__label { font-size: .9375rem; font-weight: 600; }
+.field__hint { margin: 0; font-size: .84375rem; color: var(--ink-3); }
+
+.field__input {
+  height: 3rem;
+  padding: 0 .9375rem;
   font: inherit;
-  font-size: .875rem;
+  font-size: .9375rem;
+  color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--field-line);
   border-radius: var(--r-md);
+  caret-color: var(--sjsu);
+  transition: border-color var(--fast) ease-out;
 }
+.field__input:hover { border-color: var(--ink-3); }
+.field__input:focus { border-color: var(--sjsu); }
 
-.note { margin-top: 1.5rem; font-size: .8125rem; color: var(--ink-3); }
+.stack .btn--primary { min-height: 3.1875rem; margin-top: .375rem; font-size: 1rem; }
+
+.note { margin: 1.5rem 0 0; font-size: .875rem; color: var(--ink-3); }
 
 /* 12. Responsive */
 @media (max-width: 75rem) {
   .layout { grid-template-columns: minmax(0, 1fr); }
-  .rail { flex-direction: row; flex-wrap: wrap; }
-  .rail > * { flex: 1 1 18rem; }
+  /* rail box drops out, so search can sit above table while cards stay below it */
+  .rail,
+  .rail__stack { display: contents; }
+  .search-form { order: -1; max-width: 30rem; }
+  .rail__cards { flex-direction: row; flex-wrap: wrap; }
+  .rail__cards > * { flex: 1 1 18rem; }
 }
 
 @media (max-width: 56rem) {
   :root { --gutter: 1.25rem; }
   .catalog { min-width: 44rem; }
   .col-instructor, .catalog td.col-instructor { display: none; }
-  .pagehead { flex-direction: column; align-items: stretch; }
-  .search-input { width: 100%; }
-  .pagehead__tools { width: 100%; }
+  .search-form { max-width: none; }
+}
+
+/* 40rem matches landing nav breakpoint (640px) */
+@media (max-width: 40rem) {
+  .topbar { gap: .75rem; padding: 0 .875rem; }
+  .topbar__brand { font-size: 1.125rem; }
+  .topbar__nav { display: none; }
+  .topbar__actions { gap: .5rem; }
+  .topbar .btn { min-height: 2.75rem; padding: 0 .75rem; font-size: .875rem; white-space: nowrap; }
+  .topbar__user { display: none; }
+  /* rings would cross stacked title and search here, keep only soft disc */
+  .pagehead::before { background: radial-gradient(circle at var(--disc-at), var(--art-disc) 0, var(--art-disc-2) 10rem, transparent 17rem); }
+  /* phones: card back at top, keyboard would cover centered card */
+  body:has(> .narrow) { padding-bottom: 1.5rem; }
+  .narrow { width: auto; margin: 0 1rem auto; padding: 1.75rem 1.25rem; }
 }
 
 @media (max-width: 36rem) {
   .catalog { min-width: 34rem; }
   .col-when, .catalog td.col-when { display: none; }
-  .topbar { gap: 1rem; }
-  .topbar__nav { display: none; }
 }
+
+/* smallest phones, header buttons still need to fit on one row */
+@media (max-width: 23.75rem) {
+  .topbar .btn { padding: 0 .625rem; font-size: .8125rem; }
+}
+
+/* 13. Landing page (index.html) */
+.hero {
+  display: grid;
+  /* text column only, animation sits behind page (section 14) */
+  grid-template-columns: minmax(0, 52rem);
+  align-content: center;
+  /* hero fills first screen under 5rem header, so background art is not covered by features band */
+  min-height: calc(100vh - 5rem);
+  min-height: calc(100dvh - 5rem);
+  align-items: center;
+  column-gap: 2.5rem;
+  padding: 5.625rem var(--gutter) 2.5rem 7.5rem;
+}
+
+.hero__wordmark {
+  font-size: clamp(3.25rem, 8vw, 6.5rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -.03em;
+}
+.hero__accent { color: var(--amber); }
+
+.hero__title {
+  margin: .5rem 0 0;
+  font-size: clamp(2.125rem, 5vw, 3.875rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -.02em;
+}
+
+.hero__lede {
+  max-width: 43.125rem;
+  margin: 1.375rem 0 0;
+  font-size: 1.375rem;
+  line-height: 1.6;
+}
+.hero__sjsu { color: var(--sjsu); font-weight: 700; }
+
+.hero__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: .875rem;
+  margin-top: 2.125rem;
+  padding: 1.375rem 3.625rem;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--amber);
+  border-radius: var(--r-md);
+  text-decoration: none;
+  transition: background-color var(--fast) ease-out;
+}
+.hero__cta:hover { color: var(--ink); background: var(--amber-hover); }
+.hero__cta-icon {
+  width: 1.875rem;
+  height: 1.875rem;
+  transition: transform var(--medium) var(--ease-out);
+}
+/* arrow nudge only when user allows motion */
+@media (prefers-reduced-motion: no-preference) {
+  .hero__cta:hover .hero__cta-icon { transform: translateX(4px); }
+}
+
+/* features: four glass squares under hero, grid as wide as title so it lines up under it */
+.features {
+  padding: 6rem var(--gutter) 6rem 7.5rem;
+}
+
+.features__list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  max-width: 44.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feature {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  aspect-ratio: 1;
+  padding: 1.75rem;
+  /* each square is white but see-through, no outline, soft shadow sets it off from page */
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  backdrop-filter: blur(18px) saturate(1.15);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-soft);
+}
+
+.feature__img { width: 5rem; height: 5rem; object-fit: contain; }
+
+.feature__title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+
+.feature__body {
+  margin: .5rem 0 0;
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+/* each feature comes into focus as it scrolls in, browsers without scroll timelines just show it */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .feature {
+      animation: feature-in linear both;
+      animation-timeline: view();
+      /* fully sharp once whole item is on screen, so last item still finishes at page bottom */
+      animation-range: entry 5% entry 100%;
+    }
+  }
+}
+
+@keyframes feature-in {
+  from { opacity: 0; transform: translateY(1.5rem); filter: blur(6px); }
+}
+
+/* map moves under text once side by side gets too tight */
+@media (max-width: 62.5rem) {
+  /* bottom padding leaves room for background art under text */
+  .hero { align-content: start; padding: 3.75rem 1.75rem 46vh; }
+  .features { padding: 4rem 1.75rem; }
+}
+
+@media (max-width: 40rem) {
+  .hero__lede { font-size: 1.125rem; }
+  .hero__cta { padding: 1.125rem 2.25rem; font-size: 1.375rem; }
+  .features { padding: 3rem 1rem; }
+  /* phones: squares too small for text, so tiles stack and size to content */
+  .features__list { grid-template-columns: minmax(0, 1fr); gap: .75rem; }
+  .feature { aspect-ratio: auto; gap: 1rem; padding: 1.375rem; }
+  .feature__img { width: 3.5rem; height: 3.5rem; }
+  .feature__title { font-size: 1.375rem; }
+}
+
+/*
+  landing only: header floats above page so it can slide away going down and come back going up
+  (landing-loop.js toggles .is-hidden), body padding keeps hero where header used to push it.
+  glass look itself is .topbar default (section 4)
+*/
+.page-landing { padding-top: 5rem; }
+.page-landing .topbar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 20;
+  transition: transform 300ms var(--ease-out);
+}
+.page-landing .topbar.is-hidden { transform: translateY(-100%); }
+
+/* 14. Landing background animation */
+/*
+  12s loop fixed behind landing page, flat shapes with soft gradients and rim light.
+  Storyboard: typing on laptop (hold), zoom into screen, dot climbs one road past course stops, faster each stop,
+  road keeps going as tightening squiggle while camera rushes up with speed lines, camera pulls back to show
+  diploma at end of dashed road while dot keeps running, light bursts, camera punches in on diploma (hold), fade.
+  .pov__laptop zooms into screen, then .pov__camera (inside screen) follows dot all way up road.
+  Sizes inside SVG are user units (px), they scale with viewBox, not with page text.
+*/
+.pov {
+  --pov-loop: 12s;
+  /* art colors only used inside illustration */
+  --pov-road:        rgba(22, 35, 63, .32);
+  --pov-ring:        #DCE7F4;
+  --pov-mote:        #BFD4EC;
+  --pov-streak:      #9DBBE0;
+  --pov-key:         #F5F7FA;
+  --pov-key-edge:    #CDD3DC;
+  --pov-lip:         #BCC4D0;
+  --pov-lid-rim:     #33507F;
+  --pov-webcam:      #0D1730;
+  --pov-desk-edge:   #FFFBEF;
+  --pov-skin:        #EDB991;
+  --pov-roll-end:    #D9C48F;
+  --pov-pearl:       #FFF8EC;
+  --pov-crown-back:  #C08A1E;
+  --pov-pearl-back:  #D8C59C;
+
+  position: fixed;
+  /* 5rem header plus gap, so art never sits flush with top of page */
+  top: 7rem;
+  right: 0;
+  z-index: -1;
+  width: min(48vw, 60rem);
+  height: calc(100vh - 9rem);
+  height: calc(100dvh - 9rem);
+  pointer-events: none;
+  /* soft edges all round so art melts into page instead of hard cut */
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 22%), linear-gradient(to bottom, transparent 0, #000 8%, #000 92%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 22%), linear-gradient(to bottom, transparent 0, #000 8%, #000 92%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+.pov__frame { animation: pov-frame var(--pov-loop) linear infinite; }
+
+/* backdrop: soft disc, rings and drifting dust */
+.pov__ring { fill: none; stroke: var(--pov-ring); stroke-width: 2; }
+.pov__mote {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pov-drift 7s ease-in-out infinite;
+}
+.pov__mote--t1 { animation-duration: 9.5s; animation-delay: -3s; }
+.pov__mote--a  { fill: var(--amber); }
+.pov__mote--b  { fill: var(--pov-mote); }
+.pov__mote--c  { fill: var(--sjsu); opacity: .35; }
+
+/* laptop, desk and arms zoom together. base is zoomed in, so reduced motion lands on diploma */
+.pov__laptop {
+  transform-box: view-box;
+  transform-origin: 400px 209px;
+  transform: translate(0, 91px) scale(3.4);
+  animation: pov-laptop var(--pov-loop) infinite;
+}
+.pov__desk-edge { fill: var(--pov-desk-edge); }
+.pov__lip       { fill: var(--pov-lip); }
+.pov__lid-rim   { fill: var(--pov-lid-rim); }
+.pov__webcam    { fill: var(--pov-webcam); }
+.pov__glare     { fill: var(--surface); opacity: .15; }
+
+.pov__key      { fill: var(--pov-key); }
+.pov__key-edge { fill: var(--pov-key-edge); }
+/* few keys light up while typing, delays keep them out of sync */
+.pov__key--f1, .pov__key--f2, .pov__key--f3,
+.pov__key--f4, .pov__key--f5, .pov__key--f6 { animation: pov-key 1.1s linear infinite; }
+.pov__key--f2 { animation-delay: -.2s; }
+.pov__key--f3 { animation-delay: -.45s; }
+.pov__key--f4 { animation-delay: -.65s; }
+.pov__key--f5 { animation-delay: -.85s; }
+.pov__key--f6 { animation-delay: -1s; }
+
+/* arms are plain noodles, one rounded stroke each, round hand at tip */
+.pov__noodle { fill: none; stroke: var(--sjsu); stroke-width: 44; stroke-linecap: round; }
+.pov__skin   { fill: var(--pov-skin); }
+/* whole arm swings from shoulder (30, 660) so hand moves around keyboard, hands also tap */
+.pov__reach {
+  transform-box: view-box;
+  transform-origin: 30px 660px;
+  animation: pov-reach 2.6s ease-in-out infinite;
+}
+.pov__reach--right { animation-duration: 3.1s; animation-delay: -1.3s; }
+.pov__hand {
+  transform-box: fill-box;
+  transform-origin: 50% 80%;
+  animation: pov-type .3s ease-in-out infinite alternate;
+}
+.pov__hand--right { animation-delay: -.15s; }
+
+/* camera inside screen: translate(400, 300) scale(s) translate(-x, -y) puts world point (x, y) at center */
+.pov__camera {
+  transform: translate(400px, 300px) scale(.8) translate(-400px, 1473px);
+  animation: pov-camera var(--pov-loop) infinite;
+}
+
+/* untraveled road is dashed, traveled part turns solid gold behind dot */
+.pov__road {
+  fill: none;
+  stroke: var(--pov-road);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-dasharray: 9 12;
+}
+.pov__todo circle { fill: var(--surface); stroke: var(--pov-road); stroke-width: 3; }
+.pov__labels { font-size: 15px; font-weight: 700; fill: var(--ink-3); }
+
+/* mask stroke, white in mask means shown, visible dash runs from path start to (1 - offset) */
+.pov__sweep {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 60;
+  stroke-dasharray: 1 2;
+  animation: pov-sweep var(--pov-loop) infinite;
+}
+.pov__trail-edge,
+.pov__trail { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.pov__trail-edge { stroke: var(--amber-deep); stroke-width: 11; }
+.pov__trail      { stroke: var(--amber); stroke-width: 6; }
+
+.pov__start { fill: var(--ink); stroke: var(--surface); stroke-width: 3; }
+
+.pov__done { transform-box: fill-box; transform-origin: center; }
+.pov__done circle { fill: url(#pov-gold); stroke: var(--ink); stroke-width: 3; }
+.pov__done path {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.pov__done--1 { animation: pov-done-1 var(--pov-loop) ease-out infinite; }
+.pov__done--2 { animation: pov-done-2 var(--pov-loop) ease-out infinite; }
+.pov__done--3 { animation: pov-done-3 var(--pov-loop) ease-out infinite; }
+.pov__done--4 { animation: pov-done-4 var(--pov-loop) ease-out infinite; }
+
+/* "you" dot: one zero-length dash with round cap, moved along road by dashoffset */
+.pov__you { opacity: 0; animation: pov-you var(--pov-loop) linear infinite; }
+.pov__you path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 0 2;
+  stroke-dashoffset: -1;
+  animation: pov-walk var(--pov-loop) infinite;
+}
+.pov__you .pov__you-halo {
+  stroke: var(--sjsu);
+  animation: pov-walk var(--pov-loop) infinite, pov-pulse 1.4s ease-out infinite;
+}
+.pov__you-ring { stroke: var(--surface); stroke-width: 24; }
+.pov__you-dot  { stroke: var(--sjsu); stroke-width: 15; }
+
+.pov__speed { opacity: 0; animation: pov-speed var(--pov-loop) linear infinite; }
+.pov__streak {
+  /* px, Chrome rejects calc() on plain numbers here */
+  --o: 120px;
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 240 2600;
+  animation: pov-streak var(--pov-loop) linear infinite;
+}
+.pov__streak--amber { stroke: var(--amber); }
+.pov__streak--blue  { stroke: var(--pov-streak); }
+.pov__streak--ink   { stroke: var(--pov-road); }
+.pov__streak--o1 { --o: 420px; }
+.pov__streak--o2 { --o: 760px; }
+.pov__streak--o3 { --o: 1080px; }
+
+/* light burst behind diploma when dot arrives, glow and slow turning rays stay after */
+.pov__backlight,
+.pov__rays,
+.pov__flash,
+.pov__shock { transform-box: fill-box; transform-origin: center; }
+.pov__backlight { opacity: .8; animation: pov-backlight var(--pov-loop) infinite; }
+.pov__rays      { opacity: .65; animation: pov-rays var(--pov-loop) infinite; }
+.pov__rays-spin {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pov-turn 40s linear infinite;
+}
+.pov__flash { opacity: 0; animation: pov-flash var(--pov-loop) infinite; }
+.pov__shock { opacity: 0; animation: pov-shock var(--pov-loop) infinite; }
+
+.pov__paper {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: pov-thud var(--pov-loop) infinite;
+}
+.pov__paper-border { fill: none; stroke: var(--amber-deep); stroke-width: 2; }
+.pov__degree { font-size: 30px; font-weight: 800; letter-spacing: 2px; fill: var(--ink); }
+.pov__degree-sub { font-size: 15px; font-weight: 700; letter-spacing: 8px; fill: var(--sjsu); }
+.pov__line-text { fill: var(--line-2); }
+.pov__ribbon { fill: var(--sjsu); }
+.pov__seal-ring { fill: none; stroke: var(--surface); stroke-width: 1.5; stroke-dasharray: 2 3; opacity: .8; }
+.pov__roll-end { fill: var(--pov-roll-end); }
+
+
+/* crown faces viewer and turns: points and gems slide right across front of band and squeeze to nothing at
+   edges, like faces of round band turning away. six facets spaced 60deg apart */
+.pov__crown-glow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pov-glow 2.4s ease-in-out infinite alternate;
+}
+.pov__crown-bob { animation: pov-bob 1.8s ease-in-out infinite alternate; }
+.pov__point     { fill: url(#pov-point); stroke: var(--amber-deep); stroke-width: 1; stroke-linejoin: round; }
+.pov__pearl     { fill: var(--pov-pearl); }
+.pov__gem       { fill: var(--sjsu); }
+.pov__band-light { fill: var(--surface); opacity: .3; }
+.pov__facet {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: translateX(0) scaleX(0);
+  animation: pov-facet 3.6s linear infinite;
+}
+/* still poses for reduced motion: three facets on front at -60, 0 and 60deg, rest behind */
+.pov__facet--1 { transform: translateX(-39.8px) scaleX(.5); }
+.pov__facet--2 { transform: translateX(0) scaleX(1); animation-delay: -.6s; }
+.pov__facet--3 { transform: translateX(39.8px) scaleX(.5); animation-delay: -1.2s; }
+.pov__facet--4 { animation-delay: -1.8s; }
+.pov__facet--5 { animation-delay: -2.4s; }
+.pov__facet--6 { animation-delay: -3s; }
+
+/* back half: same six facets on far side of ring, darker, same size and sweep, moving left */
+.pov__point-back { fill: var(--pov-crown-back); }
+.pov__pearl-back { fill: var(--pov-pearl-back); }
+.pov__band-inner { fill: var(--pov-crown-back); }
+.pov__facet-back {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: translateX(0) scaleX(0);
+  animation: pov-facet-back 3.6s linear infinite;
+}
+/* still poses for reduced motion: three facets on back at 120, 180 and 240deg */
+.pov__back--4 { transform: translateX(39.8px) scaleX(.5); animation-delay: -1.8s; }
+.pov__back--5 { transform: translateX(0) scaleX(1); animation-delay: -2.4s; }
+.pov__back--6 { transform: translateX(-39.8px) scaleX(.5); animation-delay: -3s; }
+.pov__back--2 { animation-delay: -.6s; }
+.pov__back--3 { animation-delay: -1.2s; }
+
+.pov__sparkle {
+  fill: var(--amber);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pov-twinkle 1.8s ease-in-out infinite;
+}
+.pov__sparkle--2 { fill: var(--amber-deep); animation-delay: -.45s; }
+.pov__sparkle--3 { animation-delay: -.9s; }
+.pov__sparkle--4 { fill: var(--amber-deep); animation-delay: -1.35s; }
+
+/* loop timeline, percent of 12s:
+   0-14 typing hold, 14-24 zoom, 25-44.2 stops (hops get shorter, rests vanish), 44.2-55.5 dot runs on without
+   stopping: up squiggle with speed lines, camera pulls back at 51-54.5 to show diploma, dot reaches it at 55.5,
+   55.5 light burst, 55.5-61.5 camera punches in, 61.5-93 hold, 93-99 fade */
+@keyframes pov-frame {
+  0%        { opacity: 0; }
+  2%, 93%   { opacity: 1; }
+  99%, 100% { opacity: 0; }
+}
+
+@keyframes pov-laptop {
+  0%, 14% {
+    transform: translate(0, 0) scale(1);
+    animation-timing-function: cubic-bezier(.7, 0, .2, 1);
+  }
+  24%, 100% { transform: translate(0, 91px) scale(3.4); }
+}
+
+@keyframes pov-reach {
+  0%, 100% { transform: rotate(0) translate(0, 0); }
+  20%      { transform: rotate(-5deg) translate(4px, -6px); }
+  45%      { transform: rotate(3deg) translate(10px, 2px); }
+  70%      { transform: rotate(-2deg) translate(-6px, -10px); }
+}
+
+@keyframes pov-type {
+  from { transform: translateY(0) rotate(0); }
+  to   { transform: translateY(4px) rotate(-1deg); }
+}
+
+@keyframes pov-key {
+  0%        { fill: var(--amber); }
+  25%, 100% { fill: var(--pov-key); }
+}
+
+@keyframes pov-drift {
+  0%       { opacity: 0; transform: translateY(12px); }
+  25%, 70% { opacity: 1; }
+  100%     { opacity: 0; transform: translateY(-34px); }
+}
+
+/* stops at 10.3, 20.6, 30.8, 42.1 percent of road, squiggle starts 50.5, last stretch starts 86.4 */
+@keyframes pov-walk {
+  0%, 25%      { stroke-dashoffset: 0;      animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
+  30.5%, 31.8% { stroke-dashoffset: -.1027; animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
+  36.3%, 37.2% { stroke-dashoffset: -.2055; animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
+  40.8%, 41.4% { stroke-dashoffset: -.308;  animation-timing-function: cubic-bezier(.5, 0, 1, 1); }
+  44.2%        { stroke-dashoffset: -.4208; animation-timing-function: linear; }
+  46%          { stroke-dashoffset: -.5045; animation-timing-function: linear; }
+  55.5%, 100%  { stroke-dashoffset: -1; }
+}
+
+@keyframes pov-sweep {
+  0%, 25%      { stroke-dashoffset: 1;     animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
+  30.5%, 31.8% { stroke-dashoffset: .8973; animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
+  36.3%, 37.2% { stroke-dashoffset: .7945; animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
+  40.8%, 41.4% { stroke-dashoffset: .692;  animation-timing-function: cubic-bezier(.5, 0, 1, 1); }
+  44.2%        { stroke-dashoffset: .5792; animation-timing-function: linear; }
+  46%          { stroke-dashoffset: .4955; animation-timing-function: linear; }
+  55.5%, 100%  { stroke-dashoffset: 0; }
+}
+
+/* camera follows dot with same stops and easing as walk, pulls back while dot keeps running, then punches in */
+@keyframes pov-camera {
+  0%, 25%      { transform: translate(400px, 300px) scale(1) translate(-400px, -300px); animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
+  30.5%, 31.8% { transform: translate(400px, 300px) scale(1) translate(-400px, -300px); animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
+  36.3%, 37.2% { transform: translate(400px, 300px) scale(1) translate(-400px, -239px); animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
+  40.8%, 41.4% { transform: translate(400px, 300px) scale(1) translate(-400px, -115px); animation-timing-function: cubic-bezier(.5, 0, 1, 1); }
+  44.2%        { transform: translate(400px, 300px) scale(1) translate(-400px, 50px);   animation-timing-function: linear; }
+  46%          { transform: translate(400px, 300px) scale(1) translate(-400px, 150px);  animation-timing-function: linear; }
+  51%          { transform: translate(400px, 300px) scale(1) translate(-400px, 700px);  animation-timing-function: cubic-bezier(.45, 0, .55, 1); }
+  54.5%, 55.5% { transform: translate(400px, 300px) scale(.55) translate(-400px, 1375px); animation-timing-function: cubic-bezier(.16, 1, .3, 1); }
+  61.5%, 100%  { transform: translate(400px, 300px) scale(.8) translate(-400px, 1473px); }
+}
+
+@keyframes pov-you {
+  0%, 23%   { opacity: 0; }
+  25%, 55.5%  { opacity: 1; }
+  55.8%, 100% { opacity: 0; }
+}
+
+@keyframes pov-pulse {
+  0%   { stroke-width: 15; stroke-opacity: .45; }
+  100% { stroke-width: 48; stroke-opacity: 0; }
+}
+
+/* each stop pops when dot arrives: 30.5%, 36.3%, 40.8%, 44.2% */
+@keyframes pov-done-1 {
+  0%, 30.2%   { opacity: 0; transform: scale(.3); }
+  31.1%       { opacity: 1; transform: scale(1.4); }
+  32%, 100%   { opacity: 1; transform: scale(1); }
+}
+@keyframes pov-done-2 {
+  0%, 36%     { opacity: 0; transform: scale(.3); }
+  36.9%       { opacity: 1; transform: scale(1.4); }
+  37.8%, 100% { opacity: 1; transform: scale(1); }
+}
+@keyframes pov-done-3 {
+  0%, 40.5%   { opacity: 0; transform: scale(.3); }
+  41.3%       { opacity: 1; transform: scale(1.4); }
+  42.1%, 100% { opacity: 1; transform: scale(1); }
+}
+@keyframes pov-done-4 {
+  0%, 44%     { opacity: 0; transform: scale(.3); }
+  44.7%       { opacity: 1; transform: scale(1.4); }
+  45.4%, 100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pov-speed {
+  0%, 45.5%   { opacity: 0; }
+  46.5%, 50.5% { opacity: 1; }
+  52%, 100%   { opacity: 0; }
+}
+
+@keyframes pov-streak {
+  0%, 45.5% { stroke-dashoffset: var(--o); }
+  52%, 100% { stroke-dashoffset: calc(var(--o) - 2600px); }
+}
+
+@keyframes pov-backlight {
+  0%, 55.4% { opacity: 0; transform: scale(.4); }
+  57%       { opacity: 1; transform: scale(1.12); }
+  60%, 100% { opacity: .8; transform: scale(1); }
+}
+
+@keyframes pov-rays {
+  0%, 55.4% { opacity: 0; transform: scale(.3); }
+  57.5%     { opacity: 1; transform: scale(1.1); }
+  61%, 100% { opacity: .55; transform: scale(1); }
+}
+
+@keyframes pov-turn {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pov-flash {
+  0%, 55.4% { opacity: 0; transform: scale(.2); }
+  55.8%     { opacity: .95; transform: scale(.7); }
+  59%, 100% { opacity: 0; transform: scale(4); }
+}
+
+@keyframes pov-shock {
+  0%, 55.4%   { opacity: 0; transform: scale(.3); }
+  55.8%       { opacity: 1; transform: scale(.5); }
+  59.5%, 100% { opacity: 0; transform: scale(3.2); }
+}
+
+@keyframes pov-thud {
+  0%, 55.5% { transform: scale(1, 1); }
+  56.3%     { transform: scale(1.05, .94); }
+  58%, 100% { transform: scale(1, 1); }
+}
+
+@keyframes pov-bob {
+  from { transform: translateY(-4px); }
+  to   { transform: translateY(4px); }
+}
+
+@keyframes pov-glow {
+  from { opacity: .55; transform: scale(.9); }
+  to   { opacity: 1; transform: scale(1.1); }
+}
+
+
+
+/* front half of lap (0-50%): x = 46 sin, width = cos, back half hidden at width 0 while it slides back */
+@keyframes pov-facet {
+  0%     { transform: translateX(-46px) scaleX(0); }
+  6.25%  { transform: translateX(-42.5px) scaleX(.38); }
+  12.5%  { transform: translateX(-32.5px) scaleX(.71); }
+  18.75% { transform: translateX(-17.6px) scaleX(.92); }
+  25%    { transform: translateX(0) scaleX(1); }
+  31.25% { transform: translateX(17.6px) scaleX(.92); }
+  37.5%  { transform: translateX(32.5px) scaleX(.71); }
+  43.75% { transform: translateX(42.5px) scaleX(.38); }
+  50%    { transform: translateX(46px) scaleX(0); }
+  100%   { transform: translateX(-46px) scaleX(0); }
+}
+
+/* other half of same lap: hidden while facet is on front, then x runs back from 46 to -46 */
+@keyframes pov-facet-back {
+  0%     { transform: translateX(-46px) scaleX(0); }
+  50%    { transform: translateX(46px) scaleX(0); }
+  56.25% { transform: translateX(42.5px) scaleX(.38); }
+  62.5%  { transform: translateX(32.5px) scaleX(.71); }
+  68.75% { transform: translateX(17.6px) scaleX(.92); }
+  75%    { transform: translateX(0) scaleX(1); }
+  81.25% { transform: translateX(-17.6px) scaleX(.92); }
+  87.5%  { transform: translateX(-32.5px) scaleX(.71); }
+  93.75% { transform: translateX(-42.5px) scaleX(.38); }
+  100%   { transform: translateX(-46px) scaleX(0); }
+}
+
+@keyframes pov-twinkle {
+  0%, 100% { opacity: 0; transform: scale(.2) rotate(0); }
+  50%      { opacity: 1; transform: scale(1) rotate(45deg); }
+}
+
+/* phones and tablets: art sits low behind content, fades in from top */
+@media (max-width: 62.5rem) {
+  .pov {
+    top: auto;
+    bottom: 0;
+    width: 100%;
+    height: 48vh;
+    height: 48dvh;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22%);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 22%);
+    -webkit-mask-composite: source-over;
+    mask-composite: add;
+  }
+}
+
+/* reduced motion: no loop, finished diploma with glow and still crown */
+@media (prefers-reduced-motion: reduce) {
+  .pov,
+  .pov * { animation: none !important; }
+}
+
+
+/* 15. Road art behind sign-in, sign-up and plan pages (WEB-INF/jspf/road.jspf) */
+/*
+  Same road as landing animation, as wave with check on each crest and two loops in troughs.
+  Dot hops in from bottom left past CS 46A, round first loop, past CS 46B and CS 146, then runs
+  behind see-through card and settles on CS 157A (this class) while gold trail fills in behind it.
+  Road ahead dips round second loop in lower right and climbs to gold star. Plays once per page load, only pulse and star keep moving.
+*/
+.road {
+  --road-play: 3.6s;
+  --road-delay: .3s;
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.road__ring { fill: none; stroke: var(--art-ring); stroke-width: 2; }
+
+.road__path {
+  fill: none;
+  stroke: var(--art-road);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 8 11;
+}
+.road__todo circle { fill: var(--surface); stroke: var(--art-road); stroke-width: 3; }
+.road__labels { font-size: 14px; font-weight: 700; fill: var(--ink-3); }
+/* this class, where dot stops, so it reads a bit stronger */
+.road__labels .road__now { font-size: 16px; fill: var(--sjsu); }
+
+/* visible dash runs from path start to (1 - offset), base state is finished trail for reduced motion */
+.road__trail-edge,
+.road__trail {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1 2;
+  stroke-dashoffset: 0;
+  animation: road-sweep var(--road-play) var(--road-delay) both;
+}
+.road__trail-edge { stroke: var(--amber-deep); stroke-width: 10; }
+.road__trail      { stroke: var(--amber); stroke-width: 5; }
+
+.road__done { transform-box: fill-box; transform-origin: center; }
+.road__done circle { fill: url(#road-gold); stroke: var(--ink); stroke-width: 2.5; }
+.road__done path {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.road__done--1 { animation: road-done-1 var(--road-play) var(--road-delay) ease-out both; }
+.road__done--2 { animation: road-done-2 var(--road-play) var(--road-delay) ease-out both; }
+.road__done--3 { animation: road-done-3 var(--road-play) var(--road-delay) ease-out both; }
+
+/* "you" dot: one zero-length dash with round cap, moved along trail by dashoffset */
+.road__you path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 0 2;
+  /* not quite -1, zero-length dash right on path end does not draw */
+  stroke-dashoffset: -.999;
+  animation: road-walk var(--road-play) var(--road-delay) both;
+}
+.road__you .road__you-halo {
+  stroke: var(--sjsu);
+  stroke-width: 14;
+  stroke-opacity: 0;
+  animation: road-walk var(--road-play) var(--road-delay) both, road-pulse 1.6s ease-out infinite;
+}
+.road__you-ring { stroke: var(--surface); stroke-width: 22; }
+.road__you-dot  { stroke: var(--sjsu); stroke-width: 14; }
+
+.road__goal { fill: var(--amber); stroke: var(--amber-deep); stroke-width: 1; stroke-linejoin: round; }
+.road__goal,
+.road__goal-glow { transform-box: fill-box; transform-origin: center; }
+.road__goal      { animation: road-twinkle 3.2s ease-in-out infinite; }
+.road__goal-glow { animation: road-glow 3.2s ease-in-out infinite; }
+
+/* checks at 20.3%, 48.6% and 60.5% of trail, hops get quicker, last run goes behind card and settles on CS 157A */
+@keyframes road-walk {
+  0%       { stroke-dashoffset: 0;      animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
+  18%, 23% { stroke-dashoffset: -.2033; animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
+  46%, 50% { stroke-dashoffset: -.4856; animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
+  58%, 61% { stroke-dashoffset: -.6053; animation-timing-function: cubic-bezier(.45, 0, .2, 1); }
+  100%     { stroke-dashoffset: -.999; }
+}
+@keyframes road-sweep {
+  0%       { stroke-dashoffset: 1;      animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
+  18%, 23% { stroke-dashoffset: .7967;  animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
+  46%, 50% { stroke-dashoffset: .5144;  animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
+  58%, 61% { stroke-dashoffset: .3947;  animation-timing-function: cubic-bezier(.45, 0, .2, 1); }
+  100%     { stroke-dashoffset: 0; }
+}
+/* each check pops when dot gets there */
+@keyframes road-done-1 {
+  0%, 17%   { opacity: 0; transform: scale(.3); }
+  20.5%     { opacity: 1; transform: scale(1.35); }
+  24%, 100% { opacity: 1; transform: scale(1); }
+}
+@keyframes road-done-2 {
+  0%, 45%   { opacity: 0; transform: scale(.3); }
+  48.5%     { opacity: 1; transform: scale(1.35); }
+  52%, 100% { opacity: 1; transform: scale(1); }
+}
+@keyframes road-done-3 {
+  0%, 57%   { opacity: 0; transform: scale(.3); }
+  60%       { opacity: 1; transform: scale(1.35); }
+  63%, 100% { opacity: 1; transform: scale(1); }
+}
+@keyframes road-pulse {
+  0%   { stroke-width: 14; stroke-opacity: .45; }
+  100% { stroke-width: 44; stroke-opacity: 0; }
+}
+@keyframes road-ping {
+  0%       { opacity: .45; transform: scale(1); }
+  70%, 100% { opacity: 0; transform: scale(2.6); }
+}
+@keyframes road-twinkle {
+  0%, 100% { transform: scale(.85) rotate(0); }
+  50%      { transform: scale(1.1) rotate(45deg); }
+}
+@keyframes road-glow {
+  0%, 100% { opacity: .6; transform: scale(.9); }
+  50%      { opacity: 1; transform: scale(1.1); }
+}
+
+/*
+  phones: card fills width, so art keeps fixed size (1440 x 900 art scaled to .85) and is shifted
+  so dot on CS 157A (art point 1010, 282) lands 300px from left and 240px under art top, just under card.
+  On short phones min() lifts art so dot stays at least 4rem above bottom edge.
+  Gold trail rises in from left edge, road ahead runs off right edge.
+*/
+@media (max-width: 40rem) {
+  .road {
+    inset: min(26rem, calc(100dvh - 19rem)) auto auto -34.9rem;
+    width: 76.5rem;
+    height: 47.8rem;
+  }
+}
+
+/* stars and drifting dots inside blue disc, shared by road art and catalog rail art (section 17) */
+.art-spark {
+  fill: var(--amber);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: art-twinkle 2.6s ease-in-out infinite;
+}
+.art-spark--2 { fill: var(--amber-deep); animation-delay: -.65s; }
+.art-spark--3 { animation-delay: -1.3s; }
+.art-spark--4 { fill: var(--amber-deep); animation-delay: -1.95s; }
+
+.art-mote {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: art-drift 8s ease-in-out infinite;
+}
+.art-mote--late  { animation-duration: 10.5s; animation-delay: -4s; }
+.art-mote--amber { fill: var(--amber); }
+.art-mote--blue  { fill: #BFD4EC; }
+.art-mote--sjsu  { fill: var(--sjsu); opacity: .35; }
+
+@keyframes art-twinkle {
+  0%, 100% { opacity: .15; transform: scale(.35) rotate(0); }
+  50%      { opacity: 1; transform: scale(1) rotate(45deg); }
+}
+@keyframes art-drift {
+  0%       { opacity: 0; transform: translateY(12px); }
+  25%, 70% { opacity: 1; }
+  100%     { opacity: 0; transform: translateY(-34px); }
+}
+
+/* reduced motion: finished trail, dot resting next to card, stars still, nothing loops */
+@media (prefers-reduced-motion: reduce) {
+  .road *,
+  .rail-art * { animation: none !important; }
+  .art-mote { opacity: .8; }
+}
+
+/* 16. Sign-in and sign-up on one page */
+/* auth.jsp holds both forms in one card, auth.js swaps them without page load */
+/* both forms have hint line so card keeps same height, new form only fades up a little */
+@media (prefers-reduced-motion: no-preference) {
+  .auth__pane--enter { animation: auth-pane-in var(--medium) var(--ease-out) both; }
+}
+
+/* auth.js moves focus to heading only so screen readers start there, heading is not control so no ring */
+.auth__pane h1:focus { outline: none; }
+
+@keyframes auth-pane-in {
+  from { opacity: 0; transform: translateY(.375rem); }
+}
+
+
+/* 17. Catalog right column: search and cards stick under site header while table scrolls (WEB-INF/jspf/rail-art.jspf) */
+/* narrow screens put rail under table, there page head disc (section 5) takes over and rail scrolls normally */
+.rail-art { display: none; }
+
+@media (min-width: 75.0625rem) {
+  /* clip, not hidden, so sticky still works and art below rail never adds scroll at page end */
+  .layout { overflow: clip; }
+
+  /*
+    Rail fills visible space under header and centers its stack in it, so search and cards sit mid screen.
+    When header slides away rail grows to full screen and stack glides to new middle (top and height move together).
+    safe center falls back to top on short screens, so search never hides under header.
+  */
+  .rail {
+    position: sticky;
+    top: calc(var(--site-header-h) + var(--stick-gap));
+    height: calc(100vh - var(--site-header-h) - 2 * var(--stick-gap));
+    height: calc(100dvh - var(--site-header-h) - 2 * var(--stick-gap));
+    justify-content: safe center;
+    transition: top 300ms var(--ease-out), height 300ms var(--ease-out);
+  }
+  body:has(> .site-header.is-hidden) .rail {
+    top: var(--stick-gap);
+    height: calc(100vh - 2 * var(--stick-gap));
+    height: calc(100dvh - 2 * var(--stick-gap));
+  }
+  .rail__stack { position: relative; }
+
+  /*
+    Art rides inside stack, so disc stays round search and plan card and road stays under cards.
+    Box covers layout gap, rail and right gutter (404 x 1100 art at 1rem = 16px), starts 8rem above stack
+    so rings show above search. Rail is its own stacking layer, -1 keeps art behind cards.
+  */
+  .rail-art {
+    display: block;
+    position: absolute;
+    top: -8rem;
+    left: calc(-1 * var(--layout-gap));
+    z-index: -1;
+    width: calc(var(--rail) + var(--gutter) + var(--layout-gap));
+    height: 68.75rem;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .pagehead::before { display: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .rail { transition: none; }
+  }
+}
+
+.rail-art__ring { fill: none; stroke: var(--art-ring); stroke-width: 2; }
+.rail-art__road {
+  fill: none;
+  stroke: var(--art-road);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-dasharray: 7 10;
+}
+.rail-art__todo { fill: var(--surface); stroke: var(--art-road); stroke-width: 3; }
+.rail-art__goal { fill: var(--amber); stroke: var(--amber-deep); stroke-width: 1; stroke-linejoin: round; }
+.rail-art__goal,
+.rail-art__goal-glow { transform-box: fill-box; transform-origin: center; }
+.rail-art__goal      { animation: road-twinkle 3.2s ease-in-out infinite; }
+.rail-art__goal-glow { animation: road-glow 3.2s ease-in-out infinite; }
