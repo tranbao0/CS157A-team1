@@ -17,9 +17,9 @@ import jakarta.servlet.http.HttpSession;
 /*
  * Runs before every request to pages that need signed-in student.
  * Add new protected paths to list below, servlet itself needs no login code then.
- * /plan/* also covers later routes like POST /plan/add.
+ * /plan/* also covers later routes like POST /plan/add, same for /transcript/*.
  */
-@WebFilter({ "/plan", "/plan/*" })
+@WebFilter({ "/plan", "/plan/*", "/transcript", "/transcript/*", "/roadmap", "/profile" })
 public class AuthFilter implements Filter {
 
 	@Override
