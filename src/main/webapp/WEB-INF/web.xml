@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- servlets and filters use annotations, this file only sets error page -->
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+         version="6.0">
+
+	<!-- no error-code, so every error (404, 500, 501 and others) lands on same page instead of Tomcat's stack trace page -->
+	<error-page>
+		<location>/WEB-INF/error.jsp</location>
+	</error-page>
+
+</web-app>
