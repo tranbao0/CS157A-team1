@@ -1,6 +1,6 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%-- shared top bar for every JSP page, goes inside <header class="site-header"> --%>
-<%-- page sets request attribute navPage first ("catalog", "plan" or "auth") so right nav item shows as current --%>
+<%-- page sets request attribute navPage first ("catalog", "roadmap", "transcript", "plan", "profile", "auth" or "error") so right nav item shows as current --%>
 <%-- c:out escapes email, so stored address cant inject tags into page --%>
 <div class="topbar">
 	<a class="topbar__brand" href="${pageContext.request.contextPath}/">CourseCraft</a>
@@ -13,14 +13,28 @@
 		<a class="nav-link" href="${pageContext.request.contextPath}/catalog.jsp">Catalog</a>
 	</c:otherwise>
 </c:choose>
-		<%-- TODO: no roadmap page yet --%>
-		<span class="nav-link is-disabled" aria-disabled="true">Roadmap</span>
 <c:choose>
-	<c:when test="${navPage == 'plan'}">
-		<span class="nav-link is-active" aria-current="page">My plan</span>
+	<c:when test="${navPage == 'roadmap'}">
+		<a class="nav-link is-active" aria-current="page" href="${pageContext.request.contextPath}/roadmap">Roadmap</a>
 	</c:when>
 	<c:otherwise>
-		<span class="nav-link is-disabled" aria-disabled="true">My plan</span>
+		<a class="nav-link" href="${pageContext.request.contextPath}/roadmap">Roadmap</a>
+	</c:otherwise>
+</c:choose>
+<c:choose>
+	<c:when test="${navPage == 'transcript'}">
+		<a class="nav-link is-active" aria-current="page" href="${pageContext.request.contextPath}/transcript">My courses</a>
+	</c:when>
+	<c:otherwise>
+		<a class="nav-link" href="${pageContext.request.contextPath}/transcript">My courses</a>
+	</c:otherwise>
+</c:choose>
+<c:choose>
+	<c:when test="${navPage == 'plan'}">
+		<a class="nav-link is-active" aria-current="page" href="${pageContext.request.contextPath}/plan">My plan</a>
+	</c:when>
+	<c:otherwise>
+		<a class="nav-link" href="${pageContext.request.contextPath}/plan">My plan</a>
 	</c:otherwise>
 </c:choose>
 	</nav>
@@ -30,6 +44,7 @@
 	<c:choose>
 		<c:when test="${not empty sessionScope.email}">
 		<span class="topbar__user">Signed in as <c:out value="${sessionScope.email}"/></span>
+		<a class="btn btn--ghost" href="${pageContext.request.contextPath}/profile"<c:if test="${navPage == 'profile'}"> aria-current="page"</c:if>>Profile</a>
 		<%-- form not link, LogoutServlet only accepts POST --%>
 		<form method="post" action="${pageContext.request.contextPath}/logout">
 			<button type="submit" class="btn btn--ghost">Sign out</button>

@@ -1,0 +1,3 @@
+<%-- major and expected grad term form, shared by /profile and get-started popup after sign-up --%>
+<%-- TODO: major dropdown (roadmaps) and grad term dropdown (terms), POST /profile --%>
+	<p class="note">Pick your major and expected graduation term here.</p>
