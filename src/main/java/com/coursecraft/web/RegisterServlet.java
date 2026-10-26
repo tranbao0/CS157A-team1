@@ -36,6 +36,12 @@ public class RegisterServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
+		// already signed in, so new account form makes no sense, send student to catalog
+		if (LoginSession.isSignedIn(request)) {
+			response.sendRedirect(request.getContextPath() + "/catalog.jsp");
+			return;
+		}
+
 		request.setAttribute("authMode", "register");
 		request.getRequestDispatcher(AUTH_VIEW).forward(request, response);
 	}

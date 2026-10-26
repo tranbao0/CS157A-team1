@@ -1,7 +1,9 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.sql.Connection, java.sql.PreparedStatement, java.sql.ResultSet, java.sql.SQLException" %>
+<%@ page import="java.net.URLEncoder, java.nio.charset.StandardCharsets" %>
 <%@ page import="java.util.ArrayList, java.util.List" %>
 <%@ page import="com.coursecraft.util.Db" %>
+<%@ page import="com.coursecraft.service.PlanService" %>
 <%-- Catalog. Browser, Tomcat, MySQL. --%>
 <%-- TODO: move query to a servlet --%>
 <%!
@@ -28,6 +30,19 @@
 	String email = (String) session.getAttribute("email");
 	boolean signedIn = email != null;
 
+	// signed out has no studentId, 0 matches no plan row since AUTO_INCREMENT IDs start at 1
+	int studentId = 0;
+	if (signedIn) {
+		studentId = (Integer) session.getAttribute("studentId");
+	}
+
+	// visitor + Plan links go to sign-in, next brings student back to this exact page and filters
+	String nextPath = "/catalog.jsp";
+	if (request.getQueryString() != null) {
+		nextPath = nextPath + "?" + request.getQueryString();
+	}
+	String signInHref = context + "/login?next=" + URLEncoder.encode(nextPath, StandardCharsets.UTF_8);
+
 	String query = request.getParameter("q");
 	query = query == null ? "" : query.trim();
 
@@ -35,7 +50,7 @@
 
 	// Filters are fixed text. User input is bound, never concatenated.
 	StringBuilder sql = new StringBuilder(
-		"SELECT c.course_id, s.section_id, s.class_number, c.subject, c.course_number, s.section_code, "
+		"SELECT c.course_id, s.section_id, s.session_id, s.class_number, c.subject, c.course_number, s.section_code, "
 		+ "       c.title, c.units, s.mode_of_instruction, s.type, "
 		+ "       (SELECT e.open_seats FROM enrollment_snapshots e "
 		+ "        WHERE e.section_id = s.section_id "
@@ -43,12 +58,16 @@
 		+ "       (SELECT b.risk_level FROM bottleneck_scores b "
 		+ "        JOIN terms t ON t.term_id = b.term_id "
 		+ "        WHERE b.course_id = c.course_id "
-		+ "        ORDER BY t.term_id DESC, b.computed_at DESC LIMIT 1) AS risk_level "
+		+ "        ORDER BY t.term_id DESC, b.computed_at DESC LIMIT 1) AS risk_level, "
+		+ "       EXISTS (SELECT 1 FROM plan_entries pe "
+		+ "               WHERE pe.student_id = ? AND pe.course_id = c.course_id) AS in_plan "
 		+ "FROM courses c "
 		+ "JOIN sections s ON c.course_id = s.course_id "
 		+ "WHERE 1 = 1");
 
-	List<String> params = new ArrayList<>();
+	// list holds Objects, since studentId is number and search text is string
+	List<Object> params = new ArrayList<>();
+	params.add(studentId);
 
 	if (!query.isEmpty()) {
 		sql.append(" AND (CONCAT(c.subject, ' ', c.course_number) LIKE ?"
@@ -74,7 +93,7 @@
 			PreparedStatement statement = connection.prepareStatement(sql.toString())) {
 
 		for (int i = 0; i < params.size(); i++) {
-			statement.setString(i + 1, params.get(i));
+			statement.setObject(i + 1, params.get(i));
 		}
 
 		try (ResultSet result = statement.executeQuery()) {
@@ -90,7 +109,9 @@
 					result.getString("open_seats"), // null if no snapshot yet
 					String.valueOf(result.getInt("course_id")),
 					String.valueOf(result.getInt("section_id")),
-					result.getString("risk_level") // null if the course is not scored
+					result.getString("risk_level"), // null if course is not scored
+					String.valueOf(result.getInt("session_id")), // + Plan button sends this with course_id
+					String.valueOf(result.getInt("in_plan")) // 1 when course is already in student's plan
 				});
 			}
 		}
@@ -190,7 +211,17 @@
 						</div>
 					</td>
 					<td class="col-action">
-						<button class="btn btn--sm" type="button" disabled>+ Plan</button>
+<% if (signedIn && "1".equals(row[12])) { %>
+						<%-- course is already planned in some term, so every section of it shows In plan --%>
+						<button class="btn btn--sm is-added" type="button" disabled>In plan</button>
+<% } else if (signedIn) { %>
+						<%-- plan-add.js sends course and session of this row to POST /plan/add --%>
+						<button class="btn btn--sm js-plan-add" type="button"
+						        data-course-id="<%= esc(row[8]) %>" data-session-id="<%= esc(row[11]) %>">+ Plan</button>
+<% } else { %>
+						<%-- visitor gets working sign-in link instead of disabled button, hidden text says where it goes --%>
+						<a class="btn btn--sm" href="<%= esc(signInHref) %>">+ Plan<span class="visually-hidden">, sign in to add <%= esc(row[0]) %></span></a>
+<% } %>
 					</td>
 				</tr>
 <%
@@ -218,11 +249,21 @@
 		</form>
 		<div class="rail__cards">
 <% if (signedIn) { %>
+<%
+			// PlanService does SQL, plan-summary.jsp only shows planTerms
+			try {
+				request.setAttribute("planTerms", new PlanService().summarize(studentId));
+			} catch (SQLException e) {
+				throw new ServletException("Could not load plan.", e);
+			}
+%>
 		<div class="card">
 			<span class="card__eyebrow">Your plan</span>
 <%@ include file="/WEB-INF/jspf/plan-road.jspf" %>
-			<h2 class="card__title">Nothing saved yet</h2>
-			<p class="card__body">Planning is not built yet. Adding sections comes next.</p>
+			<%-- plan-add.js swaps this div with fresh copy from GET /plan/summary after each add --%>
+			<div class="plan-summary" id="plan-summary">
+				<jsp:include page="/WEB-INF/plan-summary.jsp"/>
+			</div>
 		</div>
 <% } else { %>
 		<div class="card">
@@ -234,20 +275,32 @@
 				plan that respects prerequisites and your unit cap.
 			</p>
 			<a class="btn btn--primary btn--block" href="<%= context %>/register">Create account</a>
-			<a class="btn btn--block" href="<%= context %>/login">Sign in</a>
+			<%-- signInHref brings student back to same search and filters after sign-in --%>
+			<a class="btn btn--block" href="<%= esc(signInHref) %>">Sign in</a>
 		</div>
 <% } %>
 		<div class="card card--dashed">
 			<h2 class="card__title">Upload transcript</h2>
 			<p class="card__body">Filters the catalog down to the courses you still need.</p>
-			<a class="btn btn--block" href="<%= context %>/login">Sign in to upload</a>
+<% if (signedIn) { %>
+			<%-- upload form lives on My courses page (/transcript) --%>
+			<a class="btn btn--block" href="<%= context %>/transcript">Upload transcript</a>
+<% } else { %>
+			<%-- next brings student to upload page right after sign-in --%>
+			<a class="btn btn--block" href="<%= context %>/login?next=%2Ftranscript">Sign in to upload</a>
+<% } %>
 		</div>
 		</div>
 		</div>
 	</aside>
 </main>
 
+<%-- plan-add.js puts error text here, empty until something goes wrong --%>
+<p class="plan-toast" id="plan-message" role="status"></p>
+
 <script src="<%= context %>/js/header.js" defer></script>
 <script src="<%= context %>/js/catalog.js" defer></script>
+<script src="<%= context %>/js/plan-add.js" defer></script>
+<script src="<%= context %>/js/plan-summary.js" defer></script>
 </body>
 </html>

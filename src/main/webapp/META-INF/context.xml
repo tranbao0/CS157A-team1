@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Tomcat 10.1 turns session saving off by default, so every app reload (each Java change) signed everybody out.
+  Manager with pathname writes open sessions to work/.../SESSIONS.ser when app stops and reads them back on start.
+  Only studentId (Integer) and email (String) live in session, both can be saved this way.
+-->
+<Context>
+	<Manager pathname="SESSIONS.ser" />
+</Context>

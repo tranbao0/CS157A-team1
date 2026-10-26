@@ -33,8 +33,20 @@ public class LoginServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
+		String next = safeNext(request.getParameter("next"));
+
+		// already signed in, so skip form and go where sign-in would have gone
+		if (LoginSession.isSignedIn(request)) {
+			if (next != null) {
+				response.sendRedirect(request.getContextPath() + next);
+			} else {
+				response.sendRedirect(request.getContextPath() + "/catalog.jsp");
+			}
+			return;
+		}
+
 		// AuthFilter sends ?next=/plan, form keeps it in hidden field for POST
-		request.setAttribute("next", safeNext(request.getParameter("next")));
+		request.setAttribute("next", next);
 		request.setAttribute("authMode", "login");
 		request.getRequestDispatcher(AUTH_VIEW).forward(request, response);
 	}

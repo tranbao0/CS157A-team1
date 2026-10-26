@@ -177,8 +177,9 @@ CREATE TABLE completed (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- One course a student plans to take in a session.
+-- plan_entry_id is AUTO_INCREMENT so POST /plan/add gets new ID from MySQL.
 CREATE TABLE plan_entries (
-  plan_entry_id INT,
+  plan_entry_id INT AUTO_INCREMENT,
   student_id    INT      NOT NULL,
   course_id     INT      NOT NULL,
   session_id    INT      NOT NULL,

@@ -11,6 +11,12 @@ public final class LoginSession {
 	private LoginSession() {
 	}
 
+	// tells if request already has signed-in student, false so check never makes new session
+	public static boolean isSignedIn(HttpServletRequest request) {
+		HttpSession session = request.getSession(false);
+		return session != null && session.getAttribute("studentId") != null;
+	}
+
 	public static void start(HttpServletRequest request, Student student) {
 		HttpSession oldSession = request.getSession(false);
 		if (oldSession != null) {

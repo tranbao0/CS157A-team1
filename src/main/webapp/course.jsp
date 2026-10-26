@@ -1,7 +1,9 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.sql.Connection, java.sql.PreparedStatement, java.sql.ResultSet, java.sql.ResultSetMetaData, java.sql.SQLException" %>
+<%@ page import="java.net.URLEncoder, java.nio.charset.StandardCharsets" %>
 <%@ page import="java.util.ArrayList, java.util.LinkedHashMap, java.util.List, java.util.Map" %>
 <%@ page import="com.coursecraft.util.Db" %>
+<%@ page import="com.coursecraft.dao.PlanEntryDao" %>
 <%-- Course detail. TODO: move the queries to a servlet. --%>
 <%!
 	// Escapes HTML.
@@ -54,6 +56,13 @@
 	String email = (String) session.getAttribute("email");
 	boolean signedIn = email != null;
 
+	// visitor sign-in links use this, next brings student back to same course and section
+	String nextPath = "/course.jsp";
+	if (request.getQueryString() != null) {
+		nextPath = nextPath + "?" + request.getQueryString();
+	}
+	String signInHref = context + "/login?next=" + URLEncoder.encode(nextPath, StandardCharsets.UTF_8);
+
 	String loadError = null;
 	int status = 200;
 	Map<String, String> course = null;
@@ -63,6 +72,8 @@
 	Map<String, String> bottleneck = null;
 	boolean canEdit = false;
 	boolean completed = false;
+	// true when course already sits in student's plan, + Plan then shows In plan
+	boolean inPlan = false;
 
 	int courseId = -1;
 	try {
@@ -149,7 +160,7 @@
 
 				// Sections with their latest enrollment snapshot. Active first, newest term first.
 				List<Map<String, String>> sections = select(connection,
-					"SELECT s.section_id, s.section_code, s.class_number, s.status, "
+					"SELECT s.section_id, s.session_id, s.section_code, s.class_number, s.status, "
 					+ "       es.seat_capacity, es.open_seats, es.waitlist_count "
 					+ "FROM sections s "
 					+ "JOIN sessions se ON se.session_id = s.session_id "
@@ -184,6 +195,9 @@
 						"SELECT taken_and_passed FROM completed WHERE student_id = ? AND course_id = ?",
 						studentId, courseId);
 					completed = !done.isEmpty() && "1".equals(done.get(0).get("taken_and_passed"));
+
+					// same check POST /plan/add uses for duplicates, so button and server agree
+					inPlan = new PlanEntryDao().findPlannedSessionId(connection, studentId, courseId) != null;
 				}
 			}
 		} catch (SQLException e) {
@@ -213,29 +227,16 @@
 	<title><%= esc(heading) %> - CourseCraft</title>
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
 	<link rel="stylesheet" href="<%= context %>/css/app.css">
+	<link rel="stylesheet" href="<%= context %>/css/motion.css">
 </head>
 <body>
 
-<header class="topbar">
-	<a class="topbar__brand" href="<%= context %>/">CourseCraft</a>
-	<nav class="topbar__nav" aria-label="Main">
-		<a class="nav-link is-active" aria-current="page" href="<%= context %>/catalog.jsp">Catalog</a>
-		<%-- TODO: no pages yet --%>
-		<span class="nav-link is-disabled" aria-disabled="true">Roadmap</span>
-		<span class="nav-link is-disabled" aria-disabled="true">My plan</span>
-	</nav>
-	<div class="topbar__actions">
-<% if (signedIn) { %>
-		<span class="topbar__user">Signed in as <%= esc(email) %></span>
-		<a class="btn btn--ghost" href="<%= context %>/logout.jsp">Sign out</a>
-<% } else { %>
-		<a class="btn btn--ghost" href="<%= context %>/login.jsp">Sign in</a>
-		<%-- TODO: no register page --%>
-		<a class="btn btn--primary" href="<%= context %>/login.jsp">Create account</a>
-<% } %>
-	</div>
+<%-- page uses shared top bar like catalog, so nav and sign-in links match every other page --%>
+<% request.setAttribute("navPage", "catalog"); %>
+<header class="site-header">
+<%@ include file="/WEB-INF/jspf/topbar.jspf" %>
 </header>
 
 <div class="pagehead">
@@ -312,10 +313,12 @@
 <form class="detail-actions" method="post"
       action="<%= context %>/course.jsp?id=<%= esc(course.get("course_id")) %><%= section == null ? "" : "&amp;section=" + esc(section.get("section_id")) %>">
 <% if (!signedIn) { %>
-	<span class="detail-actions__hint">Sign in to mark courses completed</span>
+	<%-- visitor gets sign-in link here, checkbox below stays out since visitor cannot use it --%>
+	<a class="detail-actions__hint" href="<%= esc(signInHref) %>">Sign in to mark courses completed</a>
 <% } else if (!canEdit) { %>
 	<span class="detail-actions__hint">No student account for <%= esc(email) %></span>
 <% } %>
+<% if (signedIn) { %>
 	<label class="check<%= canEdit ? "" : " is-disabled" %>">
 		<%-- Ticking or unticking saves right away. The button is for browsers without JavaScript. --%>
 		<input type="checkbox" name="completed" value="1"<%= completed ? " checked" : "" %><%= canEdit ? "" : " disabled" %>
@@ -323,10 +326,28 @@
 		<span>Completed</span>
 	</label>
 	<noscript><button class="btn btn--sm" type="submit">Save</button></noscript>
-	<%-- TODO: plan_entries, same as the catalog button --%>
+<% } %>
+<% if (inPlan) { %>
+	<button class="btn btn--sm is-added" type="button" disabled>In plan</button>
+<% } else if (canEdit && section != null) { %>
+	<%-- plan-add.js sends course and session of shown section to POST /plan/add, same as catalog --%>
+	<button class="btn btn--sm js-plan-add" type="button"
+	        data-course-id="<%= esc(course.get("course_id")) %>" data-session-id="<%= esc(section.get("session_id")) %>">+ Plan</button>
+<% } else if (!signedIn) { %>
+	<%-- visitor gets working sign-in link instead of disabled button, hidden text says where it goes --%>
+	<a class="btn btn--sm" href="<%= esc(signInHref) %>">+ Plan<span class="visually-hidden">, sign in to add <%= esc(course.get("subject")) %> <%= esc(course.get("course_number")) %></span></a>
+<% } else { %>
+	<%-- course has no section or email has no student row, so there is no term to plan it in --%>
 	<button class="btn btn--sm" type="button" disabled>+ Plan</button>
+<% } %>
 </form>
 <% } %>
+
+<%-- plan-add.js puts result text here, empty until student clicks + Plan --%>
+<p class="plan-toast" id="plan-message" role="status"></p>
+
+<script src="<%= context %>/js/header.js" defer></script>
+<script src="<%= context %>/js/plan-add.js" defer></script>
 
 </body>
 </html>

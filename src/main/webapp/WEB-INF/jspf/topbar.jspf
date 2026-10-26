@@ -1,6 +1,6 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%-- shared top bar for every JSP page, goes inside <header class="site-header"> --%>
-<%-- page sets request attribute navPage first ("catalog", "roadmap", "transcript", "plan", "profile", "auth" or "error") so right nav item shows as current --%>
+<%-- page sets request attribute navPage first ("home", "catalog", "roadmap", "transcript", "plan", "profile", "auth" or "error") so right nav item shows as current --%>
 <%-- c:out escapes email, so stored address cant inject tags into page --%>
 <div class="topbar">
 	<a class="topbar__brand" href="${pageContext.request.contextPath}/">CourseCraft</a>
