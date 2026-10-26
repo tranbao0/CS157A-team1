@@ -12,9 +12,8 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
-// POST adds course to plan for term, write path from requirements doc
-// no doGet here, so GET /plan/add gets 405 Method Not Allowed from HttpServlet
 @WebServlet("/plan/add")
 public class PlanAddServlet extends HttpServlet {
 
