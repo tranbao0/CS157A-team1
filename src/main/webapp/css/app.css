@@ -184,6 +184,16 @@ a:hover { color: var(--sjsu-dark); }
 }
 
 .btn:disabled { opacity: .45; cursor: not-allowed; }
+/* plan button looks normal while request runs, not unavailable */
+.btn.is-busy { opacity: 1; cursor: progress; }
+/* plan button turns low risk green after add so it reads as done, text contrast is 6.6:1 */
+.btn.is-added {
+  color: var(--low-ink);
+  background: var(--low-bg);
+  border-color: var(--low-line);
+  opacity: 1;
+  cursor: default;
+}
 
 /*
   4. Site header, same rules on every page as landing.
@@ -615,7 +625,9 @@ a.chip.is-on:hover {
   margin: 1rem 0 .25rem;
   overflow: visible;
 }
-.mini-road + .card__title { margin-top: .5rem; }
+/* signed-in card wraps title in .plan-summary, so second selector keeps same gap there */
+.mini-road + .card__title,
+.mini-road + .plan-summary > .card__title:first-child { margin-top: .5rem; }
 .mini-road__path {
   fill: none;
   stroke: var(--art-road);
@@ -640,6 +652,226 @@ a.chip.is-on:hover {
 
 .card .btn + .btn { margin-top: .625rem; }
 
+/*
+  Plan card keeps terms in own scroll box, so long plan never pushes sticky rail past screen bottom.
+  Rail gets 752px on 800px tall screen once header slides away (800 minus 2 x 24 stick gap).
+  Other parts take 458px: search 44, two gaps 32, plan card without list 200, upload card 182.
+  List keeps 294px, so 17rem (272px) fits with 22px to spare.
+  Header stays 242px tall at page top, so rail has only 510px there and stack runs past it until header slides away.
+*/
+.plan-terms {
+  max-height: 17rem;
+  overflow-y: auto;
+  /* padding leaves room for 2px focus ring plus 3px offset, negative margin keeps text lined up with eyebrow */
+  margin: 0 -.375rem 1rem;
+  padding: .375rem;
+  list-style: none;
+}
+
+/* thin line splits terms same way .card__row does */
+.plan-term + .plan-term {
+  margin-top: .75rem;
+  padding-top: .75rem;
+  border-top: 1px solid var(--line-2);
+}
+
+.plan-term__head {
+  display: flex;
+  align-items: baseline;
+  gap: .5rem;
+}
+/* term name stays at card text scale, it labels list and does not compete with card title */
+.plan-term__name {
+  margin: 0;
+  font-size: .875rem;
+  font-weight: 700;
+}
+.plan-term__units {
+  margin-left: auto;
+  font-size: .8125rem;
+  color: var(--ink-3);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.plan-term__courses {
+  display: flex;
+  flex-direction: column;
+  gap: .375rem;
+  margin: .5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+/* code and risk badge share first line, dependency note wraps to its own line under them */
+.plan-course {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .25rem .5rem;
+}
+.plan-course__code { font-size: .875rem; font-weight: 600; }
+/* dependency note uses danger ink so later terms show they hang on petition term */
+.plan-course__dep {
+  flex-basis: 100%;
+  font-size: .78125rem;
+  line-height: 1.45;
+  color: var(--high-ink);
+}
+
+/* every warning gets thick left stripe, kind rules below pick its colors */
+.plan-warn {
+  margin-top: .5rem;
+  border: 1px solid;
+  border-left-width: .25rem;
+  border-radius: var(--r-sm);
+}
+/* petition warning uses strongest red fill and stripe so student cannot miss that they must file petition */
+.plan-warn--petition {
+  color: var(--high-ink);
+  background: var(--high-bg);
+  border-color: var(--high-line);
+  border-left-color: var(--danger);
+}
+/* dependency warning keeps red stripe but drops fill, so it reads one step softer than petition */
+.plan-warn--depends {
+  color: var(--high-ink);
+  background: var(--surface);
+  border-color: var(--high-line);
+  border-left-color: var(--danger);
+}
+/* part-time warning only asks for care, so it uses caution colors from medium risk badge */
+.plan-warn--part-time {
+  color: var(--med-ink);
+  background: var(--med-bg);
+  border-color: var(--med-line);
+  border-left-color: var(--med-ink);
+}
+
+/* summary hides browser triangle, closed warning shrinks to this one line */
+.plan-warn__summary {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem .625rem;
+  list-style: none;
+  cursor: pointer;
+}
+.plan-warn__summary::-webkit-details-marker { display: none; }
+
+/* small round marker repeats warning kind as shape, so color is never only signal */
+.plan-warn__summary::before {
+  content: "!";
+  content: "!" / "";
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.125rem;
+  height: 1.125rem;
+  font-size: .75rem;
+  font-weight: 700;
+  border: 1.5px solid currentColor;
+  border-radius: var(--r-round);
+}
+/* petition marker turns solid red with white mark, strongest signal in card */
+.plan-warn--petition .plan-warn__summary::before {
+  color: var(--on-ink);
+  background: var(--danger);
+  border-color: var(--danger);
+}
+.plan-warn--depends .plan-warn__summary::before { border-color: var(--danger); }
+/* part-time marker shows italic i like risk info glyph, since it informs and does not block */
+.plan-warn--part-time .plan-warn__summary::before {
+  content: "i";
+  content: "i" / "";
+  font-style: italic;
+}
+
+.plan-warn__title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: .8125rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.plan-warn--petition .plan-warn__title { font-weight: 700; }
+
+.plan-warn__toggle {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: .375rem;
+  font-size: .75rem;
+  font-weight: 500;
+}
+/* chevron points down while closed and up while open */
+.plan-warn__toggle::after {
+  content: "";
+  width: .375rem;
+  height: .375rem;
+  margin-top: -.1875rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+}
+.plan-warn[open] .plan-warn__toggle::after { margin-top: .1875rem; transform: rotate(-135deg); }
+
+/* open warning offers Minimize, closed one offers Show */
+.plan-warn[open] .plan-warn__show,
+.plan-warn:not([open]) .plan-warn__hide { display: none; }
+
+.plan-warn__text {
+  margin: 0;
+  padding: 0 .625rem .625rem;
+  font-size: .8125rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* My plan page reuses rail card markup, rules below lift rail limits and give each term its own panel */
+/* summary box measures own width, so column count follows real space and not screen width */
+.plan-summary--page { margin-top: 1.5rem; container-type: inline-size; }
+
+/* page list drops rail scroll box, since whole page scrolls */
+.plan-terms--page {
+  display: grid;
+  gap: 1rem;
+  max-height: none;
+  overflow: visible;
+  margin: 0;
+  padding: 0;
+}
+/* each term sits on solid white panel, so it reads as own block over frosted page card */
+.plan-terms--page .plan-term {
+  margin: 0;
+  padding: 1.125rem 1.25rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+}
+/* wide box gets two columns, grid fills left to right then down so terms keep time order */
+@container (min-width: 46rem) {
+  .plan-terms--page { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* term name grows to page heading scale here, since it heads its own panel */
+.plan-terms--page .plan-term__name { font-size: 1.125rem; }
+.plan-terms--page .plan-term__units { font-size: .875rem; }
+.plan-terms--page .plan-term__courses { gap: .625rem; margin-top: .875rem; }
+.plan-terms--page .plan-course__code { font-size: .9375rem; }
+
+/* empty plan gets dashed panel like .state, so blank page still looks intentional */
+.plan-summary--page:has(> .card__title) {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  border: 1px dashed var(--line-3);
+  border-radius: var(--r-lg);
+}
+.plan-summary--page > .card__title { margin-top: 0; }
+
 /* 10. Empty and error states */
 .state {
   padding: 3.5rem 1.5rem;
@@ -662,6 +894,44 @@ a.chip.is-on:hover {
 }
 .banner--warn  { color: var(--ink); background: var(--med-bg);  border-color: var(--med-line); }
 .banner--error { color: var(--ink); background: var(--high-bg); border-color: var(--high-line); }
+
+/*
+  plan message floats at bottom center so table does not shift, plan-add.js fills it when add fails.
+  z-index 60 sits over sticky header (20) and risk popover (50), under skip link (100).
+  max-width keeps 1rem gap each side on phones, same as sign-in card at 40rem.
+*/
+.plan-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  z-index: 60;
+  width: max-content;
+  max-width: min(32rem, calc(100vw - 2rem));
+  margin: 0;
+  padding: .75rem 1rem;
+  font-size: .875rem;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-pop);
+  transform: translateX(-50%);
+}
+/* empty message box paints nothing and lets clicks through, but stays in accessibility tree so screen readers hear next message */
+.plan-toast:empty {
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .plan-toast:not(:empty) { animation: toast-in var(--medium) var(--ease-out) both; }
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, .5rem); }
+}
 
 /* 11. Sign-in form, see-through glass panel over road art (section 15) */
 /*
@@ -692,6 +962,8 @@ body:has(> .narrow) {
   box-shadow: var(--shadow-soft);
 }
 .narrow__title { margin-bottom: 1.5rem; }
+/* wide modifier gives list pages like My plan room for two columns, same glass panel otherwise */
+.narrow--wide { max-width: 56rem; }
 
 .stack { display: flex; flex-direction: column; gap: 1.125rem; }
 .field { display: flex; flex-direction: column; gap: .4rem; }

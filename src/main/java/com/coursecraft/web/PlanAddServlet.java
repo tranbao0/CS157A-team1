@@ -1,12 +1,11 @@
 package com.coursecraft.web;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import com.coursecraft.util.Db;
+import com.coursecraft.model.PlanAddResult;
+import com.coursecraft.service.PlanService;
+import com.coursecraft.service.UnitRules;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -18,104 +17,90 @@ import jakarta.servlet.http.HttpSession;
 @WebServlet("/plan/add")
 public class PlanAddServlet extends HttpServlet {
 
-    private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+	@Override
+	protected void doPost(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		int courseId = parseId(request.getParameter("courseId"));
+		int sessionId = parseId(request.getParameter("sessionId"));
+		if (courseId == -1 || sessionId == -1) {
+			sendJson(response, new PlanAddResult(HttpServletResponse.SC_BAD_REQUEST, "Pick course and term to add."));
+			return;
+		}
 
-        // Session & Auth Validation
-        HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("studentId") == null) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Must be logged in to modify plans.");
-            return;
-        }
+		// studentId comes from login session, never from request, so student can only change own plan
+		// AuthFilter already checked login, so it is always there
+		int studentId = (Integer) request.getSession().getAttribute("studentId");
 
-        int studentId = (Integer) session.getAttribute("studentId");
-        int courseId;
-        int sessionId;
+		PlanAddResult result;
+		try {
+			result = new PlanService().add(studentId, courseId, sessionId);
+		} catch (SQLException e) {
+			throw new ServletException("Could not add course to plan.", e);
+		}
+		sendJson(response, result);
+	}
 
-        try {
-            courseId = Integer.parseInt(request.getParameter("courseId"));
-            sessionId = Integer.parseInt(request.getParameter("sessionId"));
-        } catch (NumberFormatException e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing or invalid courseId or sessionId.");
-            return;
-        }
+	// turns text into ID, gives -1 when value is missing or not positive whole number
+	private int parseId(String value) {
+		if (value == null) {
+			return -1;
+		}
+		int id;
+		try {
+			id = Integer.parseInt(value.trim());
+		} catch (NumberFormatException e) {
+			return -1;
+		}
+		if (id < 1) {
+			return -1;
+		}
+		return id;
+	}
 
-        try (Connection conn = Db.getConnection()) {
+	/*
+	 * Writes result as JSON, plan-add.js reads status code to know if it worked.
+	 * Every answer has "message". Only 200 adds term, units, unit status, risk level and open seats,
+	 * like {"message": "...", "termLabel": "Fall 2026", "termUnits": 15, "unitStatus": "full-time", ...}.
+	 */
+	private void sendJson(HttpServletResponse response, PlanAddResult result) throws IOException {
+		StringBuilder json = new StringBuilder();
+		json.append("{\"message\": ");
+		json.append(jsonText(result.getMessage()));
 
-            // 409 Conflict Check: Already in current plan session or already completed
-            if (isAlreadyPlannedOrPassed(conn, studentId, courseId, sessionId)) {
-                response.sendError(HttpServletResponse.SC_CONFLICT, "Course is already planned for this session or already completed.");
-                return;
-            }
+		if (result.getStatus() == HttpServletResponse.SC_OK) {
+			json.append(", \"termLabel\": ");
+			json.append(jsonText(result.getTermLabel()));
+			json.append(", \"termUnits\": ");
+			json.append(UnitRules.format(result.getTermUnits()));
+			json.append(", \"unitStatus\": ");
+			json.append(jsonText(result.getUnitStatus()));
+			json.append(", \"riskLevel\": ");
+			json.append(jsonText(result.getRiskLevel()));
+			json.append(", \"openSeats\": ");
+			if (result.getOpenSeats() == null) {
+				json.append("null");
+			} else {
+				json.append(result.getOpenSeats());
+			}
+		}
+		json.append("}");
 
-            // 422 Unprocessable Entity Check: Prerequisite Validation
-            if (!hasMetAllPrerequisites(conn, studentId, courseId)) {
-                response.sendError(422, "Prerequisites not satisfied for this course.");
-                return;
-            }
+		response.setStatus(result.getStatus());
+		response.setContentType("application/json");
+		response.setCharacterEncoding("UTF-8");
+		response.getWriter().write(json.toString());
+	}
 
-            // Insert into plan_entries on success
-            String insertSql = "INSERT INTO plan_entries (student_id, course_id, session_id, added_at) VALUES (?, ?, ?, NOW())";
-            try (PreparedStatement stmt = conn.prepareStatement(insertSql)) {
-                stmt.setInt(1, studentId);
-                stmt.setInt(2, courseId);
-                stmt.setInt(3, sessionId);
-                stmt.executeUpdate();
-            }
-
-            // 201 Created
-            response.setStatus(HttpServletResponse.SC_CREATED);
-            response.getWriter().write("{\"status\":\"success\",\"message\":\"Course added to plan.\"}");
-
-        } catch (SQLException e) {
-            getServletContext().log("Database error processing /plan/add", e);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Database transaction failure.");
-        }
-    }
-
-    private boolean isAlreadyPlannedOrPassed(Connection conn, int studentId, int courseId, int sessionId) throws SQLException {
-        String query = 
-            "SELECT 1 FROM plan_entries WHERE student_id = ? AND course_id = ? AND session_id = ? " +
-            "UNION " +
-            "SELECT 1 FROM completed WHERE student_id = ? AND course_id = ? AND taken_and_passed = 1";
-
-        try (PreparedStatement stmt = conn.prepareStatement(query)) {
-            stmt.setInt(1, studentId);
-            stmt.setInt(2, courseId);
-            stmt.setInt(3, sessionId);
-            stmt.setInt(4, studentId);
-            stmt.setInt(5, courseId);
-            try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next();
-            }
-        }
-    }
-
-    private boolean hasMetAllPrerequisites(Connection conn, int studentId, int courseId) throws SQLException {
-        // Find any prerequisite group for this course where the student has NOT passed a qualifying course
-        String query = 
-            "SELECT pg.group_id " +
-            "FROM prerequisite_groups pg " +
-            "WHERE pg.course_id = ? " +
-            "  AND NOT EXISTS (" +
-            "      SELECT 1 " +
-            "      FROM counts_towards ct, completed c " +
-            "      WHERE ct.group_id = pg.group_id " +
-            "        AND ct.course_id = c.course_id " +
-            "        AND c.student_id = ? " +
-            "        AND c.taken_and_passed = 1" +
-            "  )";
-
-        try (PreparedStatement stmt = conn.prepareStatement(query)) {
-            stmt.setInt(1, courseId);
-            stmt.setInt(2, studentId);
-            try (ResultSet rs = stmt.executeQuery()) {
-                // If any group exists without fulfillment, prerequisites are NOT met
-                return !rs.next();
-            }
-        }
-    }
+	// puts text in JSON quotes, null becomes JSON null
+	private String jsonText(String text) {
+		if (text == null) {
+			return "null";
+		}
+		// backslash and quote would end JSON string early, so escape both
+		String safe = text.replace("\\", "\\\\");
+		safe = safe.replace("\"", "\\\"");
+		return "\"" + safe + "\"";
+	}
 }

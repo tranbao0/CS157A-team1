@@ -1,3 +1,5 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%-- landing page is JSP, not plain HTML, so shared top bar knows if student is signed in --%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -328,17 +330,11 @@
   </g>
 </svg>
 
-<header class="topbar">
-  <a class="topbar__brand" href="./">CourseCraft</a>
-  <nav class="topbar__nav" aria-label="Main">
-    <a class="nav-link" href="catalog.jsp">Catalog</a>
-    <span class="nav-link is-disabled" aria-disabled="true">Roadmap</span>
-    <span class="nav-link is-disabled" aria-disabled="true">My plan</span>
-  </nav>
-  <div class="topbar__actions">
-    <a class="btn btn--ghost" href="login">Sign in</a>
-    <a class="btn btn--primary" href="register">Create account</a>
-  </div>
+<%-- "home" matches no nav item, so no link shows as current page --%>
+<% request.setAttribute("navPage", "home"); %>
+<%-- .page-landing .topbar rules and landing-loop.js find bar by its class, so plain header wrapper is enough --%>
+<header>
+<%@ include file="/WEB-INF/jspf/topbar.jspf" %>
 </header>
 
 <main id="main">
