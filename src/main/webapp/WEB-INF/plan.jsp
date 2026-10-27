@@ -7,11 +7,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>My plan - CourseCraft</title>
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
-	<link rel="stylesheet" href="<%= request.getContextPath() %>/css/app.css">
-	<link rel="stylesheet" href="<%= request.getContextPath() %>/css/motion.css">
+	<%@ include file="/WEB-INF/jspf/head.jspf" %>
 	<script src="<%= request.getContextPath() %>/js/header.js" defer></script>
 </head>
 <body>
@@ -28,7 +24,7 @@
 <main class="narrow narrow--wide" id="main">
 	<h1 class="narrow__title">My plan</h1>
 
-	<p class="note">Every term you planned, oldest first, with unit totals and SJSU unit warnings.</p>
+	<p class="note">Every term you planned, oldest first, with unit totals and SJSU unit warnings. Risk labels use sample data.</p>
 
 	<%-- success message shows once after remove, role="status" lets screen readers announce it --%>
 	<c:if test="${not empty planMessage}">
@@ -44,6 +40,7 @@
 		<jsp:include page="/WEB-INF/plan-summary.jsp"/>
 	</div>
 </main>
+<%@ include file="/WEB-INF/jspf/footer.jspf" %>
 
 <%-- closes warnings student minimized before, in rail or here, since both use same keys --%>
 <script src="<%= request.getContextPath() %>/js/plan-summary.js" defer></script>

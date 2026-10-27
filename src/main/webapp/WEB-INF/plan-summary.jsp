@@ -7,7 +7,15 @@
 <c:set var="pageMode" value="${planView == 'page'}"/>
 <c:choose>
 	<c:when test="${empty planTerms}">
-		<h2 class="card__title">Nothing saved yet</h2>
+		<%-- page has h1 above, rail card has "Your plan" h2, so empty-state heading sits one level below either --%>
+		<c:choose>
+			<c:when test="${pageMode}">
+				<h2 class="card__title">Nothing saved yet</h2>
+			</c:when>
+			<c:otherwise>
+				<h3 class="card__subtitle">Nothing saved yet</h3>
+			</c:otherwise>
+		</c:choose>
 		<p class="card__body">Use + Plan on a course row to add it to a term.</p>
 		<c:if test="${pageMode}">
 			<a class="btn btn--primary" href="${pageContext.request.contextPath}/catalog.jsp">Browse catalog</a>
@@ -51,7 +59,7 @@
 									<span class="plan-course__title"><c:out value="${course.title}"/></span>
 								</c:if>
 								<c:if test="${not empty course.riskLevel}">
-									<span class="risk risk--<c:out value='${fn:toLowerCase(course.riskLevel)}'/>"><c:out value="${course.riskLevel}"/></span>
+									<span class="risk risk--<c:out value='${fn:toLowerCase(course.riskLevel)}'/>"><c:out value="${course.riskLevel}"/> risk</span>
 								</c:if>
 								<%-- only page mode gets Remove form, plain POST works without JavaScript and PlanRemoveServlet checks owner and dependents --%>
 								<c:if test="${pageMode}">

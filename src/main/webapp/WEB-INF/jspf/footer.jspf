@@ -1,0 +1,4 @@
+<%-- every app page ends with this line, so nobody takes CourseCraft for official SJSU site or reads sample numbers as real --%>
+<footer class="site-footer">
+	<p>CourseCraft is a student course project. It is not an official SJSU product and is not affiliated with San Jos&eacute; State University. Course data and risk labels are sample data.</p>
+</footer>

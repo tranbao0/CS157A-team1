@@ -1,5 +1,6 @@
 /* CourseCraft app pages. rem sizes, so zoom works. */
-/* Palette comes from landing page (index.html): navy ink, cream canvas, amber, SJSU blue. */
+/* Palette comes from landing page (index.jsp): navy ink on white page, amber, SJSU blue. */
+/* Cream canvas and butter bands only tint table row hover and band fills, page itself stays white (--page-bg). */
 
 /* 1. Tokens */
 :root {
@@ -28,6 +29,7 @@
   --art-ring:     #DCE7F4;
   --art-disc:     #E4EDF8;
   --art-disc-2:   #F1F6FB;
+  --art-mote:     #BFD4EC;
   /* primary button hover, a shade darker than ink */
   --ink-deep:     #0B1428;
   /* text on ink fills like primary button and skip link */
@@ -38,7 +40,8 @@
   /* SJSU gold, darker edge for amber shapes on cream */
   --amber-deep:   #E5A823;
 
-  /* SJSU blue only marks links, focus, current page and selected filters */
+  /* SJSU blue marks links, focus, current page, selected filters and form controls, */
+  /* plus where student stands in art ("you" dot, first plan station) and SJSU name in landing hero */
   --sjsu:         #0055A2;
   --sjsu-dark:    #003F7A;
   --sjsu-tint:    #E3EDF8;
@@ -71,6 +74,8 @@
   --ease-in:  cubic-bezier(.4, 0, 1, 1);
   --fast:   150ms;
   --medium: 250ms;
+  /* header slide, rail and course card glide and art fade follow it, so all share this one */
+  --glide:  300ms;
 
   --gutter: 2.5rem;
   --rail:   21rem;
@@ -78,16 +83,42 @@
   --layout-gap: 1.75rem;
   /* top bar row height, every page and landing */
   --topbar-h: 5rem;
+  /* phones move nav links to second row under top bar (section 12), wide screens have none */
+  --topbar-nav-h: 0rem;
+  /* covers whole top bar with its phone nav row, landing pads page by this much */
+  --topbar-total-h: calc(var(--topbar-h) + var(--topbar-nav-h));
   /* space left above things stuck to top of screen */
   --stick-gap: 1.5rem;
   /* real height of .site-header (top bar plus page head), header.js keeps it current */
-  --site-header-h: var(--topbar-h);
+  --site-header-h: var(--topbar-total-h);
 
   accent-color: var(--sjsu);
   scrollbar-color: var(--line-3) transparent;
 }
 
 /* 2. Base */
+/*
+  Figtree ships with app (fonts/, license in fonts/OFL.txt), so no page waits on Google servers.
+  One variable file covers weights 400 to 800. Browser only downloads latin-ext when page has those letters.
+  WEB-INF/jspf/head.jspf preloads latin file, so text rarely shows in fallback font first.
+*/
+@font-face {
+  font-family: 'Figtree';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('../fonts/figtree-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Figtree';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('../fonts/figtree-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 
 /* page color lives on html only, so overscroll past top shows it too and body never paints over landing animation */
@@ -211,7 +242,7 @@ a:hover { color: var(--sjsu-dark); }
   border-bottom: 1px solid var(--header-line);
   -webkit-backdrop-filter: blur(12px) saturate(1.2);
   backdrop-filter: blur(12px) saturate(1.2);
-  transition: transform 300ms var(--ease-out);
+  transition: transform var(--glide) var(--ease-out);
 }
 .site-header.is-hidden { transform: translateY(-100%); }
 /* top bar inside site header: glass and edge come from header block, not bar */
@@ -231,7 +262,8 @@ a:hover { color: var(--sjsu-dark); }
   align-items: center;
   gap: 2.5rem;
   height: var(--topbar-h);
-  padding: 0 var(--gutter);
+  --topbar-pad: var(--gutter);
+  padding: 0 var(--topbar-pad);
   background: var(--header-bg);
   border-bottom: 1px solid var(--header-line);
   /* glass, background art shows soft through header */
@@ -313,7 +345,7 @@ a:hover { color: var(--sjsu-dark); }
   --disc-at: 24rem 9rem;
   content: "";
   position: absolute;
-  top: calc(-1 * var(--topbar-h));
+  top: calc(-1 * var(--topbar-total-h));
   right: 0;
   z-index: -1;
   width: 34rem;
@@ -325,6 +357,16 @@ a:hover { color: var(--sjsu-dark); }
     radial-gradient(circle at var(--disc-at), var(--art-disc) 0, var(--art-disc-2) 10rem, transparent 17rem);
   -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 85%);
   mask-image: linear-gradient(to bottom, #000 45%, transparent 85%);
+}
+/*
+  Catalog page head sits inside site header, so disc drawn over top bar would cross nav row and account buttons.
+  There disc starts at page head top instead, and mask fades rings in under top bar edge and out before header bottom.
+*/
+.site-header .pagehead::before {
+  --disc-at: 24rem 6rem;
+  top: 0;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 2.5rem, #000 6rem, transparent 10rem);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 2.5rem, #000 6rem, transparent 10rem);
 }
 
 /* term gets amber marker stroke, like hand highlight, drawn in once on load */
@@ -602,20 +644,19 @@ a.chip.is-on:hover {
   padding: 1.375rem;
 }
 
-.card__eyebrow {
-  display: block;
-  font-size: .75rem;
-  font-weight: 600;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: var(--ink-4);
-}
-
 .card__title {
   margin: .625rem 0 .5rem;
   font-size: 1.25rem;
   font-weight: 700;
   letter-spacing: -.01em;
+}
+/* title that opens card names whole card, so no gap above it */
+.card > .card__title:first-child { margin-top: 0; }
+/* second heading inside card, like "Nothing saved yet" under "Your plan" */
+.card__subtitle {
+  margin: .5rem 0 .375rem;
+  font-size: 1rem;
+  font-weight: 700;
 }
 .card--dashed .card__title { margin-top: 0; font-size: 1rem; }
 
@@ -629,8 +670,8 @@ a.chip.is-on:hover {
   overflow: visible;
 }
 /* signed-in card wraps title in .plan-summary, so second selector keeps same gap there */
-.mini-road + .card__title,
-.mini-road + .plan-summary > .card__title:first-child { margin-top: .5rem; }
+.mini-road + .card__subtitle,
+.mini-road + .plan-summary > .card__subtitle:first-child { margin-top: .5rem; }
 .mini-road__path {
   fill: none;
   stroke: var(--art-road);
@@ -1022,7 +1063,7 @@ a.chip.is-on:hover {
 /* 11. Sign-in form, see-through glass panel over road art (section 15) */
 /*
   Card sits in middle of screen: body turns into column, card takes auto margins,
-  and bottom padding same as 5rem header keeps it centered on whole screen, not just space under header.
+  and footer as tall as top bar keeps it centered on whole screen, not just space under header.
   Road art is centered on screen too, so card always lands in middle of its rings.
 */
 body:has(> .narrow) {
@@ -1031,8 +1072,14 @@ body:has(> .narrow) {
   gap: 1.5rem;
   min-height: 100vh;
   min-height: 100dvh;
-  /* same as top bar height, keeps card centered on whole screen */
-  padding-bottom: var(--topbar-h);
+}
+/*
+  footer matches header height (top bar plus its 1px bottom edge), so space above and below card stays equal.
+  Card's own auto margins already push footer down, so footer drops its auto top margin from section 18.
+*/
+body:has(> .narrow) > .site-footer {
+  min-height: calc(var(--topbar-total-h) + 1px);
+  margin-top: 0;
 }
 .narrow {
   width: 100%;
@@ -1138,9 +1185,14 @@ body:has(> .narrow) {
   border-radius: var(--r-xl);
   box-shadow: var(--shadow-pop);
 }
-/* backdrop dims catalog with ink tint, literal rgba repeats --ink (#16233F) since older browsers give ::backdrop no custom properties */
+/*
+  Backdrop dims catalog with ink tint.
+  Older browsers give ::backdrop no custom properties, so literal rgba (--ink #16233F at 42%) stays first as fallback,
+  newer ones take color-mix line and read token itself.
+*/
 .get-started::backdrop {
   background: rgba(22, 35, 63, .42);
+  background: color-mix(in srgb, var(--ink) 42%, transparent);
   -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px);
 }
@@ -1172,6 +1224,11 @@ body:has(> .get-started[open]) { overflow: hidden; }
 }
 
 /* 12. Responsive */
+/* email line needs about 330px, below 1280px it would push nav links onto two lines */
+@media (max-width: 80rem) {
+  .topbar__user { display: none; }
+}
+
 @media (max-width: 75rem) {
   .layout { grid-template-columns: minmax(0, 1fr); }
   /* rail box drops out, so search can sit above table while cards stay below it */
@@ -1180,6 +1237,33 @@ body:has(> .get-started[open]) { overflow: hidden; }
   .search-form { order: -1; max-width: 30rem; }
   .rail__cards { flex-direction: row; flex-wrap: wrap; }
   .rail__cards > * { flex: 1 1 18rem; }
+}
+
+/*
+  one row needs about 965px for brand, four links and two buttons, so below 1000px
+  brand and account buttons share first row and nav links get own row under them.
+  Nav row is full row height, so every link is 44px tall tap target. Row scrolls sideways if links ever outgrow it.
+*/
+@media (max-width: 62.5rem) {
+  :root { --topbar-nav-h: 2.75rem; }
+  .topbar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: var(--topbar-h) var(--topbar-nav-h);
+    gap: 0 .75rem;
+    height: auto;
+  }
+  .topbar__brand { grid-area: 1 / 1; align-self: center; }
+  .topbar__actions { grid-area: 1 / 2; justify-self: end; margin-left: 0; }
+  .topbar__nav {
+    grid-area: 2 / 1 / 3 / -1;
+    margin: 0 calc(-1 * var(--topbar-pad));
+    padding: 0 var(--topbar-pad);
+    overflow-x: auto;
+    scrollbar-width: none;
+    white-space: nowrap;
+    border-top: 1px solid var(--header-line);
+  }
 }
 
 @media (max-width: 56rem) {
@@ -1191,24 +1275,64 @@ body:has(> .get-started[open]) { overflow: hidden; }
 
 /* 40rem matches landing nav breakpoint (640px) */
 @media (max-width: 40rem) {
-  .topbar { gap: .75rem; padding: 0 .875rem; }
+  /* phones get shorter first row, smaller brand and smaller buttons */
+  :root { --topbar-h: 4rem; }
+  .topbar { --topbar-pad: .875rem; }
   .topbar__brand { font-size: 1.125rem; }
-  .topbar__nav { display: none; }
   .topbar__actions { gap: .5rem; }
+  .topbar__nav { gap: 1.5rem; font-size: .9375rem; }
   .topbar .btn { min-height: 2.75rem; padding: 0 .75rem; font-size: .875rem; white-space: nowrap; }
-  .topbar__user { display: none; }
   /* rings would cross stacked title and search here, keep only soft disc */
   .pagehead::before { background: radial-gradient(circle at var(--disc-at), var(--art-disc) 0, var(--art-disc-2) 10rem, transparent 17rem); }
-  /* phones: card back at top, keyboard would cover centered card */
-  body:has(> .narrow) { padding-bottom: 1.5rem; }
+  /* phones: card back at top, keyboard would cover centered card. Card's auto bottom margin still pushes footer to screen bottom */
+  body:has(> .narrow) > .site-footer { min-height: auto; }
   .narrow { width: auto; margin: 0 1rem auto; padding: 1.75rem 1.25rem; }
   /* phones give get-started dialog same tighter padding as sign-in card */
   .get-started { padding: 1.75rem 1.25rem; }
 }
 
-@media (max-width: 36rem) {
-  .catalog { min-width: 34rem; }
-  .col-when, .catalog td.col-when { display: none; }
+/*
+  phones: table no longer fits even without Mode and Type, and sideways scroll hid Risk and + Plan.
+  Each row turns into small block instead: section and + Plan on top, title under it, seats and risk last.
+  Header row stays for screen readers only, seat count gets "open" after it so number still makes sense.
+*/
+@media (max-width: 40rem) {
+  .catalog-wrap { overflow-x: visible; }
+  .catalog { display: block; min-width: 0; }
+  .catalog thead {
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .catalog tbody { display: block; }
+  .catalog tbody tr {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "section section action"
+      "title   title   action"
+      "seats   risk    risk";
+    align-items: center;
+    gap: .375rem .75rem;
+    padding: .875rem 0;
+    border-bottom: 1px solid var(--line-2);
+  }
+  .catalog tbody td { display: block; width: auto; padding: 0; border: 0; }
+  .catalog td.col-section { grid-area: section; display: flex; align-items: baseline; gap: .5rem; }
+  .catalog td.col-section .section-num { margin: 0; }
+  .catalog td.col-title { grid-area: title; }
+  .catalog td.col-when,
+  .catalog td.col-instructor { display: none; }
+  .catalog td.col-seats { grid-area: seats; text-align: left; }
+  .catalog .seats::after { content: " open"; font-weight: 500; }
+  /* no snapshot yet means no count, so risk moves into seats spot instead of leaving gap */
+  .catalog td.col-seats:has(.seats:empty) { display: none; }
+  .catalog tr:has(.seats:empty) td.col-risk { grid-column: 1 / 3; }
+  .catalog td.col-risk { grid-area: risk; }
+  .catalog td.col-action { grid-area: action; }
+  /* button grows to full tap target size, row has room for it */
+  .catalog td.col-action .btn { min-height: 2.75rem; }
 }
 
 /* smallest phones, header buttons still need to fit on one row */
@@ -1216,642 +1340,7 @@ body:has(> .get-started[open]) { overflow: hidden; }
   .topbar .btn { padding: 0 .625rem; font-size: .8125rem; }
 }
 
-/* 13. Landing page (index.html) */
-.hero {
-  display: grid;
-  /* text column only, animation sits behind page (section 14) */
-  grid-template-columns: minmax(0, 52rem);
-  align-content: center;
-  /* hero fills first screen under 5rem header, so background art is not covered by features band */
-  min-height: calc(100vh - 5rem);
-  min-height: calc(100dvh - 5rem);
-  align-items: center;
-  column-gap: 2.5rem;
-  padding: 5.625rem var(--gutter) 2.5rem 7.5rem;
-}
-
-.hero__wordmark {
-  font-size: clamp(3.25rem, 8vw, 6.5rem);
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -.03em;
-}
-.hero__accent { color: var(--amber); }
-
-.hero__title {
-  margin: .5rem 0 0;
-  font-size: clamp(2.125rem, 5vw, 3.875rem);
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: -.02em;
-}
-
-.hero__lede {
-  max-width: 43.125rem;
-  margin: 1.375rem 0 0;
-  font-size: 1.375rem;
-  line-height: 1.6;
-}
-.hero__sjsu { color: var(--sjsu); font-weight: 700; }
-
-.hero__cta {
-  display: inline-flex;
-  align-items: center;
-  gap: .875rem;
-  margin-top: 2.125rem;
-  padding: 1.375rem 3.625rem;
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: var(--ink);
-  background: var(--amber);
-  border-radius: var(--r-md);
-  text-decoration: none;
-  transition: background-color var(--fast) ease-out;
-}
-.hero__cta:hover { color: var(--ink); background: var(--amber-hover); }
-.hero__cta-icon {
-  width: 1.875rem;
-  height: 1.875rem;
-  transition: transform var(--medium) var(--ease-out);
-}
-/* arrow nudge only when user allows motion */
-@media (prefers-reduced-motion: no-preference) {
-  .hero__cta:hover .hero__cta-icon { transform: translateX(4px); }
-}
-
-/* features: four glass squares under hero, grid as wide as title so it lines up under it */
-.features {
-  padding: 6rem var(--gutter) 6rem 7.5rem;
-}
-
-.features__list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-  max-width: 44.5rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.feature {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  aspect-ratio: 1;
-  padding: 1.75rem;
-  /* each square is white but see-through, no outline, soft shadow sets it off from page */
-  background: color-mix(in srgb, var(--surface) 62%, transparent);
-  -webkit-backdrop-filter: blur(18px) saturate(1.15);
-  backdrop-filter: blur(18px) saturate(1.15);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow-soft);
-}
-
-.feature__img { width: 5rem; height: 5rem; object-fit: contain; }
-
-.feature__title {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: -.01em;
-}
-
-.feature__body {
-  margin: .5rem 0 0;
-  font-size: 1.0625rem;
-  line-height: 1.55;
-  color: var(--ink-2);
-}
-
-/* each feature comes into focus as it scrolls in, browsers without scroll timelines just show it */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .feature {
-      animation: feature-in linear both;
-      animation-timeline: view();
-      /* fully sharp once whole item is on screen, so last item still finishes at page bottom */
-      animation-range: entry 5% entry 100%;
-    }
-  }
-}
-
-@keyframes feature-in {
-  from { opacity: 0; transform: translateY(1.5rem); filter: blur(6px); }
-}
-
-/* map moves under text once side by side gets too tight */
-@media (max-width: 62.5rem) {
-  /* bottom padding leaves room for background art under text */
-  .hero { align-content: start; padding: 3.75rem 1.75rem 46vh; }
-  .features { padding: 4rem 1.75rem; }
-}
-
-@media (max-width: 40rem) {
-  .hero__lede { font-size: 1.125rem; }
-  .hero__cta { padding: 1.125rem 2.25rem; font-size: 1.375rem; }
-  .features { padding: 3rem 1rem; }
-  /* phones: squares too small for text, so tiles stack and size to content */
-  .features__list { grid-template-columns: minmax(0, 1fr); gap: .75rem; }
-  .feature { aspect-ratio: auto; gap: 1rem; padding: 1.375rem; }
-  .feature__img { width: 3.5rem; height: 3.5rem; }
-  .feature__title { font-size: 1.375rem; }
-}
-
-/*
-  landing only: header floats above page so it can slide away going down and come back going up
-  (landing-loop.js toggles .is-hidden), body padding keeps hero where header used to push it.
-  glass look itself is .topbar default (section 4)
-*/
-.page-landing { padding-top: 5rem; }
-.page-landing .topbar {
-  position: fixed;
-  top: 0;
-  right: 0;
-  left: 0;
-  z-index: 20;
-  transition: transform 300ms var(--ease-out);
-}
-.page-landing .topbar.is-hidden { transform: translateY(-100%); }
-
-/* 14. Landing background animation */
-/*
-  12s loop fixed behind landing page, flat shapes with soft gradients and rim light.
-  Storyboard: typing on laptop (hold), zoom into screen, dot climbs one road past course stops, faster each stop,
-  road keeps going as tightening squiggle while camera rushes up with speed lines, camera pulls back to show
-  diploma at end of dashed road while dot keeps running, light bursts, camera punches in on diploma (hold), fade.
-  .pov__laptop zooms into screen, then .pov__camera (inside screen) follows dot all way up road.
-  Sizes inside SVG are user units (px), they scale with viewBox, not with page text.
-*/
-.pov {
-  --pov-loop: 12s;
-  /* art colors only used inside illustration */
-  --pov-road:        rgba(22, 35, 63, .32);
-  --pov-ring:        #DCE7F4;
-  --pov-mote:        #BFD4EC;
-  --pov-streak:      #9DBBE0;
-  --pov-key:         #F5F7FA;
-  --pov-key-edge:    #CDD3DC;
-  --pov-lip:         #BCC4D0;
-  --pov-lid-rim:     #33507F;
-  --pov-webcam:      #0D1730;
-  --pov-desk-edge:   #FFFBEF;
-  --pov-skin:        #EDB991;
-  --pov-roll-end:    #D9C48F;
-  --pov-pearl:       #FFF8EC;
-  --pov-crown-back:  #C08A1E;
-  --pov-pearl-back:  #D8C59C;
-
-  position: fixed;
-  /* 5rem header plus gap, so art never sits flush with top of page */
-  top: 7rem;
-  right: 0;
-  z-index: -1;
-  width: min(48vw, 60rem);
-  height: calc(100vh - 9rem);
-  height: calc(100dvh - 9rem);
-  pointer-events: none;
-  /* soft edges all round so art melts into page instead of hard cut */
-  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 22%), linear-gradient(to bottom, transparent 0, #000 8%, #000 92%, transparent 100%);
-  mask-image: linear-gradient(to right, transparent 0, #000 22%), linear-gradient(to bottom, transparent 0, #000 8%, #000 92%, transparent 100%);
-  -webkit-mask-composite: source-in;
-  mask-composite: intersect;
-}
-
-.pov__frame { animation: pov-frame var(--pov-loop) linear infinite; }
-
-/* backdrop: soft disc, rings and drifting dust */
-.pov__ring { fill: none; stroke: var(--pov-ring); stroke-width: 2; }
-.pov__mote {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: pov-drift 7s ease-in-out infinite;
-}
-.pov__mote--t1 { animation-duration: 9.5s; animation-delay: -3s; }
-.pov__mote--a  { fill: var(--amber); }
-.pov__mote--b  { fill: var(--pov-mote); }
-.pov__mote--c  { fill: var(--sjsu); opacity: .35; }
-
-/* laptop, desk and arms zoom together. base is zoomed in, so reduced motion lands on diploma */
-.pov__laptop {
-  transform-box: view-box;
-  transform-origin: 400px 209px;
-  transform: translate(0, 91px) scale(3.4);
-  animation: pov-laptop var(--pov-loop) infinite;
-}
-.pov__desk-edge { fill: var(--pov-desk-edge); }
-.pov__lip       { fill: var(--pov-lip); }
-.pov__lid-rim   { fill: var(--pov-lid-rim); }
-.pov__webcam    { fill: var(--pov-webcam); }
-.pov__glare     { fill: var(--surface); opacity: .15; }
-
-.pov__key      { fill: var(--pov-key); }
-.pov__key-edge { fill: var(--pov-key-edge); }
-/* few keys light up while typing, delays keep them out of sync */
-.pov__key--f1, .pov__key--f2, .pov__key--f3,
-.pov__key--f4, .pov__key--f5, .pov__key--f6 { animation: pov-key 1.1s linear infinite; }
-.pov__key--f2 { animation-delay: -.2s; }
-.pov__key--f3 { animation-delay: -.45s; }
-.pov__key--f4 { animation-delay: -.65s; }
-.pov__key--f5 { animation-delay: -.85s; }
-.pov__key--f6 { animation-delay: -1s; }
-
-/* arms are plain noodles, one rounded stroke each, round hand at tip */
-.pov__noodle { fill: none; stroke: var(--sjsu); stroke-width: 44; stroke-linecap: round; }
-.pov__skin   { fill: var(--pov-skin); }
-/* whole arm swings from shoulder (30, 660) so hand moves around keyboard, hands also tap */
-.pov__reach {
-  transform-box: view-box;
-  transform-origin: 30px 660px;
-  animation: pov-reach 2.6s ease-in-out infinite;
-}
-.pov__reach--right { animation-duration: 3.1s; animation-delay: -1.3s; }
-.pov__hand {
-  transform-box: fill-box;
-  transform-origin: 50% 80%;
-  animation: pov-type .3s ease-in-out infinite alternate;
-}
-.pov__hand--right { animation-delay: -.15s; }
-
-/* camera inside screen: translate(400, 300) scale(s) translate(-x, -y) puts world point (x, y) at center */
-.pov__camera {
-  transform: translate(400px, 300px) scale(.8) translate(-400px, 1473px);
-  animation: pov-camera var(--pov-loop) infinite;
-}
-
-/* untraveled road is dashed, traveled part turns solid gold behind dot */
-.pov__road {
-  fill: none;
-  stroke: var(--pov-road);
-  stroke-width: 5;
-  stroke-linecap: round;
-  stroke-dasharray: 9 12;
-}
-.pov__todo circle { fill: var(--surface); stroke: var(--pov-road); stroke-width: 3; }
-.pov__labels { font-size: 15px; font-weight: 700; fill: var(--ink-3); }
-
-/* mask stroke, white in mask means shown, visible dash runs from path start to (1 - offset) */
-.pov__sweep {
-  fill: none;
-  stroke: #fff;
-  stroke-width: 60;
-  stroke-dasharray: 1 2;
-  animation: pov-sweep var(--pov-loop) infinite;
-}
-.pov__trail-edge,
-.pov__trail { fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.pov__trail-edge { stroke: var(--amber-deep); stroke-width: 11; }
-.pov__trail      { stroke: var(--amber); stroke-width: 6; }
-
-.pov__start { fill: var(--ink); stroke: var(--surface); stroke-width: 3; }
-
-.pov__done { transform-box: fill-box; transform-origin: center; }
-.pov__done circle { fill: url(#pov-gold); stroke: var(--ink); stroke-width: 3; }
-.pov__done path {
-  fill: none;
-  stroke: var(--ink);
-  stroke-width: 2.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.pov__done--1 { animation: pov-done-1 var(--pov-loop) ease-out infinite; }
-.pov__done--2 { animation: pov-done-2 var(--pov-loop) ease-out infinite; }
-.pov__done--3 { animation: pov-done-3 var(--pov-loop) ease-out infinite; }
-.pov__done--4 { animation: pov-done-4 var(--pov-loop) ease-out infinite; }
-
-/* "you" dot: one zero-length dash with round cap, moved along road by dashoffset */
-.pov__you { opacity: 0; animation: pov-you var(--pov-loop) linear infinite; }
-.pov__you path {
-  fill: none;
-  stroke-linecap: round;
-  stroke-dasharray: 0 2;
-  stroke-dashoffset: -1;
-  animation: pov-walk var(--pov-loop) infinite;
-}
-.pov__you .pov__you-halo {
-  stroke: var(--sjsu);
-  animation: pov-walk var(--pov-loop) infinite, pov-pulse 1.4s ease-out infinite;
-}
-.pov__you-ring { stroke: var(--surface); stroke-width: 24; }
-.pov__you-dot  { stroke: var(--sjsu); stroke-width: 15; }
-
-.pov__speed { opacity: 0; animation: pov-speed var(--pov-loop) linear infinite; }
-.pov__streak {
-  /* px, Chrome rejects calc() on plain numbers here */
-  --o: 120px;
-  fill: none;
-  stroke-linecap: round;
-  stroke-dasharray: 240 2600;
-  animation: pov-streak var(--pov-loop) linear infinite;
-}
-.pov__streak--amber { stroke: var(--amber); }
-.pov__streak--blue  { stroke: var(--pov-streak); }
-.pov__streak--ink   { stroke: var(--pov-road); }
-.pov__streak--o1 { --o: 420px; }
-.pov__streak--o2 { --o: 760px; }
-.pov__streak--o3 { --o: 1080px; }
-
-/* light burst behind diploma when dot arrives, glow and slow turning rays stay after */
-.pov__backlight,
-.pov__rays,
-.pov__flash,
-.pov__shock { transform-box: fill-box; transform-origin: center; }
-.pov__backlight { opacity: .8; animation: pov-backlight var(--pov-loop) infinite; }
-.pov__rays      { opacity: .65; animation: pov-rays var(--pov-loop) infinite; }
-.pov__rays-spin {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: pov-turn 40s linear infinite;
-}
-.pov__flash { opacity: 0; animation: pov-flash var(--pov-loop) infinite; }
-.pov__shock { opacity: 0; animation: pov-shock var(--pov-loop) infinite; }
-
-.pov__paper {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
-  animation: pov-thud var(--pov-loop) infinite;
-}
-.pov__paper-border { fill: none; stroke: var(--amber-deep); stroke-width: 2; }
-.pov__degree { font-size: 30px; font-weight: 800; letter-spacing: 2px; fill: var(--ink); }
-.pov__degree-sub { font-size: 15px; font-weight: 700; letter-spacing: 8px; fill: var(--sjsu); }
-.pov__line-text { fill: var(--line-2); }
-.pov__ribbon { fill: var(--sjsu); }
-.pov__seal-ring { fill: none; stroke: var(--surface); stroke-width: 1.5; stroke-dasharray: 2 3; opacity: .8; }
-.pov__roll-end { fill: var(--pov-roll-end); }
-
-
-/* crown faces viewer and turns: points and gems slide right across front of band and squeeze to nothing at
-   edges, like faces of round band turning away. six facets spaced 60deg apart */
-.pov__crown-glow {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: pov-glow 2.4s ease-in-out infinite alternate;
-}
-.pov__crown-bob { animation: pov-bob 1.8s ease-in-out infinite alternate; }
-.pov__point     { fill: url(#pov-point); stroke: var(--amber-deep); stroke-width: 1; stroke-linejoin: round; }
-.pov__pearl     { fill: var(--pov-pearl); }
-.pov__gem       { fill: var(--sjsu); }
-.pov__band-light { fill: var(--surface); opacity: .3; }
-.pov__facet {
-  transform-box: fill-box;
-  transform-origin: center;
-  transform: translateX(0) scaleX(0);
-  animation: pov-facet 3.6s linear infinite;
-}
-/* still poses for reduced motion: three facets on front at -60, 0 and 60deg, rest behind */
-.pov__facet--1 { transform: translateX(-39.8px) scaleX(.5); }
-.pov__facet--2 { transform: translateX(0) scaleX(1); animation-delay: -.6s; }
-.pov__facet--3 { transform: translateX(39.8px) scaleX(.5); animation-delay: -1.2s; }
-.pov__facet--4 { animation-delay: -1.8s; }
-.pov__facet--5 { animation-delay: -2.4s; }
-.pov__facet--6 { animation-delay: -3s; }
-
-/* back half: same six facets on far side of ring, darker, same size and sweep, moving left */
-.pov__point-back { fill: var(--pov-crown-back); }
-.pov__pearl-back { fill: var(--pov-pearl-back); }
-.pov__band-inner { fill: var(--pov-crown-back); }
-.pov__facet-back {
-  transform-box: fill-box;
-  transform-origin: center;
-  transform: translateX(0) scaleX(0);
-  animation: pov-facet-back 3.6s linear infinite;
-}
-/* still poses for reduced motion: three facets on back at 120, 180 and 240deg */
-.pov__back--4 { transform: translateX(39.8px) scaleX(.5); animation-delay: -1.8s; }
-.pov__back--5 { transform: translateX(0) scaleX(1); animation-delay: -2.4s; }
-.pov__back--6 { transform: translateX(-39.8px) scaleX(.5); animation-delay: -3s; }
-.pov__back--2 { animation-delay: -.6s; }
-.pov__back--3 { animation-delay: -1.2s; }
-
-.pov__sparkle {
-  fill: var(--amber);
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: pov-twinkle 1.8s ease-in-out infinite;
-}
-.pov__sparkle--2 { fill: var(--amber-deep); animation-delay: -.45s; }
-.pov__sparkle--3 { animation-delay: -.9s; }
-.pov__sparkle--4 { fill: var(--amber-deep); animation-delay: -1.35s; }
-
-/* loop timeline, percent of 12s:
-   0-14 typing hold, 14-24 zoom, 25-44.2 stops (hops get shorter, rests vanish), 44.2-55.5 dot runs on without
-   stopping: up squiggle with speed lines, camera pulls back at 51-54.5 to show diploma, dot reaches it at 55.5,
-   55.5 light burst, 55.5-61.5 camera punches in, 61.5-93 hold, 93-99 fade */
-@keyframes pov-frame {
-  0%        { opacity: 0; }
-  2%, 93%   { opacity: 1; }
-  99%, 100% { opacity: 0; }
-}
-
-@keyframes pov-laptop {
-  0%, 14% {
-    transform: translate(0, 0) scale(1);
-    animation-timing-function: cubic-bezier(.7, 0, .2, 1);
-  }
-  24%, 100% { transform: translate(0, 91px) scale(3.4); }
-}
-
-@keyframes pov-reach {
-  0%, 100% { transform: rotate(0) translate(0, 0); }
-  20%      { transform: rotate(-5deg) translate(4px, -6px); }
-  45%      { transform: rotate(3deg) translate(10px, 2px); }
-  70%      { transform: rotate(-2deg) translate(-6px, -10px); }
-}
-
-@keyframes pov-type {
-  from { transform: translateY(0) rotate(0); }
-  to   { transform: translateY(4px) rotate(-1deg); }
-}
-
-@keyframes pov-key {
-  0%        { fill: var(--amber); }
-  25%, 100% { fill: var(--pov-key); }
-}
-
-@keyframes pov-drift {
-  0%       { opacity: 0; transform: translateY(12px); }
-  25%, 70% { opacity: 1; }
-  100%     { opacity: 0; transform: translateY(-34px); }
-}
-
-/* stops at 10.3, 20.6, 30.8, 42.1 percent of road, squiggle starts 50.5, last stretch starts 86.4 */
-@keyframes pov-walk {
-  0%, 25%      { stroke-dashoffset: 0;      animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
-  30.5%, 31.8% { stroke-dashoffset: -.1027; animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
-  36.3%, 37.2% { stroke-dashoffset: -.2055; animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
-  40.8%, 41.4% { stroke-dashoffset: -.308;  animation-timing-function: cubic-bezier(.5, 0, 1, 1); }
-  44.2%        { stroke-dashoffset: -.4208; animation-timing-function: linear; }
-  46%          { stroke-dashoffset: -.5045; animation-timing-function: linear; }
-  55.5%, 100%  { stroke-dashoffset: -1; }
-}
-
-@keyframes pov-sweep {
-  0%, 25%      { stroke-dashoffset: 1;     animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
-  30.5%, 31.8% { stroke-dashoffset: .8973; animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
-  36.3%, 37.2% { stroke-dashoffset: .7945; animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
-  40.8%, 41.4% { stroke-dashoffset: .692;  animation-timing-function: cubic-bezier(.5, 0, 1, 1); }
-  44.2%        { stroke-dashoffset: .5792; animation-timing-function: linear; }
-  46%          { stroke-dashoffset: .4955; animation-timing-function: linear; }
-  55.5%, 100%  { stroke-dashoffset: 0; }
-}
-
-/* camera follows dot with same stops and easing as walk, pulls back while dot keeps running, then punches in */
-@keyframes pov-camera {
-  0%, 25%      { transform: translate(400px, 300px) scale(1) translate(-400px, -300px); animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
-  30.5%, 31.8% { transform: translate(400px, 300px) scale(1) translate(-400px, -300px); animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
-  36.3%, 37.2% { transform: translate(400px, 300px) scale(1) translate(-400px, -239px); animation-timing-function: cubic-bezier(.65, 0, .35, 1); }
-  40.8%, 41.4% { transform: translate(400px, 300px) scale(1) translate(-400px, -115px); animation-timing-function: cubic-bezier(.5, 0, 1, 1); }
-  44.2%        { transform: translate(400px, 300px) scale(1) translate(-400px, 50px);   animation-timing-function: linear; }
-  46%          { transform: translate(400px, 300px) scale(1) translate(-400px, 150px);  animation-timing-function: linear; }
-  51%          { transform: translate(400px, 300px) scale(1) translate(-400px, 700px);  animation-timing-function: cubic-bezier(.45, 0, .55, 1); }
-  54.5%, 55.5% { transform: translate(400px, 300px) scale(.55) translate(-400px, 1375px); animation-timing-function: cubic-bezier(.16, 1, .3, 1); }
-  61.5%, 100%  { transform: translate(400px, 300px) scale(.8) translate(-400px, 1473px); }
-}
-
-@keyframes pov-you {
-  0%, 23%   { opacity: 0; }
-  25%, 55.5%  { opacity: 1; }
-  55.8%, 100% { opacity: 0; }
-}
-
-@keyframes pov-pulse {
-  0%   { stroke-width: 15; stroke-opacity: .45; }
-  100% { stroke-width: 48; stroke-opacity: 0; }
-}
-
-/* each stop pops when dot arrives: 30.5%, 36.3%, 40.8%, 44.2% */
-@keyframes pov-done-1 {
-  0%, 30.2%   { opacity: 0; transform: scale(.3); }
-  31.1%       { opacity: 1; transform: scale(1.4); }
-  32%, 100%   { opacity: 1; transform: scale(1); }
-}
-@keyframes pov-done-2 {
-  0%, 36%     { opacity: 0; transform: scale(.3); }
-  36.9%       { opacity: 1; transform: scale(1.4); }
-  37.8%, 100% { opacity: 1; transform: scale(1); }
-}
-@keyframes pov-done-3 {
-  0%, 40.5%   { opacity: 0; transform: scale(.3); }
-  41.3%       { opacity: 1; transform: scale(1.4); }
-  42.1%, 100% { opacity: 1; transform: scale(1); }
-}
-@keyframes pov-done-4 {
-  0%, 44%     { opacity: 0; transform: scale(.3); }
-  44.7%       { opacity: 1; transform: scale(1.4); }
-  45.4%, 100% { opacity: 1; transform: scale(1); }
-}
-
-@keyframes pov-speed {
-  0%, 45.5%   { opacity: 0; }
-  46.5%, 50.5% { opacity: 1; }
-  52%, 100%   { opacity: 0; }
-}
-
-@keyframes pov-streak {
-  0%, 45.5% { stroke-dashoffset: var(--o); }
-  52%, 100% { stroke-dashoffset: calc(var(--o) - 2600px); }
-}
-
-@keyframes pov-backlight {
-  0%, 55.4% { opacity: 0; transform: scale(.4); }
-  57%       { opacity: 1; transform: scale(1.12); }
-  60%, 100% { opacity: .8; transform: scale(1); }
-}
-
-@keyframes pov-rays {
-  0%, 55.4% { opacity: 0; transform: scale(.3); }
-  57.5%     { opacity: 1; transform: scale(1.1); }
-  61%, 100% { opacity: .55; transform: scale(1); }
-}
-
-@keyframes pov-turn {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes pov-flash {
-  0%, 55.4% { opacity: 0; transform: scale(.2); }
-  55.8%     { opacity: .95; transform: scale(.7); }
-  59%, 100% { opacity: 0; transform: scale(4); }
-}
-
-@keyframes pov-shock {
-  0%, 55.4%   { opacity: 0; transform: scale(.3); }
-  55.8%       { opacity: 1; transform: scale(.5); }
-  59.5%, 100% { opacity: 0; transform: scale(3.2); }
-}
-
-@keyframes pov-thud {
-  0%, 55.5% { transform: scale(1, 1); }
-  56.3%     { transform: scale(1.05, .94); }
-  58%, 100% { transform: scale(1, 1); }
-}
-
-@keyframes pov-bob {
-  from { transform: translateY(-4px); }
-  to   { transform: translateY(4px); }
-}
-
-@keyframes pov-glow {
-  from { opacity: .55; transform: scale(.9); }
-  to   { opacity: 1; transform: scale(1.1); }
-}
-
-
-
-/* front half of lap (0-50%): x = 46 sin, width = cos, back half hidden at width 0 while it slides back */
-@keyframes pov-facet {
-  0%     { transform: translateX(-46px) scaleX(0); }
-  6.25%  { transform: translateX(-42.5px) scaleX(.38); }
-  12.5%  { transform: translateX(-32.5px) scaleX(.71); }
-  18.75% { transform: translateX(-17.6px) scaleX(.92); }
-  25%    { transform: translateX(0) scaleX(1); }
-  31.25% { transform: translateX(17.6px) scaleX(.92); }
-  37.5%  { transform: translateX(32.5px) scaleX(.71); }
-  43.75% { transform: translateX(42.5px) scaleX(.38); }
-  50%    { transform: translateX(46px) scaleX(0); }
-  100%   { transform: translateX(-46px) scaleX(0); }
-}
-
-/* other half of same lap: hidden while facet is on front, then x runs back from 46 to -46 */
-@keyframes pov-facet-back {
-  0%     { transform: translateX(-46px) scaleX(0); }
-  50%    { transform: translateX(46px) scaleX(0); }
-  56.25% { transform: translateX(42.5px) scaleX(.38); }
-  62.5%  { transform: translateX(32.5px) scaleX(.71); }
-  68.75% { transform: translateX(17.6px) scaleX(.92); }
-  75%    { transform: translateX(0) scaleX(1); }
-  81.25% { transform: translateX(-17.6px) scaleX(.92); }
-  87.5%  { transform: translateX(-32.5px) scaleX(.71); }
-  93.75% { transform: translateX(-42.5px) scaleX(.38); }
-  100%   { transform: translateX(-46px) scaleX(0); }
-}
-
-@keyframes pov-twinkle {
-  0%, 100% { opacity: 0; transform: scale(.2) rotate(0); }
-  50%      { opacity: 1; transform: scale(1) rotate(45deg); }
-}
-
-/* phones and tablets: art sits low behind content, fades in from top */
-@media (max-width: 62.5rem) {
-  .pov {
-    top: auto;
-    bottom: 0;
-    width: 100%;
-    height: 48vh;
-    height: 48dvh;
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22%);
-    mask-image: linear-gradient(to bottom, transparent 0, #000 22%);
-    -webkit-mask-composite: source-over;
-    mask-composite: add;
-  }
-}
-
-/* reduced motion: no loop, finished diploma with glow and still crown */
-@media (prefers-reduced-motion: reduce) {
-  .pov,
-  .pov * { animation: none !important; }
-}
-
+/* landing.css holds sections 13 and 14 (landing page and its background animation), only index.jsp loads it */
 
 /* 15. Road art behind sign-in, sign-up and plan pages (WEB-INF/jspf/road.jspf) */
 /*
@@ -1870,6 +1359,14 @@ body:has(> .get-started[open]) { overflow: hidden; }
   height: 100%;
   pointer-events: none;
 }
+
+/* gradient stops in road.jspf defs, token colors live here, one-off gold tints stay in markup */
+.road__stop--core      { stop-color: var(--art-disc); }
+.road__stop--mid       { stop-color: var(--art-disc-2); }
+.road__stop--edge      { stop-color: var(--surface); stop-opacity: 0; }
+.road__stop--amber     { stop-color: var(--amber); }
+.road__stop--glow-core { stop-color: var(--amber); stop-opacity: .5; }
+.road__stop--glow-edge { stop-color: var(--amber); stop-opacity: 0; }
 
 .road__ring { fill: none; stroke: var(--art-ring); stroke-width: 2; }
 
@@ -1920,11 +1417,24 @@ body:has(> .get-started[open]) { overflow: hidden; }
   stroke-dashoffset: -.999;
   animation: road-walk var(--road-play) var(--road-delay) both;
 }
+/*
+  halo pulses only 3 times (4.8s), enough to cover walk, since growing stroke-width
+  makes browser redo style and paint every frame. Then .road__you-pulse keeps same beat
+  with scale and opacity, which GPU runs without main thread.
+*/
 .road__you .road__you-halo {
   stroke: var(--sjsu);
   stroke-width: 14;
   stroke-opacity: 0;
-  animation: road-walk var(--road-play) var(--road-delay) both, road-pulse 1.6s ease-out infinite;
+  animation: road-walk var(--road-play) var(--road-delay) both, road-pulse 1.6s ease-out 3;
+}
+/* circle is 44 wide like halo at full stroke, starts at 14 / 44 scale, delay waits for halo's 3 pulses */
+.road__you-pulse {
+  fill: var(--sjsu);
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: road-pulse-settled 1.6s ease-out 4.8s infinite;
 }
 .road__you-ring { stroke: var(--surface); stroke-width: 22; }
 .road__you-dot  { stroke: var(--sjsu); stroke-width: 14; }
@@ -1969,6 +1479,10 @@ body:has(> .get-started[open]) { overflow: hidden; }
 @keyframes road-pulse {
   0%   { stroke-width: 14; stroke-opacity: .45; }
   100% { stroke-width: 44; stroke-opacity: 0; }
+}
+@keyframes road-pulse-settled {
+  0%   { opacity: .45; transform: scale(.318); }
+  100% { opacity: 0; transform: scale(1); }
 }
 @keyframes road-ping {
   0%       { opacity: .45; transform: scale(1); }
@@ -2015,7 +1529,7 @@ body:has(> .get-started[open]) { overflow: hidden; }
 }
 .art-mote--late  { animation-duration: 10.5s; animation-delay: -4s; }
 .art-mote--amber { fill: var(--amber); }
-.art-mote--blue  { fill: #BFD4EC; }
+.art-mote--blue  { fill: var(--art-mote); }
 .art-mote--sjsu  { fill: var(--sjsu); opacity: .35; }
 
 @keyframes art-twinkle {
@@ -2055,33 +1569,45 @@ body:has(> .get-started[open]) { overflow: hidden; }
 .rail-art { display: none; }
 
 @media (min-width: 75.0625rem) {
-  /* clip, not hidden, so sticky still works and art below rail never adds scroll at page end */
-  .layout { overflow: clip; }
+  /*
+    Clip sideways only, so art never adds sideways scroll but still rises under glass header instead of being cut at layout top.
+    clip, not hidden, so sticky still works.
+  */
+  .layout { overflow-x: clip; }
 
   /*
-    Rail fills visible space under header and centers its stack in it, so search and cards sit mid screen.
-    When header slides away rail grows to full screen and stack glides to new middle (top and height move together).
-    safe center falls back to top on short screens, so search never hides under header.
+    Rail always fills whole screen and centers its stack in it, so search and cards sit mid screen.
+    safe center falls back to top on short screens, so search never runs off top edge.
   */
   .rail {
     position: sticky;
-    top: calc(var(--site-header-h) + var(--stick-gap));
-    height: calc(100vh - var(--site-header-h) - 2 * var(--stick-gap));
-    height: calc(100dvh - var(--site-header-h) - 2 * var(--stick-gap));
-    justify-content: safe center;
-    transition: top 300ms var(--ease-out), height 300ms var(--ease-out);
-  }
-  body:has(> .site-header.is-hidden) .rail {
     top: var(--stick-gap);
     height: calc(100vh - 2 * var(--stick-gap));
     height: calc(100dvh - 2 * var(--stick-gap));
+    justify-content: safe center;
+    /* layout top padding equals --stick-gap, so pulling rail up by header height makes it stick from first pixel of scroll */
+    margin-top: calc(-1 * var(--site-header-h));
   }
-  .rail__stack { position: relative; }
+  /*
+    While header shows, transform pushes stack down to where it would center in space under header
+    (or to top of that space, when stack is too tall). Only transform moves, so glide skips layout work.
+    --rail-room is free space around stack on full screen, header.js measures --rail-stack-h.
+    Push = header + half of room left under header - half of room on full screen, rooms never below 0.
+  */
+  .rail__stack {
+    position: relative;
+    --rail-room: calc(100vh - 2 * var(--stick-gap) - var(--rail-stack-h, 0px));
+    transform: translateY(calc(var(--site-header-h) + max(0px, (var(--rail-room) - var(--site-header-h)) / 2) - max(0px, var(--rail-room) / 2)));
+  }
+  /* header.js sets .is-measured after first measurement, so stack does not glide from guessed header height on load */
+  .is-measured .rail__stack { transition: transform var(--glide) var(--ease-out); }
+  body:has(> .site-header.is-hidden) .rail__stack { transform: none; }
 
   /*
-    Art rides inside stack, so disc stays round search and plan card and road stays under cards.
-    Box covers layout gap, rail and right gutter (404 x 1100 art at 1rem = 16px), starts 8rem above stack
-    so rings show above search. Rail is its own stacking layer, -1 keeps art behind cards.
+    Art rides inside stack, so disc stays round search and plan card.
+    Box covers layout gap, rail and right gutter (404 x 400 art at 1rem = 16px), starts 8rem above stack
+    so rings show above search, and ends inside plan card, so it never adds scroll at page end.
+    Rail is its own stacking layer, -1 keeps art behind cards.
   */
   .rail-art {
     display: block;
@@ -2090,30 +1616,34 @@ body:has(> .get-started[open]) { overflow: hidden; }
     left: calc(-1 * var(--layout-gap));
     z-index: -1;
     width: calc(var(--rail) + var(--gutter) + var(--layout-gap));
-    height: 68.75rem;
+    height: 25rem;
     overflow: visible;
     pointer-events: none;
   }
+  /*
+    Stars and dots sit above search, where glass header covers them while it shows and blur turns them into smudges.
+    They fade in once header slides away, in step with stack glide.
+  */
+  .rail-art .art-sparks,
+  .rail-art .art-motes {
+    opacity: 0;
+    transition: opacity var(--glide) var(--ease-out);
+  }
+  body:has(> .site-header.is-hidden) .rail-art .art-sparks,
+  body:has(> .site-header.is-hidden) .rail-art .art-motes { opacity: 1; }
   .pagehead::before { display: none; }
   @media (prefers-reduced-motion: reduce) {
-    .rail { transition: none; }
+    .is-measured .rail__stack { transition: none; }
+    .rail-art .art-sparks,
+    .rail-art .art-motes { transition: none; }
   }
 }
 
 .rail-art__ring { fill: none; stroke: var(--art-ring); stroke-width: 2; }
-.rail-art__road {
-  fill: none;
-  stroke: var(--art-road);
-  stroke-width: 3.5;
-  stroke-linecap: round;
-  stroke-dasharray: 7 10;
-}
-.rail-art__todo { fill: var(--surface); stroke: var(--art-road); stroke-width: 3; }
-.rail-art__goal { fill: var(--amber); stroke: var(--amber-deep); stroke-width: 1; stroke-linejoin: round; }
-.rail-art__goal,
-.rail-art__goal-glow { transform-box: fill-box; transform-origin: center; }
-.rail-art__goal      { animation: road-twinkle 3.2s ease-in-out infinite; }
-.rail-art__goal-glow { animation: road-glow 3.2s ease-in-out infinite; }
+/* disc gradient (rail-art.jspf) reads tokens here, edge fades out to white */
+.rail-art__stop--core { stop-color: var(--art-disc); }
+.rail-art__stop--mid  { stop-color: var(--art-disc-2); }
+.rail-art__stop--edge { stop-color: var(--surface); stop-opacity: 0; }
 
 /* Links from the catalog to the course page.*/
 .course-link,
@@ -2131,31 +1661,72 @@ body:has(> .get-started[open]) { overflow: hidden; }
 .pagehead__back { margin: 0 0 .75rem; }
 .titlerow { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem 1rem; }
 .titlerow .pagehead__title { margin: 0; }
-.detail-desc { max-width: 60rem; margin: .625rem 0 0; font-size: 1rem; line-height: 1.55; color: var(--ink-2); }
+/* says where risk badge comes from, sits quiet next to it */
+.titlerow__note { font-size: .8125rem; color: var(--ink-3); }
+.detail-desc { max-width: 60rem; margin: .5rem 0 0; font-size: 1rem; line-height: 1.55; color: var(--ink-2); }
 
 .detail-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 1rem 2rem; margin: 0; font-size: 1rem; line-height: 1.6; }
 .detail-facts dt { font-weight: 600; }
 .detail-facts dd { margin: 0; color: var(--ink-2); }
+/* phones: long labels like "Is a prerequisite for" leave no room for values beside them, so value goes under label */
+@media (max-width: 40rem) {
+  .detail-facts { grid-template-columns: minmax(0, 1fr); gap: .125rem; }
+  .detail-facts dd { margin-bottom: .875rem; }
+}
 
 .card__row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .625rem 0; font-size: .875rem; border-top: 1px solid var(--line-2); }
 .card__row:first-of-type { border-top: 0; }
 .card__row > span:first-child { color: var(--ink-3); }
 
-/* Completed checkbox and + Plan, bottom right of the left column. */
-.detail-actions { display: flex; align-items: center; justify-content: flex-end; gap: .75rem; margin-top: 2rem; }
-.detail-actions__hint { margin-right: auto; font-size: .875rem; color: var(--ink-3); }
+/*
+  course page borrows catalog grid, but its one card should sit level with facts, not float mid screen.
+  Card still sticks under header on wide screens, it just keeps own height.
+*/
+@media (min-width: 75.0625rem) {
+  .layout--detail .rail {
+    top: calc(var(--site-header-h) + var(--stick-gap));
+    height: auto;
+    justify-content: flex-start;
+  }
+  /* card rises by header height when header slides away, transform keeps glide off layout */
+  .is-measured .layout--detail .rail > .card { transition: transform var(--glide) var(--ease-out); }
+  body:has(> .site-header.is-hidden) .layout--detail .rail > .card { transform: translateY(calc(-1 * var(--site-header-h))); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .is-measured .layout--detail .rail > .card { transition: none; }
+}
+/* below 75rem card drops under facts, rail width keeps label and number close enough to read as pair */
+.layout--detail .card { max-width: var(--rail); }
+
+/* Completed checkbox and + Plan close card, under seat numbers they depend on */
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .625rem;
+  margin-top: 1rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line-2);
+}
+.detail-actions > .btn,
+.detail-actions > .check { flex: 1 1 0; }
+/* hint takes whole first line, so buttons below keep equal widths */
+.detail-actions__hint { flex: 1 0 100%; font-size: .8125rem; color: var(--ink-3); }
+
+/* checkbox wears same box as .btn, so it reads as second action next to + Plan */
 .check {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: .5rem;
-  min-height: 2.125rem;
-  padding: 0 .875rem;
-  font-size: .8125rem;
+  min-height: 2.75rem;
+  padding: 0 1.25rem;
+  font-size: .9375rem;
   font-weight: 600;
   color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--r-sm);
+  border-radius: var(--r-md);
   cursor: pointer;
   transition: background-color var(--fast) ease-out, border-color var(--fast) ease-out;
 }
@@ -2164,87 +1735,28 @@ body:has(> .get-started[open]) { overflow: hidden; }
 .check.is-disabled { opacity: .45; cursor: not-allowed; }
 .check.is-disabled:hover { background: var(--surface); border-color: var(--line); }
 
-/* Transcript page. Two even halves, search left and transcript right, stacked on narrow screens. */
-.layout--split { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (max-width: 56rem) {
-  .layout--split { grid-template-columns: minmax(0, 1fr); }
+/* 18. Site footer (WEB-INF/jspf/footer.jspf) */
+/* body turns into column at least one screen tall, so footer's auto top margin keeps it at screen bottom on short pages */
+body:has(> .site-footer) {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
-.tx-form { min-width: 0; }
-.tx-search { min-width: 0; }
-.tx-list--empty { padding: 0; font-size: .875rem; color: var(--ink-3); background: none; border: 0; border-radius: 0; }
-.tx-section__title { margin: 0 0 .25rem; font-size: 1.375rem; font-weight: 700; letter-spacing: -.015em; }
-.tx-search__form { display: flex; flex-wrap: wrap; gap: .625rem; margin: 0 0 1.25rem; }
-.tx-search__form .search-input { flex: 1 1 14rem; width: auto; min-width: 0; }
-.tx-search__form .tx-search__area { flex: 0 1 18rem; cursor: pointer; }
-.tx-empty { margin: .5rem 0 1.5rem; font-size: .9375rem; color: var(--ink-3); }
-.tx-section__head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; margin: 0 0 1rem; }
-.tx-section__head .tx-section__title { margin: 0; }
-
-/* transcript upload, sits in page head where title used to be */
-.tx-import { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem 2rem; }
-.tx-import .pagehead__text { flex: 1 1 24rem; max-width: 40rem; }
-.tx-import__controls { display: flex; flex-direction: column; align-items: center; gap: .5rem; flex: 0 1 26rem; min-width: 0; text-align: center; }
-.tx-import__file { max-width: 100%; font: inherit; font-size: .875rem; color: var(--ink-3); }
-.tx-import__file::file-selector-button {
-  min-height: 2.75rem;
-  margin-right: .75rem;
-  padding: 0 1.125rem;
-  font: inherit;
-  font-weight: 600;
-  color: var(--on-ink);
-  background: var(--ink);
-  border: 0;
-  border-radius: var(--r-md);
-  cursor: pointer;
+/* same glass and edge as site header, so every page reads as framed top and bottom */
+.site-footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  min-height: var(--topbar-h);
+  padding: 1rem var(--gutter);
+  font-size: .8125rem;
+  line-height: 1.5;
+  color: var(--ink-3);
+  background: var(--header-bg);
+  border-top: 1px solid var(--header-line);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  backdrop-filter: blur(12px) saturate(1.2);
 }
-.tx-import__file:focus-visible { outline: 2px solid var(--sjsu); outline-offset: 2px; border-radius: var(--r-md); }
-.tx-import__status { margin: 0; font-size: .875rem; color: var(--ink-2); }
-.tx-import__status:empty { display: none; }
-.tx-actions { display: flex; justify-content: flex-end; }
-
-/* save popup, bottom center over page, visible 2 seconds in total then gone */
-.toast {
-  position: fixed;
-  left: 50%;
-  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
-  z-index: 100;
-  padding: .75rem 1.25rem;
-  font-size: .9375rem;
-  font-weight: 600;
-  color: var(--ink);
-  background: var(--low-bg);
-  border: 1px solid var(--low-line);
-  border-radius: var(--r-md);
-  box-shadow: var(--shadow-pop);
-  transform: translateX(-50%);
-  pointer-events: none;
-  animation: toast 2s var(--ease-out) forwards;
-}
-@keyframes toast {
-  0%   { opacity: 0; transform: translate(-50%, .75rem); }
-  10%  { opacity: 1; transform: translate(-50%, 0); }
-  85%  { opacity: 1; transform: translate(-50%, 0); }
-  100% { opacity: 0; transform: translate(-50%, 0); visibility: hidden; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .toast { animation-name: toast-still; }
-  @keyframes toast-still {
-    0%, 99% { opacity: 1; }
-    100%    { opacity: 0; visibility: hidden; }
-  }
-}
-.banner--ok { color: var(--ink); background: var(--low-bg); border-color: var(--low-line); }
-.tx-group { margin: 0 0 2rem; }
-.tx-group__title { display: flex; align-items: baseline; flex-wrap: wrap; gap: .25rem .75rem; margin: 0; font-size: 1.125rem; font-weight: 700; letter-spacing: -.01em; }
-.tx-group__count { font-size: .8125rem; font-weight: 500; color: var(--ink-3); }
-.tx-group__note { margin: .125rem 0 .75rem; font-size: .875rem; color: var(--ink-3); }
-.tx-list { margin: 0; padding: 0; list-style: none; overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); }
-.tx-row { display: flex; align-items: center; gap: .875rem; min-height: 3rem; padding: .5rem 1rem; border-top: 1px solid var(--line-2); transition: background-color var(--fast) ease-out; }
-.tx-row:first-child { border-top: 0; }
-.tx-row:hover { background: var(--canvas); }
-.tx-row input[type="checkbox"] { flex-shrink: 0; width: 1.125rem; height: 1.125rem; margin: 0; cursor: pointer; }
-.tx-label { display: flex; flex: 1 1 auto; align-items: baseline; gap: .875rem; min-width: 0; cursor: pointer; }
-.tx-code { min-width: 5.75rem; font-size: .9375rem; font-weight: 600; }
-.tx-title { font-size: .9375rem; color: var(--ink-2); overflow-wrap: anywhere; }
-.tx-units { font-size: .8125rem; color: var(--ink-3); white-space: nowrap; }
-.tx-view { font-size: .875rem; white-space: nowrap; }
+/* one line on wide screens, pretty wrap keeps single word from hanging alone on narrower ones */
+.site-footer p { margin: 0; max-width: 66rem; text-wrap: pretty; }

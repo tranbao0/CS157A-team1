@@ -6,11 +6,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Roadmap - CourseCraft</title>
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
-	<link rel="stylesheet" href="<%= request.getContextPath() %>/css/app.css">
-	<link rel="stylesheet" href="<%= request.getContextPath() %>/css/motion.css">
+	<%@ include file="/WEB-INF/jspf/head.jspf" %>
 	<script src="<%= request.getContextPath() %>/js/header.js" defer></script>
 </head>
 <body>
@@ -30,6 +26,7 @@
 	<%-- TODO: required courses in suggested term order, then GE areas, each marked done or remaining --%>
 	<p class="note">Courses your major needs will show here.</p>
 </main>
+<%@ include file="/WEB-INF/jspf/footer.jspf" %>
 
 </body>
 </html>

@@ -8,11 +8,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Error - CourseCraft</title>
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
-	<link rel="stylesheet" href="${pageContext.request.contextPath}/css/app.css">
-	<link rel="stylesheet" href="${pageContext.request.contextPath}/css/motion.css">
+	<%@ include file="/WEB-INF/jspf/head.jspf" %>
 	<script src="${pageContext.request.contextPath}/js/header.js" defer></script>
 </head>
 <body>
@@ -43,6 +39,7 @@
 </c:choose>
 	<p class="note"><a href="${pageContext.request.contextPath}/catalog.jsp">Back to catalog</a></p>
 </main>
+<%@ include file="/WEB-INF/jspf/footer.jspf" %>
 
 </body>
 </html>

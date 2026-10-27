@@ -1,12 +1,16 @@
 /* Page transitions, shared by every page including landing. */
 /* View Transitions API, browsers without it just load next page like normal. */
 
-/* page timing, easing curves come from app.css tokens */
+/*
+  page timing, easing curves come from app.css tokens.
+  New page only settles once transition ends, so every ms here adds to each click.
+  Old 380ms in plus 40ms delay made pages feel slow, short fade keeps smooth swap without wait.
+*/
 :root {
-  --page-out:   140ms;
-  --page-in:    380ms;
-  --page-delay: 40ms;
-  --page-chrome: 300ms;
+  --page-out:   90ms;
+  --page-in:    160ms;
+  --page-delay: 0ms;
+  --page-chrome: 160ms;
 }
 
 /* opt in for same-site page loads, both old and new page need this rule */
@@ -14,9 +18,14 @@
   navigation: auto;
 }
 
-/* each page has one top bar row, named so it holds still while content swaps */
-/* bar row only, not whole site header, page head under it (catalog) belongs to page and swaps with it */
-.topbar {
+/*
+  each page has one site header, named so it holds still while content swaps.
+  Whole header and not just bar row, since its glass and bottom line belong to header,
+  bar alone left that line in moving page and drew it twice mid swap.
+  Landing has no .site-header, its fixed .topbar is same glass bar.
+*/
+.site-header,
+.page-landing .topbar {
   view-transition-name: site-header;
 }
 
@@ -32,6 +41,10 @@
 ::view-transition-new(root) {
   animation: var(--page-in) var(--ease-out) var(--page-delay) both page-in;
 }
+/* root group moves nothing, but browser default runs it 250ms and transition waits for it */
+::view-transition-group(root) {
+  animation-duration: var(--page-in);
+}
 
 ::view-transition-group(site-header),
 ::view-transition-old(site-header),
@@ -41,16 +54,46 @@
 }
 
 @keyframes page-out {
-  to { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 0; transform: translateY(-3px); }
 }
 @keyframes page-in {
-  from { opacity: 0; transform: translateY(14px); }
+  from { opacity: 0; transform: translateY(6px); }
 }
 @keyframes page-fade-out {
   to { opacity: 0; }
 }
 @keyframes page-fade-in {
   from { opacity: 0; }
+}
+
+/*
+  road page to road page (sign-in, plan, roadmap, courses, profile, error): head.jspf marks transition from-road.
+  Both pages fade on same curve with no movement and plus-lighter adds two images together,
+  so road art, same on both pages, stays fully drawn and still while card swaps.
+  Browser sets plus-lighter through its own animation, so animation rule here drops it and has to set it again.
+*/
+html:active-view-transition-type(from-road):has(svg.road)::view-transition-old(root) {
+  animation: var(--page-in) var(--ease-out) both page-fade-out;
+  mix-blend-mode: plus-lighter;
+}
+html:active-view-transition-type(from-road):has(svg.road)::view-transition-new(root) {
+  animation: var(--page-in) var(--ease-out) both page-fade-in;
+  mix-blend-mode: plus-lighter;
+}
+
+/*
+  head.jspf sets .road-held when last page also drew road art, so road shows finished
+  instead of walking dot again on every click. First arrival still plays whole walk.
+*/
+html.road-held .road__trail-edge,
+html.road-held .road__trail,
+html.road-held .road__done,
+html.road-held .road__you path {
+  animation: none;
+}
+/* no walk to wait for, so steady pulse starts right away */
+html.road-held .road__you-pulse {
+  animation-delay: 0s;
 }
 
 /* reduced motion keeps crossfade but drops movement */

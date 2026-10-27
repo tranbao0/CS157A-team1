@@ -217,12 +217,8 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title><%= esc(code + rest) %> - CourseCraft</title>
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
-	<link rel="stylesheet" href="<%= context %>/css/app.css">
-	<link rel="stylesheet" href="<%= context %>/css/motion.css">
+	<title><%= esc(heading) %> - CourseCraft</title>
+	<%@ include file="/WEB-INF/jspf/head.jspf" %>
 </head>
 <body>
 
@@ -241,7 +237,8 @@
 <% if (bottleneck == null) { %>
 				<span class="cell-muted">Not scored</span>
 <% } else { %>
-				<span class="risk risk--<%= esc(bottleneck.get("risk_level") == null ? "" : bottleneck.get("risk_level").toLowerCase()) %>"><%= esc(bottleneck.get("risk_level")) %> risk</span>
+			<span class="risk risk--<%= esc(bottleneck.get("risk_level") == null ? "" : bottleneck.get("risk_level").toLowerCase()) %>"><%= esc(bottleneck.get("risk_level")) %> risk</span>
+			<span class="titlerow__note">Sample data</span>
 <% } %>
 			</div>
 			<p class="detail-desc"><%= course.get("description") == null ? "No description available." : esc(course.get("description")) %></p>
@@ -252,7 +249,7 @@
 	</div>
 </header>
 
-<main class="layout" id="main">
+<main class="layout layout--detail">
 <% if (loadError != null) { %>
 	<div class="detail">
 		<div class="banner banner--error" role="alert"><%= esc(loadError) %></div>
@@ -314,11 +311,8 @@
 	</div>
 
 	<aside class="rail">
-		<div class="rail__stack">
-<%@ include file="/WEB-INF/jspf/rail-art.jspf" %>
-			<div class="rail__cards">
-				<div class="card">
-					<span class="card__eyebrow">Enrollment</span>
+		<div class="card">
+			<h2 class="card__title">Enrollment</h2>
 <% if (section == null) { %>
 					<p class="card__body">No section on record for this course.</p>
 <% } else { %>
@@ -326,46 +320,44 @@
 					<div class="card__row"><span>Available seats</span><span><%= orDash(section.get("open_seats")) %></span></div>
 					<div class="card__row"><span>Waitlist</span><span><%= orDash(section.get("waitlist_count")) %></span></div>
 <% } %>
-				</div>
-			</div>
+			<%-- actions sit under seat numbers, so student sees seats right where they decide to plan --%>
+			<form class="detail-actions" method="post"
+			      action="<%= context %>/course.jsp?id=<%= esc(course.get("course_id")) %><%= section == null ? "" : "&amp;section=" + esc(section.get("section_id")) %>">
+<% if (!signedIn) { %>
+				<%-- visitor gets sign-in link here, checkbox below stays out since visitor cannot use it --%>
+				<a class="detail-actions__hint" href="<%= esc(signInHref) %>">Sign in to mark courses completed</a>
+<% } else if (!canEdit) { %>
+				<span class="detail-actions__hint">No student account for <%= esc(email) %></span>
+<% } %>
+<% if (signedIn) { %>
+				<label class="check<%= canEdit ? "" : " is-disabled" %>">
+					<%-- Ticking or unticking saves right away. The button is for browsers without JavaScript. --%>
+					<input type="checkbox" name="completed" value="1"<%= completed ? " checked" : "" %><%= canEdit ? "" : " disabled" %>
+					       onchange="this.form.submit()">
+					<span>Completed</span>
+				</label>
+				<noscript><button class="btn" type="submit">Save</button></noscript>
+<% } %>
+<% if (inPlan) { %>
+				<button class="btn btn--primary is-added" type="button" disabled>In plan</button>
+<% } else if (canEdit && section != null) { %>
+				<%-- plan-add.js sends course and session of shown section to POST /plan/add, same as catalog --%>
+				<button class="btn btn--primary js-plan-add" type="button"
+				        data-course-id="<%= esc(course.get("course_id")) %>" data-session-id="<%= esc(section.get("session_id")) %>">+ Plan</button>
+<% } else if (!signedIn) { %>
+				<%-- visitor gets working sign-in link instead of disabled button, hidden text says where it goes --%>
+				<a class="btn btn--primary" href="<%= esc(signInHref) %>">+ Plan<span class="visually-hidden">, sign in to add <%= esc(course.get("subject")) %> <%= esc(course.get("course_number")) %></span></a>
+<% } else { %>
+				<%-- course has no section or email has no student row, so there is no term to plan it in --%>
+				<button class="btn btn--primary" type="button" disabled>+ Plan</button>
+<% } %>
+			</form>
 		</div>
 	</aside>
 <% } %>
 </main>
+<%@ include file="/WEB-INF/jspf/footer.jspf" %>
 
-<% if (loadError == null) { %>
-<form class="detail-actions" method="post"
-      action="<%= context %>/course.jsp?id=<%= esc(course.get("course_id")) %><%= section == null ? "" : "&amp;section=" + esc(section.get("section_id")) %>">
-<% if (!signedIn) { %>
-	<%-- visitor gets sign-in link here, checkbox below stays out since visitor cannot use it --%>
-	<a class="detail-actions__hint" href="<%= esc(signInHref) %>">Sign in to mark courses completed</a>
-<% } else if (!canEdit) { %>
-	<span class="detail-actions__hint">No student account for <%= esc(email) %></span>
-<% } %>
-<% if (signedIn) { %>
-	<label class="check<%= canEdit ? "" : " is-disabled" %>">
-		<%-- Ticking or unticking saves right away. The button is for browsers without JavaScript. --%>
-		<input type="checkbox" name="completed" value="1"<%= completed ? " checked" : "" %><%= canEdit ? "" : " disabled" %>
-		       onchange="this.form.submit()">
-		<span>Completed</span>
-	</label>
-	<noscript><button class="btn btn--sm" type="submit">Save</button></noscript>
-<% } %>
-<% if (inPlan) { %>
-	<button class="btn btn--sm is-added" type="button" disabled>In plan</button>
-<% } else if (canEdit && section != null) { %>
-	<%-- plan-add.js sends course and session of shown section to POST /plan/add, same as catalog --%>
-	<button class="btn btn--sm js-plan-add" type="button"
-	        data-course-id="<%= esc(course.get("course_id")) %>" data-session-id="<%= esc(section.get("session_id")) %>">+ Plan</button>
-<% } else if (!signedIn) { %>
-	<%-- visitor gets working sign-in link instead of disabled button, hidden text says where it goes --%>
-	<a class="btn btn--sm" href="<%= esc(signInHref) %>">+ Plan<span class="visually-hidden">, sign in to add <%= esc(course.get("subject")) %> <%= esc(course.get("course_number")) %></span></a>
-<% } else { %>
-	<%-- course has no section or email has no student row, so there is no term to plan it in --%>
-	<button class="btn btn--sm" type="button" disabled>+ Plan</button>
-<% } %>
-</form>
-<% } %>
 
 <%-- plan-add.js puts result text here, empty until student clicks + Plan --%>
 <p class="plan-toast" id="plan-message" role="status"></p>

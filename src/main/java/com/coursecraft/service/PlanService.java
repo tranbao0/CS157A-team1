@@ -9,7 +9,6 @@ import com.coursecraft.dao.BottleneckScoreDao;
 import com.coursecraft.dao.CompletedDao;
 import com.coursecraft.dao.CourseDao;
 import com.coursecraft.dao.PlanEntryDao;
-import com.coursecraft.dao.PrerequisiteDao;
 import com.coursecraft.dao.SectionDao;
 import com.coursecraft.dao.SessionDao;
 import com.coursecraft.dao.StudentDao;
@@ -84,8 +83,8 @@ public class PlanService {
 					course.getCode() + " is already in your plan for " + planned.getLabel() + ".");
 		}
 
-		List<String> missing = new PrerequisiteDao().findMissing(connection, studentId, courseId, sessionId,
-				catalogYear);
+		List<String> missing = new PrerequisiteCheck().findMissing(connection, studentId, courseId,
+				session.getTermOrder(), catalogYear);
 		if (!missing.isEmpty()) {
 			// String.join puts ", and " between groups: "CS 146, and MATH 42 or MATH 42X"
 			String message = course.getCode() + " needs " + String.join(", and ", missing) + " first.";
@@ -171,7 +170,7 @@ public class PlanService {
 		Course course = new CourseDao().find(connection, entry.getCourseId());
 		SessionInfo session = new SessionDao().find(connection, entry.getSessionId());
 
-		List<String> dependents = planEntryDao.findDependents(connection, studentId, entry.getCourseId(),
+		List<String> dependents = new PrerequisiteCheck().findDependents(connection, studentId, entry.getCourseId(),
 				catalogYear);
 		if (!dependents.isEmpty()) {
 			// one course "needs" and gets named again, several courses "need" and get "those courses"
@@ -193,8 +192,8 @@ public class PlanService {
 	public List<PlanTerm> summarize(int studentId) throws SQLException {
 		try (Connection connection = Db.getConnection()) {
 			int catalogYear = yearOrNewest(new StudentDao().findCatalogYear(connection, studentId));
-			List<PlannedCourse> courses = new PlanEntryDao().findForStudent(connection, studentId, catalogYear,
-					UnitRules.NORMAL_LIMIT);
+			List<PlannedCourse> courses = new PlanEntryDao().findForStudent(connection, studentId);
+			new PrerequisiteCheck().markPetitionDependents(connection, studentId, catalogYear, courses);
 
 			List<PlanTerm> terms = new ArrayList<>();
 			PlanTerm current = null;
