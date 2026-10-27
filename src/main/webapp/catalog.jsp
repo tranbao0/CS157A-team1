@@ -130,11 +130,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Course catalog - CourseCraft</title>
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
-	<link rel="stylesheet" href="<%= context %>/css/app.css">
-	<link rel="stylesheet" href="<%= context %>/css/motion.css">
+	<%@ include file="/WEB-INF/jspf/head.jspf" %>
 </head>
 <body>
 
@@ -209,7 +205,7 @@
 <% if (row[10] == null) { %>
 							<span class="cell-muted">Not scored</span>
 <% } else { %>
-							<span class="risk risk--<%= esc(row[10].toLowerCase()) %>"><%= esc(row[10]) %></span>
+							<span class="risk risk--<%= esc(row[10].toLowerCase()) %>"><%= esc(row[10]) %> risk</span>
 <% } %>
 						</div>
 					</td>
@@ -261,7 +257,7 @@
 			}
 %>
 		<div class="card">
-			<span class="card__eyebrow">Your plan</span>
+			<h2 class="card__title">Your plan</h2>
 <%@ include file="/WEB-INF/jspf/plan-road.jspf" %>
 			<%-- plan-add.js swaps this div with fresh copy from GET /plan/summary after each add --%>
 			<div class="plan-summary" id="plan-summary">
@@ -270,9 +266,9 @@
 		</div>
 <% } else { %>
 		<div class="card">
-			<span class="card__eyebrow">Your plan</span>
+			<h2 class="card__title">Your plan</h2>
 <%@ include file="/WEB-INF/jspf/plan-road.jspf" %>
-			<h2 class="card__title">Nothing saved yet</h2>
+			<h3 class="card__subtitle">Nothing saved yet</h3>
 			<p class="card__body">
 				Sign in to save sections, upload a transcript and get a term-by-term
 				plan that respects prerequisites and your unit cap.
@@ -297,6 +293,7 @@
 		</div>
 	</aside>
 </main>
+<%@ include file="/WEB-INF/jspf/footer.jspf" %>
 
 <%-- plan-add.js puts error text here, empty until something goes wrong --%>
 <p class="plan-toast" id="plan-message" role="status"></p>

@@ -130,6 +130,37 @@
     idleTimer = setTimeout(onIdle, 180);
   }, { passive: true });
 
+  /*
+   * Background art tells hero's story and costs main-thread time every frame.
+   * Pause it while no hero (real one or loop copy) is on screen, play on once one comes back.
+   */
+  var art = document.querySelector('.pov');
+  if (art && 'IntersectionObserver' in window) {
+    var heroes = document.querySelectorAll('.hero');
+    var heroObserver = new IntersectionObserver(function (entries) {
+      /*
+       * each hero keeps own on-screen flag, first report covers all heroes at once.
+       * Hero counts only when 10% of it shows, edge just touching screen reports as intersecting too.
+       */
+      for (var e = 0; e < entries.length; e++) {
+        if (entries[e].intersectionRatio >= 0.1) {
+          entries[e].target.setAttribute('data-on-screen', '1');
+        } else {
+          entries[e].target.removeAttribute('data-on-screen');
+        }
+      }
+      var heroesOnScreen = document.querySelectorAll('.hero[data-on-screen]').length;
+      if (heroesOnScreen > 0) {
+        art.classList.remove('is-paused');
+      } else {
+        art.classList.add('is-paused');
+      }
+    }, { threshold: 0.1 });
+    for (var h = 0; h < heroes.length; h++) {
+      heroObserver.observe(heroes[h]);
+    }
+  }
+
   // browser may restore old scroll position inside a copy after reload
   wrap();
 }());

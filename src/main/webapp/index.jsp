@@ -6,11 +6,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CourseCraft</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="css/app.css">
-<link rel="stylesheet" href="css/motion.css">
+<%@ include file="/WEB-INF/jspf/head.jspf" %>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/landing.css">
 </head>
 <body class="page-landing">
 
@@ -21,16 +18,16 @@
 <svg class="pov" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
   <defs>
     <radialGradient id="pov-disc" cx="50%" cy="45%" r="50%">
-      <stop offset="0" stop-color="#E4EDF8"/>
-      <stop offset=".65" stop-color="#F1F6FB"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop class="pov__stop--disc" offset="0"/>
+      <stop class="pov__stop--disc-2" offset=".65"/>
+      <stop class="pov__stop--surface" offset="1" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="pov-lid" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#1D2C4C"/>
-      <stop offset="1" stop-color="#16233F"/>
+      <stop class="pov__stop--ink" offset="1"/>
     </linearGradient>
     <linearGradient id="pov-screen" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop class="pov__stop--surface" offset="0"/>
       <stop offset="1" stop-color="#F4F7FB"/>
     </linearGradient>
     <linearGradient id="pov-deck" x1="0" y1="0" x2="0" y2="1">
@@ -43,31 +40,31 @@
     </linearGradient>
     <linearGradient id="pov-gold" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#FFD866"/>
-      <stop offset=".5" stop-color="#FDC23B"/>
+      <stop class="pov__stop--amber" offset=".5"/>
       <stop offset="1" stop-color="#F2B530"/>
     </linearGradient>
     <linearGradient id="pov-paper" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FFFFFF"/>
-      <stop offset="1" stop-color="#FFF8E5"/>
+      <stop class="pov__stop--surface" offset="0"/>
+      <stop class="pov__stop--canvas" offset="1"/>
     </linearGradient>
     <linearGradient id="pov-roll" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#FFF6DF"/>
-      <stop offset=".5" stop-color="#FFFFFF"/>
+      <stop class="pov__stop--surface" offset=".5"/>
       <stop offset="1" stop-color="#F3E6C4"/>
     </linearGradient>
     <linearGradient id="pov-ray" x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0" stop-color="#FDC23B" stop-opacity=".6"/>
-      <stop offset="1" stop-color="#FDC23B" stop-opacity="0"/>
+      <stop class="pov__stop--amber" offset="0" stop-opacity=".6"/>
+      <stop class="pov__stop--amber" offset="1" stop-opacity="0"/>
     </linearGradient>
     <radialGradient id="pov-backlight">
       <stop offset="0" stop-color="#FFE7A3" stop-opacity=".95"/>
-      <stop offset=".45" stop-color="#FDC23B" stop-opacity=".35"/>
-      <stop offset="1" stop-color="#FDC23B" stop-opacity="0"/>
+      <stop class="pov__stop--amber" offset=".45" stop-opacity=".35"/>
+      <stop class="pov__stop--amber" offset="1" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="pov-flash">
       <stop offset="0" stop-color="#FFF4CC"/>
-      <stop offset=".45" stop-color="#FDC23B" stop-opacity=".55"/>
-      <stop offset="1" stop-color="#FDC23B" stop-opacity="0"/>
+      <stop class="pov__stop--amber" offset=".45" stop-opacity=".55"/>
+      <stop class="pov__stop--amber" offset="1" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="pov-shock-ring">
       <stop offset=".55" stop-color="#FFE7A3" stop-opacity="0"/>
@@ -93,15 +90,15 @@
       <feGaussianBlur stdDeviation="6"/>
     </filter>
     <radialGradient id="pov-glow">
-      <stop offset="0" stop-color="#FDC23B" stop-opacity=".55"/>
-      <stop offset="1" stop-color="#FDC23B" stop-opacity="0"/>
+      <stop class="pov__stop--amber" offset="0" stop-opacity=".55"/>
+      <stop class="pov__stop--amber" offset="1" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="pov-floor-shadow">
-      <stop offset="0" stop-color="#16233F" stop-opacity=".1"/>
-      <stop offset="1" stop-color="#16233F" stop-opacity="0"/>
+      <stop class="pov__stop--ink" offset="0" stop-opacity=".1"/>
+      <stop class="pov__stop--ink" offset="1" stop-opacity="0"/>
     </radialGradient>
     <filter id="pov-paper-shadow" x="-20%" y="-20%" width="140%" height="150%">
-      <feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#16233F" flood-opacity=".09"/>
+      <feDropShadow class="pov__shadow-ink" dx="0" dy="14" stdDeviation="14" flood-opacity=".09"/>
     </filter>
     <clipPath id="pov-display-clip">
       <rect x="219" y="114" width="362" height="190" rx="6"/>
@@ -139,21 +136,21 @@
       <g class="pov__keys">
           <rect class="pov__key-edge" x="265.7" y="336.0" width="23.3" height="17" rx="3"/><rect class="pov__key" x="265.7" y="334" width="23.3" height="17" rx="3"/>
           <rect class="pov__key-edge" x="292.9" y="336.0" width="23.3" height="17" rx="3"/><rect class="pov__key" x="292.9" y="334" width="23.3" height="17" rx="3"/>
-          <rect class="pov__key-edge" x="320.2" y="336.0" width="23.3" height="17" rx="3"/><rect class="pov__key pov__key--f1" x="320.2" y="334" width="23.3" height="17" rx="3"/>
+          <rect class="pov__key-edge" x="320.2" y="336.0" width="23.3" height="17" rx="3"/><rect class="pov__key" x="320.2" y="334" width="23.3" height="17" rx="3"/><rect class="pov__key-lit pov__key--f1" x="320.2" y="334" width="23.3" height="17" rx="3"/>
           <rect class="pov__key-edge" x="347.5" y="336.0" width="23.3" height="17" rx="3"/><rect class="pov__key" x="347.5" y="334" width="23.3" height="17" rx="3"/>
           <rect class="pov__key-edge" x="374.7" y="336.0" width="23.3" height="17" rx="3"/><rect class="pov__key" x="374.7" y="334" width="23.3" height="17" rx="3"/>
           <rect class="pov__key-edge" x="402.0" y="336.0" width="23.3" height="17" rx="3"/><rect class="pov__key" x="402.0" y="334" width="23.3" height="17" rx="3"/>
           <rect class="pov__key-edge" x="429.3" y="336.0" width="23.3" height="17" rx="3"/><rect class="pov__key" x="429.3" y="334" width="23.3" height="17" rx="3"/>
-          <rect class="pov__key-edge" x="456.5" y="336.0" width="23.3" height="17" rx="3"/><rect class="pov__key pov__key--f4" x="456.5" y="334" width="23.3" height="17" rx="3"/>
+          <rect class="pov__key-edge" x="456.5" y="336.0" width="23.3" height="17" rx="3"/><rect class="pov__key" x="456.5" y="334" width="23.3" height="17" rx="3"/><rect class="pov__key-lit pov__key--f4" x="456.5" y="334" width="23.3" height="17" rx="3"/>
           <rect class="pov__key-edge" x="483.8" y="336.0" width="23.3" height="17" rx="3"/><rect class="pov__key" x="483.8" y="334" width="23.3" height="17" rx="3"/>
           <rect class="pov__key-edge" x="511.1" y="336.0" width="23.3" height="17" rx="3"/><rect class="pov__key" x="511.1" y="334" width="23.3" height="17" rx="3"/>
           <rect class="pov__key-edge" x="246.5" y="363.0" width="27.1" height="17" rx="3"/><rect class="pov__key" x="246.5" y="361" width="27.1" height="17" rx="3"/>
           <rect class="pov__key-edge" x="277.6" y="363.0" width="27.1" height="17" rx="3"/><rect class="pov__key" x="277.6" y="361" width="27.1" height="17" rx="3"/>
           <rect class="pov__key-edge" x="308.7" y="363.0" width="27.1" height="17" rx="3"/><rect class="pov__key" x="308.7" y="361" width="27.1" height="17" rx="3"/>
-          <rect class="pov__key-edge" x="339.8" y="363.0" width="27.1" height="17" rx="3"/><rect class="pov__key pov__key--f6" x="339.8" y="361" width="27.1" height="17" rx="3"/>
+          <rect class="pov__key-edge" x="339.8" y="363.0" width="27.1" height="17" rx="3"/><rect class="pov__key" x="339.8" y="361" width="27.1" height="17" rx="3"/><rect class="pov__key-lit pov__key--f6" x="339.8" y="361" width="27.1" height="17" rx="3"/>
           <rect class="pov__key-edge" x="370.9" y="363.0" width="27.1" height="17" rx="3"/><rect class="pov__key" x="370.9" y="361" width="27.1" height="17" rx="3"/>
           <rect class="pov__key-edge" x="402.0" y="363.0" width="27.1" height="17" rx="3"/><rect class="pov__key" x="402.0" y="361" width="27.1" height="17" rx="3"/>
-          <rect class="pov__key-edge" x="433.1" y="363.0" width="27.1" height="17" rx="3"/><rect class="pov__key pov__key--f2" x="433.1" y="361" width="27.1" height="17" rx="3"/>
+          <rect class="pov__key-edge" x="433.1" y="363.0" width="27.1" height="17" rx="3"/><rect class="pov__key" x="433.1" y="361" width="27.1" height="17" rx="3"/><rect class="pov__key-lit pov__key--f2" x="433.1" y="361" width="27.1" height="17" rx="3"/>
           <rect class="pov__key-edge" x="464.2" y="363.0" width="27.1" height="17" rx="3"/><rect class="pov__key" x="464.2" y="361" width="27.1" height="17" rx="3"/>
           <rect class="pov__key-edge" x="495.3" y="363.0" width="27.1" height="17" rx="3"/><rect class="pov__key" x="495.3" y="361" width="27.1" height="17" rx="3"/>
           <rect class="pov__key-edge" x="526.4" y="363.0" width="27.1" height="17" rx="3"/><rect class="pov__key" x="526.4" y="361" width="27.1" height="17" rx="3"/>
@@ -161,16 +158,16 @@
           <rect class="pov__key-edge" x="262.3" y="390.0" width="30.9" height="17" rx="3"/><rect class="pov__key" x="262.3" y="388" width="30.9" height="17" rx="3"/>
           <rect class="pov__key-edge" x="297.2" y="390.0" width="30.9" height="17" rx="3"/><rect class="pov__key" x="297.2" y="388" width="30.9" height="17" rx="3"/>
           <rect class="pov__key-edge" x="332.1" y="390.0" width="30.9" height="17" rx="3"/><rect class="pov__key" x="332.1" y="388" width="30.9" height="17" rx="3"/>
-          <rect class="pov__key-edge" x="367.1" y="390.0" width="30.9" height="17" rx="3"/><rect class="pov__key pov__key--f3" x="367.1" y="388" width="30.9" height="17" rx="3"/>
+          <rect class="pov__key-edge" x="367.1" y="390.0" width="30.9" height="17" rx="3"/><rect class="pov__key" x="367.1" y="388" width="30.9" height="17" rx="3"/><rect class="pov__key-lit pov__key--f3" x="367.1" y="388" width="30.9" height="17" rx="3"/>
           <rect class="pov__key-edge" x="402.0" y="390.0" width="30.9" height="17" rx="3"/><rect class="pov__key" x="402.0" y="388" width="30.9" height="17" rx="3"/>
           <rect class="pov__key-edge" x="436.9" y="390.0" width="30.9" height="17" rx="3"/><rect class="pov__key" x="436.9" y="388" width="30.9" height="17" rx="3"/>
-          <rect class="pov__key-edge" x="471.9" y="390.0" width="30.9" height="17" rx="3"/><rect class="pov__key pov__key--f2" x="471.9" y="388" width="30.9" height="17" rx="3"/>
+          <rect class="pov__key-edge" x="471.9" y="390.0" width="30.9" height="17" rx="3"/><rect class="pov__key" x="471.9" y="388" width="30.9" height="17" rx="3"/><rect class="pov__key-lit pov__key--f2" x="471.9" y="388" width="30.9" height="17" rx="3"/>
           <rect class="pov__key-edge" x="506.8" y="390.0" width="30.9" height="17" rx="3"/><rect class="pov__key" x="506.8" y="388" width="30.9" height="17" rx="3"/>
           <rect class="pov__key-edge" x="541.7" y="390.0" width="30.9" height="17" rx="3"/><rect class="pov__key" x="541.7" y="388" width="30.9" height="17" rx="3"/>
           <rect class="pov__key-edge" x="208.2" y="417.0" width="34.8" height="17" rx="3"/><rect class="pov__key" x="208.2" y="415" width="34.8" height="17" rx="3"/>
           <rect class="pov__key-edge" x="247.0" y="417.0" width="34.8" height="17" rx="3"/><rect class="pov__key" x="247.0" y="415" width="34.8" height="17" rx="3"/>
           <rect class="pov__key-edge" x="285.7" y="417.0" width="34.8" height="17" rx="3"/><rect class="pov__key" x="285.7" y="415" width="34.8" height="17" rx="3"/>
-          <rect class="pov__key-edge" x="324.5" y="417.0" width="34.8" height="17" rx="3"/><rect class="pov__key pov__key--f5" x="324.5" y="415" width="34.8" height="17" rx="3"/>
+          <rect class="pov__key-edge" x="324.5" y="417.0" width="34.8" height="17" rx="3"/><rect class="pov__key" x="324.5" y="415" width="34.8" height="17" rx="3"/><rect class="pov__key-lit pov__key--f5" x="324.5" y="415" width="34.8" height="17" rx="3"/>
           <rect class="pov__key-edge" x="363.2" y="417.0" width="34.8" height="17" rx="3"/><rect class="pov__key" x="363.2" y="415" width="34.8" height="17" rx="3"/>
           <rect class="pov__key-edge" x="402.0" y="417.0" width="34.8" height="17" rx="3"/><rect class="pov__key" x="402.0" y="415" width="34.8" height="17" rx="3"/>
           <rect class="pov__key-edge" x="440.8" y="417.0" width="34.8" height="17" rx="3"/><rect class="pov__key" x="440.8" y="415" width="34.8" height="17" rx="3"/>
@@ -193,7 +190,8 @@
               </g>
             </g>
 
-            <path class="pov__road" d="M 190 520 C 330 520, 460 525, 540 500 C 600 480, 600 395, 540 385 C 440 370, 330 375, 260 365 C 200 355, 200 255, 260 245 C 350 230, 460 235, 540 225 C 600 215, 600 115, 540 105 C 440 92, 330 95, 260 85 C 200 75, 200 -25, 260 -35 C 340 -48, 470 -45, 520 -70 C 570 -100, 560 -170, 470 -190 C 340 -220, 260 -230, 260 -300 C 260 -370, 520 -370, 520 -440 C 520 -500, 300 -505, 300 -565 C 300 -615, 470 -620, 470 -670 C 470 -710, 340 -715, 340 -755 C 340 -790, 430 -795, 420 -830 C 410 -880, 380 -940, 400 -1000 C 420 -1060, 400 -1120, 400 -1180 L 400 -1395"/>
+            <%-- id lets "you" dot follow this path, see .pov__you --%>
+            <path id="pov-road" class="pov__road" d="M 190 520 C 330 520, 460 525, 540 500 C 600 480, 600 395, 540 385 C 440 370, 330 375, 260 365 C 200 355, 200 255, 260 245 C 350 230, 460 235, 540 225 C 600 215, 600 115, 540 105 C 440 92, 330 95, 260 85 C 200 75, 200 -25, 260 -35 C 340 -48, 470 -45, 520 -70 C 570 -100, 560 -170, 470 -190 C 340 -220, 260 -230, 260 -300 C 260 -370, 520 -370, 520 -440 C 520 -500, 300 -505, 300 -565 C 300 -615, 470 -620, 470 -670 C 470 -710, 340 -715, 340 -755 C 340 -790, 430 -795, 420 -830 C 410 -880, 380 -940, 400 -1000 C 420 -1060, 400 -1120, 400 -1180 L 400 -1395"/>
             <g class="pov__todo">
               <circle cx="584.9" cy="442.8" r="11"/>
               <circle cx="216.4" cy="319.4" r="11"/>
@@ -292,9 +290,11 @@
             </g>
 
             <g class="pov__you">
-              <path class="pov__you-halo" d="M 190 520 C 330 520, 460 525, 540 500 C 600 480, 600 395, 540 385 C 440 370, 330 375, 260 365 C 200 355, 200 255, 260 245 C 350 230, 460 235, 540 225 C 600 215, 600 115, 540 105 C 440 92, 330 95, 260 85 C 200 75, 200 -25, 260 -35 C 340 -48, 470 -45, 520 -70 C 570 -100, 560 -170, 470 -190 C 340 -220, 260 -230, 260 -300 C 260 -370, 520 -370, 520 -440 C 520 -500, 300 -505, 300 -565 C 300 -615, 470 -620, 470 -670 C 470 -710, 340 -715, 340 -755 C 340 -790, 430 -795, 420 -830 C 410 -880, 380 -940, 400 -1000 C 420 -1060, 400 -1120, 400 -1180 L 400 -1395" pathLength="1"/>
-              <path class="pov__you-ring" d="M 190 520 C 330 520, 460 525, 540 500 C 600 480, 600 395, 540 385 C 440 370, 330 375, 260 365 C 200 355, 200 255, 260 245 C 350 230, 460 235, 540 225 C 600 215, 600 115, 540 105 C 440 92, 330 95, 260 85 C 200 75, 200 -25, 260 -35 C 340 -48, 470 -45, 520 -70 C 570 -100, 560 -170, 470 -190 C 340 -220, 260 -230, 260 -300 C 260 -370, 520 -370, 520 -440 C 520 -500, 300 -505, 300 -565 C 300 -615, 470 -620, 470 -670 C 470 -710, 340 -715, 340 -755 C 340 -790, 430 -795, 420 -830 C 410 -880, 380 -940, 400 -1000 C 420 -1060, 400 -1120, 400 -1180 L 400 -1395" pathLength="1"/>
-              <path class="pov__you-dot" d="M 190 520 C 330 520, 460 525, 540 500 C 600 480, 600 395, 540 385 C 440 370, 330 375, 260 365 C 200 355, 200 255, 260 245 C 350 230, 460 235, 540 225 C 600 215, 600 115, 540 105 C 440 92, 330 95, 260 85 C 200 75, 200 -25, 260 -35 C 340 -48, 470 -45, 520 -70 C 570 -100, 560 -170, 470 -190 C 340 -220, 260 -230, 260 -300 C 260 -370, 520 -370, 520 -440 C 520 -500, 300 -505, 300 -565 C 300 -615, 470 -620, 470 -670 C 470 -710, 340 -715, 340 -755 C 340 -790, 430 -795, 420 -830 C 410 -880, 380 -940, 400 -1000 C 420 -1060, 400 -1120, 400 -1180 L 400 -1395" pathLength="1"/>
+              <g class="pov__you-move">
+                <circle class="pov__you-halo" r="24"/>
+                <circle class="pov__you-ring" r="12"/>
+                <circle class="pov__you-dot" r="7.5"/>
+              </g>
             </g>
           </g>
         </g>
@@ -347,6 +347,7 @@
         Get Started
         <svg class="hero__cta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16M13 5l7 7-7 7"/></svg>
       </a>
+      <p class="hero__note">Student course project. Not an official SJSU product and not affiliated with SJSU.</p>
     </div>
   </section>
 

@@ -1,0 +1,65 @@
+<%-- every page includes these <head> links, page keeps own <title> and page scripts around include --%>
+<%--
+  script runs before stylesheets so it never waits on them, and before first paint so road art class is in place.
+  Road art (road.jspf) walks its dot once when student arrives from page without it, page to page with road it holds still.
+  Matching rules live in css/motion.css.
+--%>
+	<script>
+	(function () {
+		'use strict';
+
+		var root = document.documentElement;
+		var key = 'coursecraft-road';
+
+		function lastPageHadRoad() {
+			try {
+				return sessionStorage.getItem(key) === '1';
+			} catch (error) {
+				// storage blocked, so act like first visit
+				return false;
+			}
+		}
+
+		// write down if this page draws road art, next page reads it before it paints
+		function remember() {
+			try {
+				if (document.querySelector('svg.road')) {
+					sessionStorage.setItem(key, '1');
+				} else {
+					sessionStorage.removeItem(key);
+				}
+			} catch (error) {
+				// storage blocked, next page just plays road walk again
+			}
+		}
+
+		var cameFromRoad = lastPageHadRoad();
+
+		// typed address or bookmark has no same-site referrer, so those still get road walk
+		var cameFromApp = document.referrer.indexOf(location.origin + '/') === 0;
+		if (cameFromRoad && cameFromApp) {
+			root.classList.add('road-held');
+		}
+
+		document.addEventListener('DOMContentLoaded', remember);
+
+		// Back and Forward can bring page back from memory without running scripts again, so read and write flag here too
+		window.addEventListener('pageshow', function (event) {
+			if (event.persisted) {
+				cameFromRoad = lastPageHadRoad();
+				remember();
+			}
+		});
+
+		// tells motion.css old page had road too, so it swaps pages without moving road
+		window.addEventListener('pagereveal', function (event) {
+			if (event.viewTransition && event.viewTransition.types && cameFromRoad) {
+				event.viewTransition.types.add('from-road');
+			}
+		});
+	}());
+	</script>
+<%-- preload starts font download before app.css asks for it, crossorigin is required for font preload even on same site --%>
+	<link rel="preload" href="${pageContext.request.contextPath}/fonts/figtree-latin.woff2" as="font" type="font/woff2" crossorigin>
+	<link rel="stylesheet" href="${pageContext.request.contextPath}/css/app.css">
+	<link rel="stylesheet" href="${pageContext.request.contextPath}/css/motion.css">
