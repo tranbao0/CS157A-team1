@@ -1657,6 +1657,7 @@ body:has(> .get-started[open]) { overflow: hidden; }
 .course-link:focus-visible .course-title { color: var(--ink-3); }
 
 /* Course detail page. */
+.detail { min-width: 0; }
 .pagehead__back { margin: 0 0 .75rem; }
 .titlerow { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem 1rem; }
 .titlerow .pagehead__title { margin: 0; }
@@ -1673,7 +1674,7 @@ body:has(> .get-started[open]) { overflow: hidden; }
   .detail-facts dd { margin-bottom: .875rem; }
 }
 
-.card__row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .5rem 0; font-size: .875rem; border-top: 1px solid var(--line-2); }
+.card__row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .625rem 0; font-size: .875rem; border-top: 1px solid var(--line-2); }
 .card__row:first-of-type { border-top: 0; }
 .card__row > span:first-child { color: var(--ink-3); }
 
