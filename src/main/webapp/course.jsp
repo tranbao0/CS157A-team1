@@ -53,7 +53,10 @@
 %>
 <%
 	String context = request.getContextPath();
+
+	// LoginSession puts both in the session. studentId is what the completed table is keyed on.
 	String email = (String) session.getAttribute("email");
+	Integer studentId = (Integer) session.getAttribute("studentId");
 	boolean signedIn = email != null;
 
 	// visitor sign-in links use this, next brings student back to same course and section
@@ -70,7 +73,6 @@
 	List<Map<String, String>> dependents = new ArrayList<>();
 	Map<String, String> section = null;
 	Map<String, String> bottleneck = null;
-	boolean canEdit = false;
 	boolean completed = false;
 	// true when course already sits in student's plan, + Plan then shows In plan
 	boolean inPlan = false;
@@ -87,21 +89,12 @@
 		// One connection for every query. Closes on failure too.
 		try (Connection connection = Db.getConnection()) {
 
-			// Signed-in student, found by email. Null if the email has no student row.
-			Integer studentId = null;
-			if (signedIn) {
-				List<Map<String, String>> who = select(connection, "SELECT student_id FROM students WHERE email = ?", email);
-				if (!who.isEmpty()) {
-					studentId = Integer.valueOf(who.get(0).get("student_id"));
-				}
-				canEdit = studentId != null;
-			}
-
-			// The Completed checkbox posts here. Ticked sends "completed", unticked deletes the row.
+			// The Completed checkbox posts here. Ticked sends "completed", unticked sends nothing.
 			if ("POST".equals(request.getMethod())) {
-				if (studentId != null) {
+				if (canEdit) {
 					String sql = request.getParameter("completed") != null
 						? "INSERT INTO completed (student_id, course_id, taken_and_passed) VALUES (?, ?, 1) "
+							+ "ON DUPLICATE KEY UPDATE taken_and_passed = 1"
 						: "DELETE FROM completed WHERE student_id = ? AND course_id = ?";
 					try (PreparedStatement statement = connection.prepareStatement(sql)) {
 						statement.setInt(1, studentId);
@@ -119,7 +112,7 @@
 				return;
 			}
 
-			// Course and GE area. ge_area_code can be NULL, LEFT JOIN is used to account for NULL values.
+			// Course and GE area. ge_area_code can be NULL, so LEFT JOIN is used to account for NULL values.
 			List<Map<String, String>> found = select(connection,
 				"SELECT c.course_id, c.subject, c.course_number, c.title, c.units, c.description, "
 				+ "       c.ge_area_code, g.name AS ge_name "
@@ -182,7 +175,7 @@
 					section = sections.get(0);
 				}
 
-				// Latest bottleneck score.
+				// Latest risk level, same rule as the catalog.
 				List<Map<String, String>> bn = select(connection,
 					"SELECT b.risk_level "
 					+ "FROM bottleneck_scores b JOIN terms t ON t.term_id = b.term_id "
@@ -190,7 +183,7 @@
 				bottleneck = bn.isEmpty() ? null : bn.get(0);
 
 				// Is it on this student's completed list as passed?
-				if (studentId != null) {
+				if (canEdit) {
 					List<Map<String, String>> done = select(connection,
 						"SELECT taken_and_passed FROM completed WHERE student_id = ? AND course_id = ?",
 						studentId, courseId);
@@ -201,7 +194,7 @@
 				}
 			}
 		} catch (SQLException e) {
-			getServletContext().log("Course query failed", e);
+			getServletContext().log("Course detail query failed", e);
 			loadError = "Could not read the course. Check that MySQL is running.";
 			status = 500;
 		}
@@ -211,12 +204,12 @@
 		response.setStatus(status);
 	}
 
-	// CS 146 Sec-01 Data Structures and Algorithms
-	String heading = "Course";
+	// CS 146 Sec-01 Data Structures and Algorithms. Code gets the marker, like the term on the catalog.
+	String code = "Course";
+	String rest = "";
 	if (course != null) {
-		heading = course.get("subject") + " " + course.get("course_number")
-			+ (section == null ? "" : " Sec-" + section.get("section_code"))
-			+ " " + course.get("title");
+		code = course.get("subject") + " " + course.get("course_number");
+		rest = (section == null ? "" : " Sec-" + section.get("section_code")) + " " + course.get("title");
 	}
 %>
 <!DOCTYPE html>
@@ -224,7 +217,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title><%= esc(heading) %> - CourseCraft</title>
+	<title><%= esc(code + rest) %> - CourseCraft</title>
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
@@ -243,67 +236,98 @@
 	<div class="pagehead__text">
 		<p class="pagehead__back"><a class="btn btn--sm" href="<%= context %>/catalog.jsp">&larr; Back</a></p>
 <% if (loadError == null) { %>
-		<div class="titlerow">
-			<h1 class="pagehead__title"><%= esc(heading) %></h1>
+			<div class="titlerow">
+				<h1 class="pagehead__title"><span class="pagehead__term"><%= esc(code) %></span><%= esc(rest) %></h1>
 <% if (bottleneck == null) { %>
-			<span class="cell-muted">Not scored</span>
+				<span class="cell-muted">Not scored</span>
 <% } else { %>
-			<span class="risk risk--<%= esc(bottleneck.get("risk_level") == null ? "" : bottleneck.get("risk_level").toLowerCase()) %>"><%= esc(bottleneck.get("risk_level")) %> risk</span>
+				<span class="risk risk--<%= esc(bottleneck.get("risk_level") == null ? "" : bottleneck.get("risk_level").toLowerCase()) %>"><%= esc(bottleneck.get("risk_level")) %> risk</span>
+<% } %>
+			</div>
+			<p class="detail-desc"><%= course.get("description") == null ? "No description available." : esc(course.get("description")) %></p>
+<% } else { %>
+			<h1 class="pagehead__title">Course</h1>
 <% } %>
 		</div>
-		<p class="detail-desc"><%= course.get("description") == null ? "No description available." : esc(course.get("description")) %></p>
-<% } else { %>
-		<h1 class="pagehead__title">Course</h1>
-<% } %>
 	</div>
-</div>
+</header>
 
-<main class="layout">
+<main class="layout" id="main">
 <% if (loadError != null) { %>
-	<div class="banner banner--error" role="alert"><%= esc(loadError) %></div>
+	<div class="detail">
+		<div class="banner banner--error" role="alert"><%= esc(loadError) %></div>
+	</div>
 <% } else { %>
-	<dl class="detail-facts">
-		<dt>Fulfills</dt>
-		<dd><%= course.get("ge_area_code") == null ? "None"
-			: "Area " + esc(course.get("ge_area_code")) + " - " + esc(course.get("ge_name")) %></dd>
+	<div class="detail">
+		<dl class="detail-facts">
+			<dt>Units</dt>
+			<dd><%= esc(course.get("units")) %></dd>
 
-		<dt>Prerequisite(s)</dt>
-		<dd>
+			<dt>Fulfills</dt>
+			<dd><%= course.get("ge_area_code") == null ? "None"
+				: "Area " + esc(course.get("ge_area_code")) + " - " + esc(course.get("ge_name")) %></dd>
+
+			<dt>Prerequisite(s)</dt>
+			<dd>
 <% if (groups.isEmpty()) { %>
-			None
+				None
 <% } else { %>
 <% for (int g = 0; g < groups.size(); g++) {
 	List<Map<String, String>> group = groups.get(g); %>
-			<%= g > 0 ? " <em>and</em> " : "" %><%
+				<%= g > 0 ? " <em>and</em> " : "" %><%
 	for (int i = 0; i < group.size(); i++) {
 		Map<String, String> pre = group.get(i); %><%= i > 0 ? " <em>or</em> " : "" %><a class="course-link" href="<%= context %>/course.jsp?id=<%= esc(pre.get("course_id")) %>"><%= esc(pre.get("subject")) %> <%= esc(pre.get("course_number")) %></a><%
 	} %>
 <% } %>
 <% } %>
-		</dd>
+			</dd>
 
-		<dt>Is a prerequisite for</dt>
-		<dd>
+			<dt>Is a prerequisite for</dt>
+			<dd>
 <% if (dependents.isEmpty()) { %>
-			None
+				None
 <% } else { %>
 <% for (int i = 0; i < dependents.size(); i++) {
 	Map<String, String> dep = dependents.get(i); %><%= i > 0 ? ", " : "" %><a class="course-link" href="<%= context %>/course.jsp?id=<%= esc(dep.get("course_id")) %>"><%= esc(dep.get("subject")) %> <%= esc(dep.get("course_number")) %></a><%
 } %>
 <% } %>
-		</dd>
-	</dl>
+			</dd>
+		</dl>
+
+		<form class="detail-actions" method="post"
+		      action="<%= context %>/course.jsp?id=<%= esc(course.get("course_id")) %><%= section == null ? "" : "&amp;section=" + esc(section.get("section_id")) %>">
+<% if (!signedIn) { %>
+			<span class="detail-actions__hint"><a href="<%= context %>/login">Sign in</a> to mark courses completed</span>
+<% } else if (!canEdit) { %>
+			<span class="detail-actions__hint">Sign in again to mark courses completed</span>
+<% } %>
+			<label class="check<%= canEdit ? "" : " is-disabled" %>">
+				<%-- ticking or unticking saves right away, the button is for browsers without JavaScript --%>
+				<input type="checkbox" name="completed" value="1"<%= completed ? " checked" : "" %><%= canEdit ? "" : " disabled" %>
+				       onchange="this.form.submit()">
+				<span>Completed</span>
+			</label>
+			<noscript><button class="btn btn--sm" type="submit">Save</button></noscript>
+			<%-- TODO: wire to POST /plan/add, same as the catalog button --%>
+			<button class="btn btn--sm" type="button" disabled>+ Plan</button>
+		</form>
+	</div>
 
 	<aside class="rail">
-		<div class="card">
-			<span class="card__eyebrow">Enrollment</span>
+		<div class="rail__stack">
+<%@ include file="/WEB-INF/jspf/rail-art.jspf" %>
+			<div class="rail__cards">
+				<div class="card">
+					<span class="card__eyebrow">Enrollment</span>
 <% if (section == null) { %>
-			<p class="card__body">No section on record for this course.</p>
+					<p class="card__body">No section on record for this course.</p>
 <% } else { %>
-			<div class="card__row"><span>Class capacity</span><span><%= orDash(section.get("seat_capacity")) %></span></div>
-			<div class="card__row"><span>Available seats</span><span><%= orDash(section.get("open_seats")) %></span></div>
-			<div class="card__row"><span>Waitlist</span><span><%= orDash(section.get("waitlist_count")) %></span></div>
+					<div class="card__row"><span>Class capacity</span><span><%= orDash(section.get("seat_capacity")) %></span></div>
+					<div class="card__row"><span>Available seats</span><span><%= orDash(section.get("open_seats")) %></span></div>
+					<div class="card__row"><span>Waitlist</span><span><%= orDash(section.get("waitlist_count")) %></span></div>
 <% } %>
+				</div>
+			</div>
 		</div>
 	</aside>
 <% } %>

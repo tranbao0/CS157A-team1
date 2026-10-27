@@ -283,11 +283,10 @@
 			<h2 class="card__title">Upload transcript</h2>
 			<p class="card__body">Filters the catalog down to the courses you still need.</p>
 <% if (signedIn) { %>
-			<%-- upload form lives on My courses page (/transcript) --%>
-			<a class="btn btn--block" href="<%= context %>/transcript">Upload transcript</a>
+			<a class="btn btn--block" href="<%= context %>/transcript.jsp">Upload transcript</a>
 <% } else { %>
-			<%-- next brings student to upload page right after sign-in --%>
-			<a class="btn btn--block" href="<%= context %>/login?next=%2Ftranscript">Sign in to upload</a>
+			<%-- next sends the student on to the transcript page once they sign in --%>
+			<a class="btn btn--block" href="<%= context %>/login?next=/transcript.jsp">Sign in to upload</a>
 <% } %>
 		</div>
 		</div>
