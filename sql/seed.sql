@@ -398,23 +398,140 @@ INSERT INTO plan_entries (plan_entry_id, student_id, course_id, session_id, adde
   (15, 7,  29, 11, '2026-09-27 15:30:00'),
   (16, 8,  21, 11, '2026-09-28 10:05:00');
 
--- Sample scores from 0 to 1. Higher score means higher risk.
-INSERT INTO bottleneck_scores
-  (score_id, course_id, term_id, computed_at, waitlist_count, total_capacity,
-   section_count, dependent_course_count, risk_level, score)
-VALUES
-  -- Fall 2026
-  (1,  1,  7, '2026-09-28 09:00:00',  2, 120, 2, 1, 'Low',    0.35),
-  (2,  2,  7, '2026-09-28 09:00:00',  4, 100, 2, 3, 'Medium', 0.58),
-  (3,  6,  7, '2026-09-28 09:00:00', 12,  80, 2, 6, 'High',   0.92),
-  (4,  8,  7, '2026-09-28 09:00:00',  0,  40, 1, 3, 'Low',    0.30),
-  (5,  7,  7, '2026-09-28 09:00:00',  8,  40, 1, 0, 'Medium', 0.61),
-  (6,  11, 7, '2026-09-28 09:00:00',  5,  90, 2, 0, 'Low',    0.38),
-  (7,  12, 7, '2026-09-28 09:00:00',  2,  35, 1, 0, 'Low',    0.33),
-  (8,  13, 7, '2026-09-28 09:00:00',  6,  40, 1, 0, 'Medium', 0.52),
-  (9,  19, 7, '2026-09-28 09:00:00',  0,  40, 1, 1, 'Low',    0.12),
-  (10, 15, 7, '2026-09-28 09:00:00',  3,  45, 1, 5, 'Medium', 0.64),
-  -- Spring 2026
-  (11, 6,  5, '2026-01-20 09:00:00', 12,  40, 1, 6, 'High',   0.95),
-  (12, 11, 5, '2026-01-20 09:00:00',  4,  45, 1, 0, 'Low',    0.36),
-  (13, 1,  5, '2026-01-20 09:00:00',  0,  60, 1, 1, 'Low',    0.18);
+INSERT INTO bottleneck_scores (
+    score_id, course_id, term_id, computed_at,
+    waitlist_count, total_capacity, section_count,
+    dependent_course_count, risk_level, score
+)
+-- High risk: waitlist ratio over 15% or more than four dependent courses.
+SELECT
+    (BaseStats.course_id * 100) + BaseStats.term_id AS score_id,
+    BaseStats.course_id,
+    BaseStats.term_id,
+    '2026-10-24 10:00:00' AS computed_at,
+    BaseStats.waitlist_count,
+    BaseStats.total_capacity,
+    BaseStats.section_count,
+    BaseStats.dependent_course_count,
+    'High' AS risk_level,
+    ((BaseStats.waitlist_count * 1.0 / BaseStats.total_capacity) * 0.7)
+      + (BaseStats.dependent_course_count * 0.1) AS score
+FROM (
+    SELECT
+        c.course_id,
+        sess.term_id,
+        SUM(es.waitlist_count) AS waitlist_count,
+        SUM(es.seat_capacity) AS total_capacity,
+        COUNT(DISTINCT s.section_id) AS section_count,
+        (SELECT COUNT(DISTINCT pg.course_id)
+         FROM counts_towards ct, prerequisite_groups pg
+         WHERE ct.group_id = pg.group_id AND ct.course_id = c.course_id) AS dependent_course_count
+    FROM courses c, sections s, sessions sess, enrollment_snapshots es,
+         (SELECT section_id, MAX(captured_at) AS max_time FROM enrollment_snapshots GROUP BY section_id) latest
+    WHERE c.course_id = s.course_id
+      AND s.session_id = sess.session_id
+      AND s.section_id = es.section_id
+      AND es.section_id = latest.section_id
+      AND es.captured_at = latest.max_time
+      AND sess.term_id = 7
+      AND s.status = 'Active'
+    GROUP BY c.course_id, sess.term_id
+) BaseStats
+WHERE (BaseStats.total_capacity > 0
+       AND (BaseStats.waitlist_count * 1.0 / BaseStats.total_capacity) > 0.15)
+   OR BaseStats.dependent_course_count > 4
+
+UNION
+
+-- Medium risk: nonzero waitlist ratio or more than two dependent courses,
+-- excluding courses already classified as high risk.
+SELECT
+    (BaseStats.course_id * 100) + BaseStats.term_id AS score_id,
+    BaseStats.course_id,
+    BaseStats.term_id,
+    '2026-10-24 10:00:00' AS computed_at,
+    BaseStats.waitlist_count,
+    BaseStats.total_capacity,
+    BaseStats.section_count,
+    BaseStats.dependent_course_count,
+    'Medium' AS risk_level,
+    ((BaseStats.waitlist_count * 1.0 / BaseStats.total_capacity) * 0.7)
+      + (BaseStats.dependent_course_count * 0.1) AS score
+FROM (
+    SELECT
+        c.course_id,
+        sess.term_id,
+        SUM(es.waitlist_count) AS waitlist_count,
+        SUM(es.seat_capacity) AS total_capacity,
+        COUNT(DISTINCT s.section_id) AS section_count,
+        (SELECT COUNT(DISTINCT pg.course_id)
+         FROM counts_towards ct, prerequisite_groups pg
+         WHERE ct.group_id = pg.group_id AND ct.course_id = c.course_id) AS dependent_course_count
+    FROM courses c, sections s, sessions sess, enrollment_snapshots es,
+         (SELECT section_id, MAX(captured_at) AS max_time FROM enrollment_snapshots GROUP BY section_id) latest
+    WHERE c.course_id = s.course_id
+      AND s.session_id = sess.session_id
+      AND s.section_id = es.section_id
+      AND es.section_id = latest.section_id
+      AND es.captured_at = latest.max_time
+      AND sess.term_id = 7
+      AND s.status = 'Active'
+    GROUP BY c.course_id, sess.term_id
+) BaseStats
+WHERE (
+        (BaseStats.total_capacity > 0
+         AND (BaseStats.waitlist_count * 1.0 / BaseStats.total_capacity) > 0)
+     OR BaseStats.dependent_course_count > 2
+      )
+  AND NOT (
+        (BaseStats.total_capacity > 0
+         AND (BaseStats.waitlist_count * 1.0 / BaseStats.total_capacity) > 0.15)
+     OR BaseStats.dependent_course_count > 4
+      )
+
+UNION
+
+-- Low risk: all remaining courses.
+SELECT
+    (BaseStats.course_id * 100) + BaseStats.term_id AS score_id,
+    BaseStats.course_id,
+    BaseStats.term_id,
+    '2026-10-24 10:00:00' AS computed_at,
+    BaseStats.waitlist_count,
+    BaseStats.total_capacity,
+    BaseStats.section_count,
+    BaseStats.dependent_course_count,
+    'Low' AS risk_level,
+    ((BaseStats.waitlist_count * 1.0 / BaseStats.total_capacity) * 0.7)
+      + (BaseStats.dependent_course_count * 0.1) AS score
+FROM (
+    SELECT
+        c.course_id,
+        sess.term_id,
+        SUM(es.waitlist_count) AS waitlist_count,
+        SUM(es.seat_capacity) AS total_capacity,
+        COUNT(DISTINCT s.section_id) AS section_count,
+        (SELECT COUNT(DISTINCT pg.course_id)
+         FROM counts_towards ct, prerequisite_groups pg
+         WHERE ct.group_id = pg.group_id AND ct.course_id = c.course_id) AS dependent_course_count
+    FROM courses c, sections s, sessions sess, enrollment_snapshots es,
+         (SELECT section_id, MAX(captured_at) AS max_time FROM enrollment_snapshots GROUP BY section_id) latest
+    WHERE c.course_id = s.course_id
+      AND s.session_id = sess.session_id
+      AND s.section_id = es.section_id
+      AND es.section_id = latest.section_id
+      AND es.captured_at = latest.max_time
+      AND sess.term_id = 7
+      AND s.status = 'Active'
+    GROUP BY c.course_id, sess.term_id
+) BaseStats
+WHERE NOT (
+        (BaseStats.total_capacity > 0
+         AND (BaseStats.waitlist_count * 1.0 / BaseStats.total_capacity) > 0.15)
+     OR BaseStats.dependent_course_count > 4
+      )
+  AND NOT (
+        (BaseStats.total_capacity > 0
+         AND (BaseStats.waitlist_count * 1.0 / BaseStats.total_capacity) > 0)
+     OR BaseStats.dependent_course_count > 2
+      );
