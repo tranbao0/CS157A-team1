@@ -45,6 +45,22 @@
 		}
 	}
 
+	// JSON string for an inline <script>. Quotes, backslash, < > & and control characters become
+	// unicode escapes, so the text cannot close the script tag.
+	private static String json(String value) {
+		if (value == null) return "null";
+		StringBuilder out = new StringBuilder("\"");
+		for (int i = 0; i < value.length(); i++) {
+			char c = value.charAt(i);
+			if (c == '"' || c == '\\' || c == '<' || c == '>' || c == '&' || c < 0x20) {
+				out.append(String.format("\\u%04x", (int) c));
+			} else {
+				out.append(c);
+			}
+		}
+		return out.append('"').toString();
+	}
+
 	private static boolean passed(Map<String, String> course) {
 		return "1".equals(course.get("passed"));
 	}
@@ -86,15 +102,21 @@
 	String context = request.getContextPath();
 	String email = (String) session.getAttribute("email");
 
-	// Transcripts belong to a signed-in student.
+	// Transcripts belong to a signed-in student. next brings them back here after login.
 	if (email == null) {
-		response.sendRedirect(context + "/login");
+		response.sendRedirect(context + "/login?next=/transcript.jsp");
 		return;
 	}
 
 	String loadError = null;
 	boolean noStudent = false;
 	boolean saved = "1".equals(request.getParameter("saved"));
+	// set after a transcript import, the number of courses it newly marked completed
+	String importedParam = request.getParameter("imported");
+	int imported = importedParam != null && importedParam.matches("\\d{1,4}") ? Integer.parseInt(importedParam) : -1;
+	String savedMessage = imported < 0 ? "Transcript saved."
+		: imported == 0 ? "Transcript imported. Nothing new to add."
+		: "Transcript imported. " + imported + (imported == 1 ? " course" : " courses") + " marked completed.";
 	String query = request.getParameter("q") == null ? "" : request.getParameter("q").trim();
 	String areaKey = request.getParameter("area") == null ? "" : request.getParameter("area");
 	List<Map<String, String>> courses = new ArrayList<>();
@@ -153,6 +175,7 @@
 
 				// Redirect so a refresh does not repeat the POST. Keeps the search the student was on.
 				response.sendRedirect(context + "/transcript.jsp?saved=1"
+					+ (imported < 0 ? "" : "&imported=" + imported)
 					+ "&q=" + URLEncoder.encode(query, StandardCharsets.UTF_8)
 					+ "&area=" + URLEncoder.encode(areaKey, StandardCharsets.UTF_8));
 				return;
@@ -276,17 +299,27 @@
 <% request.setAttribute("navPage", "transcript"); %>
 <header class="site-header">
 <%@ include file="/WEB-INF/jspf/topbar.jspf" %>
-	<div class="pagehead">
+	<div class="pagehead tx-import">
 		<div class="pagehead__text">
-			<h1 class="pagehead__title">Transcript</h1>
+			<h1 class="pagehead__title">Import your transcript</h1>
+			<p class="pagehead__meta">
+				Upload your MySJSU unofficial transcript, saved from the browser as a web page (.html).
+				Upload SJ_SA_CUSTOM.SJ_TR_SS_TSCRPT.html from the "_files" folder.
+				Every course that you passed is marked as completed.
+			</p>
 		</div>
 <% if (loadError == null && !noStudent) { %>
-		<button class="btn btn--primary" type="submit" form="transcript-form">Save changes</button>
+		<div class="tx-import__controls">
+			<label class="visually-hidden" for="tx-file">Unofficial transcript file</label>
+			<%-- multiple, so the saved page and the inner frame file in its _files folder can go in together --%>
+			<input class="tx-import__file" id="tx-file" type="file" accept=".html,.htm,text/html" multiple>
+			<p class="tx-import__status" id="tx-import-status" role="status" aria-live="polite"></p>
+		</div>
 <% } %>
 	</div>
 </header>
 
-<%-- two halves: search on the left, transcript on the right, stacked on narrow screens --%>
+<%-- two halves: transcript on the left, search on the right, stacked on narrow screens --%>
 <main class="layout layout--split" id="main">
 <% if (loadError != null) { %>
 	<div class="banner banner--error" role="alert"><%= esc(loadError) %></div>
@@ -295,8 +328,54 @@
 <% } else { %>
 <% if (saved) { %>
 	<%-- popup, shows for 2 seconds then fades out (app.css), script below removes it after --%>
-	<div class="toast" id="saved-toast" role="status">Transcript saved.</div>
+	<div class="toast" id="saved-toast" role="status"><%= esc(savedMessage) %></div>
 <% } %>
+
+	<form class="tx-form" id="transcript-form" method="post" action="<%= context %>/transcript.jsp">
+		<%-- carried through the save so the redirect lands back on the same search --%>
+		<input type="hidden" name="q" value="<%= esc(query) %>">
+		<input type="hidden" name="area" value="<%= esc(areaKey) %>">
+		<div class="tx-section__head">
+			<h2 class="tx-section__title">Transcript</h2>
+			<button class="btn btn--primary" type="submit">Save changes</button>
+		</div>
+<% if (!anyDone) { %>
+		<p class="tx-empty">No completed courses yet. Import your transcript or use the search to add some.</p>
+<% } %>
+<%-- every category shows, even with nothing completed, so the student sees what is left --%>
+<% for (Group group : groups) { %>
+		<section class="tx-group">
+			<h3 class="tx-group__title"><%= esc(group.title) %>
+				<span class="tx-group__count"><%= group.done %> of <%= group.courses.size() %></span></h3>
+			<p class="tx-group__note"><%= esc(group.note) %></p>
+<% if (group.done == 0) { %>
+			<p class="tx-list tx-list--empty">Nothing completed yet.</p>
+<% } else { %>
+			<ul class="tx-list">
+<% for (Map<String, String> c : group.courses) {
+	if (!passed(c)) {
+		continue;
+	}
+	String id = esc(c.get("course_id")); %>
+				<li class="tx-row">
+					<input type="hidden" name="shown" value="<%= id %>">
+					<input type="checkbox" id="course-<%= id %>" name="completed" value="<%= id %>" checked>
+					<label class="tx-label" for="course-<%= id %>">
+						<span class="tx-code"><%= esc(c.get("subject")) %> <%= esc(c.get("course_number")) %></span>
+						<span class="tx-title"><%= esc(c.get("title")) %></span>
+					</label>
+					<span class="tx-units"><%= esc(c.get("units")) %> units</span>
+					<a class="course-link tx-view" href="<%= context %>/course.jsp?id=<%= id %>">Details</a>
+				</li>
+<% } %>
+			</ul>
+<% } %>
+		</section>
+<% } %>
+		<div class="tx-actions">
+			<button class="btn btn--primary" type="submit">Save changes</button>
+		</div>
+	</form>
 
 	<%-- search lives outside the save form (forms cannot nest), its checkboxes join it through form="transcript-form" --%>
 	<section class="tx-search" aria-labelledby="tx-search-title">
@@ -353,58 +432,30 @@
 <% } %>
 	</section>
 
-	<form class="tx-form" id="transcript-form" method="post" action="<%= context %>/transcript.jsp">
-		<%-- carried through the save so the redirect lands back on the same search --%>
+	<%-- import posts here: transcript.js adds a shown + completed pair for each passed course it finds --%>
+	<form id="import-form" method="post" action="<%= context %>/transcript.jsp" hidden>
 		<input type="hidden" name="q" value="<%= esc(query) %>">
 		<input type="hidden" name="area" value="<%= esc(areaKey) %>">
-		<h2 class="tx-section__title">Transcript</h2>
-<% if (!anyDone) { %>
-		<p class="tx-empty">No completed courses yet. Use the search to add some.</p>
-<% } %>
-<%-- every category shows, even with nothing completed, so the student sees what is left --%>
-<% for (Group group : groups) { %>
-		<section class="tx-group">
-			<h3 class="tx-group__title"><%= esc(group.title) %>
-				<span class="tx-group__count"><%= group.done %> of <%= group.courses.size() %></span></h3>
-			<p class="tx-group__note"><%= esc(group.note) %></p>
-<% if (group.done == 0) { %>
-			<p class="tx-list tx-list--empty">Nothing completed yet.</p>
-<% } else { %>
-			<ul class="tx-list">
-<% for (Map<String, String> c : group.courses) {
-	if (!passed(c)) {
-		continue;
-	}
-	String id = esc(c.get("course_id")); %>
-				<li class="tx-row">
-					<input type="hidden" name="shown" value="<%= id %>">
-					<input type="checkbox" id="course-<%= id %>" name="completed" value="<%= id %>" checked>
-					<label class="tx-label" for="course-<%= id %>">
-						<span class="tx-code"><%= esc(c.get("subject")) %> <%= esc(c.get("course_number")) %></span>
-						<span class="tx-title"><%= esc(c.get("title")) %></span>
-					</label>
-					<span class="tx-units"><%= esc(c.get("units")) %> units</span>
-					<a class="course-link tx-view" href="<%= context %>/course.jsp?id=<%= id %>">Details</a>
-				</li>
-<% } %>
-			</ul>
-<% } %>
-		</section>
-<% } %>
-		<div class="tx-actions">
-			<button class="btn btn--primary" type="submit">Save changes</button>
-		</div>
+		<input type="hidden" name="imported" value="0">
 	</form>
+
+	<%-- every catalog course, so the import can match transcript codes to course ids --%>
+	<script type="application/json" id="tx-courses">[<%
+	for (int i = 0; i < courses.size(); i++) {
+		Map<String, String> c = courses.get(i); %><%= i == 0 ? "" : "," %>{"id":<%= json(c.get("course_id")) %>,"code":<%= json(c.get("subject") + " " + c.get("course_number")) %>,"passed":<%= passed(c) %>}<%
+	} %>]</script>
 <% } %>
 </main>
 
 <script src="<%= context %>/js/header.js" defer></script>
+<script src="<%= context %>/js/transcript.js" defer></script>
 <% if (saved) { %>
 <script>
-	// drop saved=1 from the address, so a refresh does not show the popup again
+	// drop saved and imported from the address, so a refresh does not show the popup again
 	(function () {
 		var url = new URL(window.location.href);
 		url.searchParams.delete("saved");
+		url.searchParams.delete("imported");
 		history.replaceState(null, "", url.pathname + url.search + url.hash);
 		var toast = document.getElementById("saved-toast");
 		toast.addEventListener("animationend", function () { toast.remove(); });

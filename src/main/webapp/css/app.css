@@ -1716,13 +1716,35 @@ body:has(> .narrow) {
 }
 .tx-form { min-width: 0; }
 .tx-search { min-width: 0; }
-.tx-list--empty { padding: .875rem 1rem; font-size: .875rem; color: var(--ink-3); border-style: dashed; }
+.tx-list--empty { padding: 0; font-size: .875rem; color: var(--ink-3); background: none; border: 0; border-radius: 0; }
 .tx-section__title { margin: 0 0 .25rem; font-size: 1.375rem; font-weight: 700; letter-spacing: -.015em; }
 .tx-search__form { display: flex; flex-wrap: wrap; gap: .625rem; margin: 0 0 1.25rem; }
 .tx-search__form .search-input { flex: 1 1 14rem; width: auto; min-width: 0; }
 .tx-search__form .tx-search__area { flex: 0 1 18rem; cursor: pointer; }
 .tx-empty { margin: .5rem 0 1.5rem; font-size: .9375rem; color: var(--ink-3); }
-.tx-form .tx-section__title { margin-bottom: 1rem; }
+.tx-section__head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; margin: 0 0 1rem; }
+.tx-section__head .tx-section__title { margin: 0; }
+
+/* transcript upload, sits in page head where title used to be */
+.tx-import { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem 2rem; }
+.tx-import .pagehead__text { flex: 1 1 24rem; max-width: 40rem; }
+.tx-import__controls { display: flex; flex-direction: column; align-items: center; gap: .5rem; flex: 0 1 26rem; min-width: 0; text-align: center; }
+.tx-import__file { max-width: 100%; font: inherit; font-size: .875rem; color: var(--ink-3); }
+.tx-import__file::file-selector-button {
+  min-height: 2.75rem;
+  margin-right: .75rem;
+  padding: 0 1.125rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--on-ink);
+  background: var(--ink);
+  border: 0;
+  border-radius: var(--r-md);
+  cursor: pointer;
+}
+.tx-import__file:focus-visible { outline: 2px solid var(--sjsu); outline-offset: 2px; border-radius: var(--r-md); }
+.tx-import__status { margin: 0; font-size: .875rem; color: var(--ink-2); }
+.tx-import__status:empty { display: none; }
 .tx-actions { display: flex; justify-content: flex-end; }
 
 /* save popup, bottom center over page, visible 2 seconds in total then gone */
