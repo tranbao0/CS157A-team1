@@ -17,12 +17,13 @@
 		<%-- rail list scrolls inside small box, so keyboard needs tabindex to reach it, page list does not scroll --%>
 		<ol class="plan-terms<c:if test='${pageMode}'> plan-terms--page</c:if>"<c:if test='${not pageMode}'> tabindex="0"</c:if> aria-label="Planned terms">
 			<c:forEach var="term" items="${planTerms}">
-				<li class="plan-term">
+				<li class="plan-term<c:if test="${term.gradTerm}"> plan-term--grad</c:if>">
 					<div class="plan-term__head">
 						<%-- page has h1 above, rail card has h2 title, so term heading sits one level below either --%>
 						<c:choose>
 							<c:when test="${pageMode}">
-								<h2 class="plan-term__name"><c:out value="${term.label}"/></h2>
+								<%-- star marker is drawing only, hidden text tells screen readers same thing --%>
+								<h2 class="plan-term__name"><c:out value="${term.label}"/><c:if test="${term.gradTerm}"><span class="visually-hidden">, expected graduation</span></c:if></h2>
 							</c:when>
 							<c:otherwise>
 								<h3 class="plan-term__name"><c:out value="${term.label}"/></h3>
@@ -51,6 +52,13 @@
 								</c:if>
 								<c:if test="${not empty course.riskLevel}">
 									<span class="risk risk--<c:out value='${fn:toLowerCase(course.riskLevel)}'/>"><c:out value="${course.riskLevel}"/></span>
+								</c:if>
+								<%-- only page mode gets Remove form, plain POST works without JavaScript and PlanRemoveServlet checks owner and dependents --%>
+								<c:if test="${pageMode}">
+									<form class="plan-course__remove" method="post" action="${pageContext.request.contextPath}/plan/remove">
+										<input type="hidden" name="planEntryId" value="${course.planEntryId}">
+										<button class="btn btn--sm btn--ghost" type="submit">Remove<span class="visually-hidden"> <c:out value="${course.code}"/> from plan</span></button>
+									</form>
 								</c:if>
 								<c:if test="${not empty course.petitionTermLabel}">
 									<span class="plan-course__dep">Needs <c:out value="${course.petitionTermLabel}"/> petition, via <c:out value="${course.throughCourses}"/></span>

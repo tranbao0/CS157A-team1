@@ -1,4 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%-- Profile page, ProfileServlet forwards here --%>
 <!DOCTYPE html>
 <html lang="en">
@@ -26,6 +27,15 @@
 
 <main class="narrow" id="main">
 	<h1 class="narrow__title">Profile</h1>
+
+	<%-- ProfileServlet sets saved once after redirect from POST, role="status" lets screen readers announce it --%>
+	<c:if test="${saved}">
+		<div class="banner banner--ok" role="status">Profile saved.</div>
+	</c:if>
+	<%-- refused form comes back with error, role="alert" reads it out right away --%>
+	<c:if test="${not empty error}">
+		<div class="banner banner--error" role="alert"><c:out value="${error}"/></div>
+	</c:if>
 
 <%@ include file="/WEB-INF/jspf/profile-form.jspf" %>
 </main>

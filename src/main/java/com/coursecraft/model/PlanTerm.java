@@ -14,6 +14,7 @@ public class PlanTerm {
 	private final List<PlannedCourse> courses = new ArrayList<>();
 	private final List<PlanWarning> warnings = new ArrayList<>();
 	private double units;
+	private boolean gradTerm;
 
 	public PlanTerm(int termId, String label, String season) {
 		this.termId = termId;
@@ -29,6 +30,15 @@ public class PlanTerm {
 
 	public void addWarning(PlanWarning warning) {
 		warnings.add(warning);
+	}
+
+	// marks term student picked as expected graduation on Profile, My plan draws gold star there
+	public void markGradTerm() {
+		gradTerm = true;
+	}
+
+	public boolean isGradTerm() {
+		return gradTerm;
 	}
 
 	public int getTermId() {

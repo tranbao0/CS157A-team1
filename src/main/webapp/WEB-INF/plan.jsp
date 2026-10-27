@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%-- My plan page, PlanServlet forwards here --%>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%-- My plan page, PlanPage forwards here for PlanServlet and PlanRemoveServlet --%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,6 +29,15 @@
 	<h1 class="narrow__title">My plan</h1>
 
 	<p class="note">Every term you planned, oldest first, with unit totals and SJSU unit warnings.</p>
+
+	<%-- success message shows once after remove, role="status" lets screen readers announce it --%>
+	<c:if test="${not empty planMessage}">
+		<div class="banner banner--ok" role="status"><c:out value="${planMessage}"/></div>
+	</c:if>
+	<%-- refused remove (404, 409) explains why, role="alert" reads it out right away --%>
+	<c:if test="${not empty planError}">
+		<div class="banner banner--error" role="alert"><c:out value="${planError}"/></div>
+	</c:if>
 
 	<%-- page includes same fragment as plan card in catalog rail, planView "page" from PlanServlet picks full-page look --%>
 	<div class="plan-summary plan-summary--page" id="plan-summary">

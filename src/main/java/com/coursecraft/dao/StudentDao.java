@@ -5,8 +5,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 
 import com.coursecraft.model.Student;
+import com.coursecraft.model.StudentProfile;
 import com.coursecraft.util.Db;
 
 // SQL for students table lives here, servlets just call these methods
@@ -69,6 +71,70 @@ public class StudentDao {
 				}
 				return year;
 			}
+		}
+	}
+
+	/*
+	 * Reads profile form values for one student, null when student does not exist.
+	 * Each subquery picks student's one placement of that kind, NULL when none is on file.
+	 */
+	public StudentProfile findProfile(Connection connection, int studentId) throws SQLException {
+		String sql = "SELECT s.roadmap_id, s.expected_grad_term_id, s.ppa_score, "
+				+ "       (SELECT sp.category_code FROM student_placements sp "
+				+ "        JOIN placement_categories pc ON pc.code = sp.category_code "
+				+ "        WHERE sp.student_id = s.student_id AND pc.kind = 'Math' LIMIT 1) AS math_category, "
+				+ "       (SELECT sp.category_code FROM student_placements sp "
+				+ "        JOIN placement_categories pc ON pc.code = sp.category_code "
+				+ "        WHERE sp.student_id = s.student_id AND pc.kind = 'Writing' LIMIT 1) AS writing_category "
+				+ "FROM students s WHERE s.student_id = ?";
+
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+			statement.setInt(1, studentId);
+
+			try (ResultSet rs = statement.executeQuery()) {
+				if (!rs.next()) {
+					return null;
+				}
+				return new StudentProfile(
+						readInteger(rs, "roadmap_id"),
+						readInteger(rs, "expected_grad_term_id"),
+						readInteger(rs, "ppa_score"),
+						rs.getString("math_category"),
+						rs.getString("writing_category"));
+			}
+		}
+	}
+
+	// saves major, grad term and PPA score, null values store SQL NULL
+	public void updateProfile(Connection connection, int studentId, Integer roadmapId, Integer gradTermId,
+			Integer ppaScore) throws SQLException {
+		String sql = "UPDATE students SET roadmap_id = ?, expected_grad_term_id = ?, ppa_score = ? "
+				+ "WHERE student_id = ?";
+
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+			setInteger(statement, 1, roadmapId);
+			setInteger(statement, 2, gradTermId);
+			setInteger(statement, 3, ppaScore);
+			statement.setInt(4, studentId);
+			statement.executeUpdate();
+		}
+	}
+
+	// getInt gives 0 for SQL NULL, wasNull tells empty column apart from real 0
+	private Integer readInteger(ResultSet rs, String column) throws SQLException {
+		int value = rs.getInt(column);
+		if (rs.wasNull()) {
+			return null;
+		}
+		return value;
+	}
+
+	// setInt cannot take null, so empty value goes in with setNull
+	private void setInteger(PreparedStatement statement, int index, Integer value) throws SQLException {
+		if (value == null) {
+			statement.setNull(index, Types.INTEGER);
+		} else {
+			statement.setInt(index, value);
 		}
 	}
 

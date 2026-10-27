@@ -6,6 +6,7 @@ package com.coursecraft.model;
  */
 public class PlannedCourse {
 
+	private final int planEntryId;
 	private final int courseId;
 	private final String code;
 	private final String title;
@@ -17,8 +18,9 @@ public class PlannedCourse {
 	private final String petitionTermLabel;
 	private final String throughCourses;
 
-	public PlannedCourse(int courseId, String code, String title, double units, int termId, String termLabel, String season,
+	public PlannedCourse(int planEntryId, int courseId, String code, String title, double units, int termId, String termLabel, String season,
 			String riskLevel, String petitionTermLabel, String throughCourses) {
+		this.planEntryId = planEntryId;
 		this.courseId = courseId;
 		this.code = code;
 		this.title = title;
@@ -29,6 +31,11 @@ public class PlannedCourse {
 		this.riskLevel = riskLevel;
 		this.petitionTermLabel = petitionTermLabel;
 		this.throughCourses = throughCourses;
+	}
+
+	// gives plan_entries key, My plan Remove button sends it to POST /plan/remove
+	public int getPlanEntryId() {
+		return planEntryId;
 	}
 
 	public int getCourseId() {

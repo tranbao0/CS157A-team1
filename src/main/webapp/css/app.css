@@ -289,6 +289,8 @@ a:hover { color: var(--sjsu-dark); }
 }
 /* white fill so ghost button reads as button on cream, hover still goes to band */
 .topbar .btn--ghost { background: var(--surface); }
+/* Profile button on its own page gets SJSU blue edge, same signal as underline on current nav link */
+.topbar .btn[aria-current="page"] { color: var(--ink); border-color: var(--sjsu); }
 
 .topbar__user {
   font-size: .9375rem;
@@ -342,9 +344,10 @@ a:hover { color: var(--sjsu-dark); }
   from { background-size: 0 100%; }
 }
 
-/* sign-in panel title shares this look */
+/* sign-in panel title and get-started dialog title share this look */
 .pagehead__title,
-.narrow__title {
+.narrow__title,
+.get-started__title {
   margin: 0 0 .375rem;
   font-size: 2rem;
   font-weight: 700;
@@ -831,43 +834,118 @@ a.chip.is-on:hover {
   color: var(--ink-2);
 }
 
-/* My plan page reuses rail card markup, rules below lift rail limits and give each term its own panel */
-/* summary box measures own width, so column count follows real space and not screen width */
+/*
+  My plan page draws terms as stations on one dashed track, same road language as sign-in art and mini road.
+  Track and station rings use --ink-4, which keeps 3.9:1 even where gold road art shows through glass card.
+  Station center sits .875rem below term top, so track segments start and end on station centers.
+*/
 .plan-summary--page { margin-top: 1.5rem; container-type: inline-size; }
+/* remove result banners keep same gap under intro note as track keeps under them */
+.narrow--wide > .banner { margin: 1.25rem 0 0; }
 
 /* page list drops rail scroll box, since whole page scrolls */
 .plan-terms--page {
-  display: grid;
-  gap: 1rem;
   max-height: none;
   overflow: visible;
   margin: 0;
   padding: 0;
 }
-/* each term sits on solid white panel, so it reads as own block over frosted page card */
+/* each term indents past track and leaves room before next station */
 .plan-terms--page .plan-term {
+  position: relative;
   margin: 0;
-  padding: 1.125rem 1.25rem 1.25rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
+  padding: 0 0 2.25rem 2.75rem;
+  border: 0;
 }
-/* wide box gets two columns, grid fills left to right then down so terms keep time order */
-@container (min-width: 46rem) {
-  .plan-terms--page { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.plan-terms--page .plan-term:last-child { padding-bottom: 0; }
+
+/* dashed segment runs from this station down to next one, last station ends track */
+.plan-terms--page .plan-term:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  top: .875rem;
+  bottom: -.875rem;
+  left: .5625rem;
+  width: .125rem;
+  background: repeating-linear-gradient(to bottom, var(--ink-4) 0 .5rem, transparent .5rem .875rem);
 }
 
-/* term name grows to page heading scale here, since it heads its own panel */
-.plan-terms--page .plan-term__name { font-size: 1.125rem; }
+/* station marker copies open stop from road art: white disc with road ring */
+.plan-terms--page .plan-term__head::before {
+  content: "";
+  position: absolute;
+  top: .25rem;
+  left: 0;
+  z-index: 1;
+  box-sizing: border-box;
+  width: 1.25rem;
+  height: 1.25rem;
+  background: var(--surface);
+  border: .1875rem solid var(--ink-4);
+  border-radius: var(--r-round);
+}
+/* first station shows blue "you" dot with soft halo, since plan starts where student stands now */
+.plan-terms--page .plan-term:first-child .plan-term__head::before {
+  background: var(--sjsu);
+  border-color: var(--surface);
+  box-shadow: 0 0 0 .0625rem var(--sjsu), 0 0 0 .375rem color-mix(in srgb, var(--sjsu) 18%, transparent);
+}
+/* graduation term from Profile turns into gold goal star with ink edge like road check marks, star value is --amber (#FDC23B) and --ink (#16233F) */
+.plan-terms--page .plan-term--grad:not(:first-child) .plan-term__head::before {
+  top: 0;
+  left: -.25rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-12 -12 24 24'%3E%3Cpath d='M0 -10.5Q1.7 -1.7 10.5 0Q1.7 1.7 0 10.5Q-1.7 1.7 -10.5 0Q-1.7 -1.7 0 -10.5Z' fill='%23FDC23B' stroke='%2316233F' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  border: 0;
+  border-radius: 0;
+}
+/* petition term gets red outer ring on any marker kind, so station itself warns before student reads text */
+.plan-terms--page .plan-term:has(.plan-warn--petition) .plan-term__head::before {
+  box-shadow: 0 0 0 .1875rem var(--surface), 0 0 0 .375rem var(--danger);
+  border-radius: var(--r-round);
+}
+
+/* term name grows to page heading scale here, line height matches station so name sits level with marker */
+.plan-terms--page .plan-term__name { font-size: 1.125rem; line-height: 1.75rem; }
 .plan-terms--page .plan-term__units { font-size: .875rem; }
-.plan-terms--page .plan-term__courses { gap: .75rem; margin-top: .875rem; }
-.plan-terms--page .plan-course__code { font-size: .9375rem; }
+
+/* course list reads like ledger: thin rules between rows, no gap, so rows keep even height */
+.plan-terms--page .plan-term__courses { gap: 0; margin-top: .625rem; }
+/* wide row puts code, name, badge and Remove in fixed columns so every row lines up down track */
+.plan-terms--page .plan-course {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr) 4.75rem auto;
+  align-items: baseline;
+  gap: .25rem .75rem;
+  padding: .3125rem 0;
+  border-top: 1px solid var(--line-2);
+}
+.plan-terms--page .plan-course:last-child { border-bottom: 1px solid var(--line-2); }
+.plan-terms--page .plan-course__code { grid-column: 1; font-size: .9375rem; }
 /* course name follows code in muted ink, so code stays easy to scan down list, text contrast is 6.9:1 */
-.plan-course__title { flex: 1 1 10rem; min-width: 0; font-size: .875rem; color: var(--ink-3); }
-/* page rows line up on first text line, so code stays level with first line of long wrapped title */
-.plan-terms--page .plan-course { align-items: baseline; }
-/* badge hangs 5px over row edges, so rows with and without badge keep same height and list keeps even rhythm */
-.plan-terms--page .plan-course .risk { margin-block: -.3125rem; }
+.plan-course__title { grid-column: 2; min-width: 0; font-size: .875rem; color: var(--ink-3); }
+.plan-terms--page .plan-course .risk { grid-column: 3; justify-self: start; }
+.plan-course__remove { grid-column: 4; justify-self: end; margin: 0; }
+.plan-terms--page .plan-course__dep { grid-column: 2 / -1; }
+
+/* Remove stays visible as quiet text, border shows on hover and keyboard focus so it still reads as button */
+.plan-course__remove .btn {
+  color: var(--ink-3);
+  border-color: transparent;
+}
+.plan-course__remove .btn:not(:disabled):hover,
+.plan-course__remove .btn:focus-visible { color: var(--ink); border-color: var(--line-3); }
+
+/* narrow box stacks name under code and centers Remove beside both lines, so phone rows stay tight */
+@container (max-width: 34rem) {
+  .plan-terms--page .plan-course { grid-template-columns: auto minmax(0, 1fr) auto; row-gap: .125rem; }
+  .plan-terms--page .plan-course__code { grid-row: 1; }
+  .plan-terms--page .plan-course .risk { grid-row: 1; grid-column: 2; }
+  .plan-course__remove { grid-row: 1 / 3; grid-column: 3; align-self: center; }
+  .plan-course__title { grid-row: 2; grid-column: 1 / 3; }
+  .plan-terms--page .plan-course__dep { grid-column: 1 / -1; }
+}
 
 /* empty plan gets dashed panel like .state, so blank page still looks intentional */
 .plan-summary--page:has(> .card__title) {
@@ -900,6 +978,8 @@ a.chip.is-on:hover {
 }
 .banner--warn  { color: var(--ink); background: var(--med-bg);  border-color: var(--med-line); }
 .banner--error { color: var(--ink); background: var(--high-bg); border-color: var(--high-line); }
+/* success banner borrows low risk green, so saved message reads as done */
+.banner--ok    { color: var(--low-ink); background: var(--low-bg); border-color: var(--low-line); }
 
 /*
   plan message floats at bottom center so table does not shift, plan-add.js fills it when add fails.
@@ -968,14 +1048,15 @@ body:has(> .narrow) {
   box-shadow: var(--shadow-soft);
 }
 .narrow__title { margin-bottom: 1.5rem; }
-/* wide modifier gives list pages like My plan room for two columns, same glass panel otherwise */
-.narrow--wide { max-width: 56rem; }
+/* wide modifier gives My plan track room for code, name, badge and Remove on one row, while Remove stays close enough to scan */
+.narrow--wide { max-width: 48rem; }
 
 .stack { display: flex; flex-direction: column; gap: 1.125rem; }
 .field { display: flex; flex-direction: column; gap: .4rem; }
 
 .field__label { font-size: .9375rem; font-weight: 600; }
-.field__hint { margin: 0; font-size: .84375rem; color: var(--ink-3); }
+/* line-height gives two-line hints room to breathe */
+.field__hint { margin: 0; font-size: .84375rem; line-height: 1.45; color: var(--ink-3); }
 
 .field__input {
   height: 3rem;
@@ -992,9 +1073,103 @@ body:has(> .narrow) {
 .field__input:hover { border-color: var(--ink-3); }
 .field__input:focus { border-color: var(--sjsu); }
 
+/* select keeps text field look, own chevron replaces browser arrow so every browser matches */
+.field__select {
+  padding-right: 2.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  /* chevron stroke uses --ink-3 value (#4F5A70) since data URI cannot read custom properties */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%234F5A70' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right .9375rem center;
+  background-size: .75rem .5rem;
+}
+
+/* fieldset drops browser frame and uses thin top line, so group reads as section of same card */
+.fieldset {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 1.25rem 0 0;
+  border: 0;
+  border-top: 1px solid var(--line-2);
+}
+/* float pulls legend off top border into normal flow, so it lines up like heading above group */
+.fieldset__legend {
+  float: left;
+  width: 100%;
+  margin: 0 0 .4rem;
+  padding: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+/* fields inside group keep same spacing as .stack */
+.fieldset > .field { margin-top: 1.125rem; }
+
 .stack .btn--primary { min-height: 3.1875rem; margin-top: .375rem; font-size: 1rem; }
 
 .note { margin: 1.5rem 0 0; font-size: .875rem; color: var(--ink-3); }
+
+/*
+  Get-started dialog borrows sign-in card shape, but fills almost solid so catalog rows behind never fight form.
+  Height stops 1rem short of each screen edge and form scrolls inside, since profile form is taller than phone screens.
+*/
+.get-started {
+  width: min(30rem, calc(100vw - 2rem));
+  max-width: none;
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
+  margin: auto;
+  padding: 2.5rem 2.25rem 2.25rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* thin scrollbar keeps inner scroll from eating into rounded corners */
+  scrollbar-width: thin;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  backdrop-filter: blur(12px) saturate(1.1);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-pop);
+}
+/* backdrop dims catalog with ink tint, literal rgba repeats --ink (#16233F) since older browsers give ::backdrop no custom properties */
+.get-started::backdrop {
+  background: rgba(22, 35, 63, .42);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+/* lede uses card body text and leaves room before first field */
+.get-started__lede {
+  margin: 0 0 1.75rem;
+  font-size: .875rem;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+/* skip button keeps same small gap under Save as stacked card buttons */
+/* header row keeps title left and Skip right, Skip stays visible without scrolling */
+.get-started__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: .75rem; }
+.get-started__head .get-started__title { margin-bottom: 0; }
+.get-started__skip { flex: none; margin: .375rem 0 0; }
+/* open dialog locks catalog scroll, so wheel and touch only move dialog content */
+body:has(> .get-started[open]) { overflow: hidden; }
+
+/* dialog fades up once when it opens, only when user allows motion */
+@media (prefers-reduced-motion: no-preference) {
+  .get-started[open] { animation: get-started-in var(--medium) var(--ease-out) both; }
+  .get-started[open]::backdrop { animation: get-started-dim var(--medium) var(--ease-out) both; }
+}
+@keyframes get-started-in {
+  from { opacity: 0; transform: translateY(.75rem) scale(.98); }
+}
+@keyframes get-started-dim {
+  from { opacity: 0; }
+}
 
 /* 12. Responsive */
 @media (max-width: 75rem) {
@@ -1027,6 +1202,8 @@ body:has(> .narrow) {
   /* phones: card back at top, keyboard would cover centered card */
   body:has(> .narrow) { padding-bottom: 1.5rem; }
   .narrow { width: auto; margin: 0 1rem auto; padding: 1.75rem 1.25rem; }
+  /* phones give get-started dialog same tighter padding as sign-in card */
+  .get-started { padding: 1.75rem 1.25rem; }
 }
 
 @media (max-width: 36rem) {

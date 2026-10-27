@@ -1,3 +1,68 @@
-<%-- major and expected grad term form, shared by /profile and get-started popup after sign-up --%>
-<%-- TODO: major dropdown (roadmaps) and grad term dropdown (terms), POST /profile --%>
-	<p class="note">Pick your major and expected graduation term here.</p>
+<%-- /profile and get-started dialog on catalog (right after sign-up) both include this form --%>
+<%-- ProfileServlet fills roadmaps, terms, categories and profile, c:out escapes every database value --%>
+	<form method="post" action="${pageContext.request.contextPath}/profile" class="stack">
+		<%-- catalog dialog sets profileReturnTo, so ProfileServlet sends student back to catalog after save --%>
+		<c:if test="${profileReturnTo == 'catalog'}">
+			<input type="hidden" name="returnTo" value="catalog">
+		</c:if>
+		<div class="field">
+			<label class="field__label" for="profile-roadmap">Major and catalog year</label>
+			<select class="field__input field__select" id="profile-roadmap" name="roadmapId">
+				<option value="">Not set</option>
+				<c:forEach var="roadmap" items="${roadmaps}">
+					<option value="${roadmap.roadmapId}"<c:if test="${roadmap.roadmapId == profile.roadmapId}"> selected</c:if>><c:out value="${roadmap.label}"/></option>
+				</c:forEach>
+			</select>
+		</div>
+
+		<div class="field">
+			<label class="field__label" for="profile-term">Expected graduation term</label>
+			<select class="field__input field__select" id="profile-term" name="termId">
+				<option value="">Not set</option>
+				<c:forEach var="term" items="${terms}">
+					<option value="${term.termId}"<c:if test="${term.termId == profile.gradTermId}"> selected</c:if>><c:out value="${term.label}"/></option>
+				</c:forEach>
+			</select>
+		</div>
+
+		<fieldset class="fieldset">
+			<legend class="fieldset__legend">Placement</legend>
+			<p class="field__hint">From your SJSU admission portal. Some math and science courses need it.</p>
+
+			<div class="field">
+				<label class="field__label" for="profile-math">Math enrollment category</label>
+				<select class="field__input field__select" id="profile-math" name="mathCategory">
+					<option value="">Not set</option>
+					<%-- server sends one categories list, kind picks which dropdown each one goes in --%>
+					<c:forEach var="category" items="${categories}">
+						<c:if test="${category.kind == 'Math'}">
+							<option value="<c:out value='${category.code}'/>"<c:if test="${category.code == profile.mathCategory}"> selected</c:if>><c:out value="${category.code}"/>: <c:out value="${category.name}"/></option>
+						</c:if>
+					</c:forEach>
+				</select>
+			</div>
+
+			<div class="field">
+				<label class="field__label" for="profile-writing">Writing enrollment category</label>
+				<select class="field__input field__select" id="profile-writing" name="writingCategory">
+					<option value="">Not set</option>
+					<c:forEach var="category" items="${categories}">
+						<c:if test="${category.kind == 'Writing'}">
+							<option value="<c:out value='${category.code}'/>"<c:if test="${category.code == profile.writingCategory}"> selected</c:if>><c:out value="${category.code}"/>: <c:out value="${category.name}"/></option>
+						</c:if>
+					</c:forEach>
+				</select>
+			</div>
+
+			<div class="field">
+				<label class="field__label" for="profile-ppa">PPA score</label>
+				<input class="field__input" type="number" id="profile-ppa" name="ppaScore" min="0" max="100" inputmode="numeric"
+				       value="<c:choose><c:when test='${not empty ppaText}'><c:out value='${ppaText}'/></c:when><c:otherwise><c:out value='${profile.ppaScore}'/></c:otherwise></c:choose>"
+				       aria-describedby="profile-ppa-hint">
+				<%-- after refused form, field shows exactly what student typed, even text that is not number --%>
+				<p class="field__hint" id="profile-ppa-hint">Precalculus Proficiency Assessment, 0 to 100. Leave empty if you have not taken it.</p>
+			</div>
+		</fieldset>
+
+		<button type="submit" class="btn btn--primary btn--block">Save profile</button>
+	</form>
