@@ -58,6 +58,7 @@
 	String email = (String) session.getAttribute("email");
 	Integer studentId = (Integer) session.getAttribute("studentId");
 	boolean signedIn = email != null;
+	boolean canEdit = studentId != null;
 
 	// visitor sign-in links use this, next brings student back to same course and section
 	String nextPath = "/course.jsp";
@@ -217,7 +218,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title><%= esc(heading) %> - CourseCraft</title>
+	<title><%= esc(code + rest) %> - CourseCraft</title>
 	<%@ include file="/WEB-INF/jspf/head.jspf" %>
 </head>
 <body>
@@ -232,22 +233,21 @@
 	<div class="pagehead__text">
 		<p class="pagehead__back"><a class="btn btn--sm" href="<%= context %>/catalog.jsp">&larr; Back</a></p>
 <% if (loadError == null) { %>
-			<div class="titlerow">
-				<h1 class="pagehead__title"><span class="pagehead__term"><%= esc(code) %></span><%= esc(rest) %></h1>
+		<div class="titlerow">
+			<h1 class="pagehead__title"><span class="pagehead__term"><%= esc(code) %></span><%= esc(rest) %></h1>
 <% if (bottleneck == null) { %>
-				<span class="cell-muted">Not scored</span>
+			<span class="cell-muted">Not scored</span>
 <% } else { %>
 			<span class="risk risk--<%= esc(bottleneck.get("risk_level") == null ? "" : bottleneck.get("risk_level").toLowerCase()) %>"><%= esc(bottleneck.get("risk_level")) %> risk</span>
 			<span class="titlerow__note">Sample data</span>
 <% } %>
-			</div>
-			<p class="detail-desc"><%= course.get("description") == null ? "No description available." : esc(course.get("description")) %></p>
-<% } else { %>
-			<h1 class="pagehead__title">Course</h1>
-<% } %>
 		</div>
+		<p class="detail-desc"><%= course.get("description") == null ? "No description available." : esc(course.get("description")) %></p>
+<% } else { %>
+		<h1 class="pagehead__title">Course</h1>
+<% } %>
 	</div>
-</header>
+</div>
 
 <main class="layout layout--detail">
 <% if (loadError != null) { %>
@@ -290,35 +290,17 @@
 <% } %>
 			</dd>
 		</dl>
-
-		<form class="detail-actions" method="post"
-		      action="<%= context %>/course.jsp?id=<%= esc(course.get("course_id")) %><%= section == null ? "" : "&amp;section=" + esc(section.get("section_id")) %>">
-<% if (!signedIn) { %>
-			<span class="detail-actions__hint"><a href="<%= context %>/login">Sign in</a> to mark courses completed</span>
-<% } else if (!canEdit) { %>
-			<span class="detail-actions__hint">Sign in again to mark courses completed</span>
-<% } %>
-			<label class="check<%= canEdit ? "" : " is-disabled" %>">
-				<%-- ticking or unticking saves right away, the button is for browsers without JavaScript --%>
-				<input type="checkbox" name="completed" value="1"<%= completed ? " checked" : "" %><%= canEdit ? "" : " disabled" %>
-				       onchange="this.form.submit()">
-				<span>Completed</span>
-			</label>
-			<noscript><button class="btn btn--sm" type="submit">Save</button></noscript>
-			<%-- TODO: wire to POST /plan/add, same as the catalog button --%>
-			<button class="btn btn--sm" type="button" disabled>+ Plan</button>
-		</form>
 	</div>
 
 	<aside class="rail">
 		<div class="card">
 			<h2 class="card__title">Enrollment</h2>
 <% if (section == null) { %>
-					<p class="card__body">No section on record for this course.</p>
+			<p class="card__body">No section on record for this course.</p>
 <% } else { %>
-					<div class="card__row"><span>Class capacity</span><span><%= orDash(section.get("seat_capacity")) %></span></div>
-					<div class="card__row"><span>Available seats</span><span><%= orDash(section.get("open_seats")) %></span></div>
-					<div class="card__row"><span>Waitlist</span><span><%= orDash(section.get("waitlist_count")) %></span></div>
+			<div class="card__row"><span>Class capacity</span><span><%= orDash(section.get("seat_capacity")) %></span></div>
+			<div class="card__row"><span>Available seats</span><span><%= orDash(section.get("open_seats")) %></span></div>
+			<div class="card__row"><span>Waitlist</span><span><%= orDash(section.get("waitlist_count")) %></span></div>
 <% } %>
 			<%-- actions sit under seat numbers, so student sees seats right where they decide to plan --%>
 			<form class="detail-actions" method="post"
