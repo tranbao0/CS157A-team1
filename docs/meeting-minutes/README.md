@@ -15,6 +15,7 @@ They record only what those sources show.
 | 10/3-10/4 | No meeting | Midterm week. A study group was proposed for Saturday, then cancelled, and members studied on their own. |
 | 10/10-10/11 | No meeting | Travis was not available on Saturday. Bao worked on the non-functional requirements. On 10/11 the team agreed in Discord to remove the AssignedSection relationship from the ERD, and Bao sent the revised ERD to the professor. |
 | 10/17-10/18 | [Sun 10/18, library](2026-10-18.md) | Functional requirements assigned for coding |
+| 10/24-10/25 | [Sun 10/25, library](2026-10-25.md) | Focused work day (2-6 PM): environment issues sorted out, coding together |
 
 ## Template for new minutes
 
