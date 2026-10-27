@@ -22,6 +22,9 @@ public class RegisterServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 1L;
 
+	// names session key catalog.jsp reads to open get-started dialog right after sign-up
+	public static final String GET_STARTED_FLAG = "showGetStarted";
+
 	// inside WEB-INF so browser cant open it directly, only servlets can forward to it
 	// same page as sign-in, authMode tells it to show sign-up form first
 	private static final String AUTH_VIEW = "/WEB-INF/auth.jsp";
@@ -101,6 +104,8 @@ public class RegisterServlet extends HttpServlet {
 
 		// new account is signed in right away, no second login needed
 		LoginSession.start(request, student);
+		// catalog sees this flag once and opens get-started dialog with profile form
+		request.getSession().setAttribute(GET_STARTED_FLAG, Boolean.TRUE);
 		response.sendRedirect(request.getContextPath() + "/catalog.jsp");
 	}
 

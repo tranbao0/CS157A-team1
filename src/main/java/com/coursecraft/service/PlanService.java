@@ -15,6 +15,8 @@ import com.coursecraft.dao.SessionDao;
 import com.coursecraft.dao.StudentDao;
 import com.coursecraft.model.Course;
 import com.coursecraft.model.PlanAddResult;
+import com.coursecraft.model.PlanEntry;
+import com.coursecraft.model.PlanRemoveResult;
 import com.coursecraft.model.PlanTerm;
 import com.coursecraft.model.PlanWarning;
 import com.coursecraft.model.PlannedCourse;
@@ -86,8 +88,26 @@ public class PlanService {
 				catalogYear);
 		if (!missing.isEmpty()) {
 			// String.join puts ", and " between groups: "CS 146, and MATH 42 or MATH 42X"
-			return new PlanAddResult(422, course.getCode() + " needs " + String.join(", and ", missing)
-					+ " first. Plan prerequisites in earlier term, or add them to your completed list.");
+			String message = course.getCode() + " needs " + String.join(", and ", missing) + " first.";
+
+			// hint fits what can meet missing groups: course options, placement options, or both
+			boolean courseOption = false;
+			boolean placementOption = false;
+			for (String group : missing) {
+				if (!group.startsWith("placement ")) {
+					courseOption = true;
+				}
+				if (group.contains("placement ")) {
+					placementOption = true;
+				}
+			}
+			if (courseOption) {
+				message = message + " Plan missing courses in an earlier term, or add them to your completed list.";
+			}
+			if (placementOption) {
+				message = message + " If you have an SJSU placement, add it on your Profile page.";
+			}
+			return new PlanAddResult(422, message);
 		}
 
 		double newTotal = planEntryDao.sumUnitsInTerm(connection, studentId, session.getTermId())
@@ -107,6 +127,63 @@ public class PlanService {
 				+ UnitRules.describe(session.getTermLabel(), session.getSeason(), newTotal);
 		return new PlanAddResult(200, message, session.getTermLabel(), newTotal,
 				UnitRules.statusFor(session.getSeason(), newTotal), riskLevel, openSeats);
+	}
+
+	/*
+	 * Removes one course from student's plan in one transaction, same lock as add.
+	 * Refuses (409) when later planned course needs this one, so plan always passes add rules.
+	 * Commit only when row was deleted, every other answer rolls back.
+	 */
+	public PlanRemoveResult remove(int studentId, int planEntryId) throws SQLException {
+		try (Connection connection = Db.getConnection()) {
+			// autocommit off means nothing is saved until commit() below
+			connection.setAutoCommit(false);
+			try {
+				PlanRemoveResult result = checkAndRemove(connection, studentId, planEntryId);
+				if (result.getStatus() == 200) {
+					connection.commit();
+				} else {
+					connection.rollback();
+				}
+				return result;
+			} catch (SQLException e) {
+				connection.rollback();
+				throw e;
+			} finally {
+				// pool hands this connection to next request, so put setting back
+				connection.setAutoCommit(true);
+			}
+		}
+	}
+
+	private PlanRemoveResult checkAndRemove(Connection connection, int studentId, int planEntryId)
+			throws SQLException {
+		// lock comes first, so add and remove from same student never run at same time
+		int catalogYear = yearOrNewest(new StudentDao().findCatalogYearForUpdate(connection, studentId));
+
+		// findEntry only returns row when it belongs to this student
+		PlanEntryDao planEntryDao = new PlanEntryDao();
+		PlanEntry entry = planEntryDao.findEntry(connection, studentId, planEntryId);
+		if (entry == null) {
+			return new PlanRemoveResult(404, "That course is not in your plan anymore.");
+		}
+
+		Course course = new CourseDao().find(connection, entry.getCourseId());
+		SessionInfo session = new SessionDao().find(connection, entry.getSessionId());
+
+		List<String> dependents = planEntryDao.findDependents(connection, studentId, entry.getCourseId(),
+				catalogYear);
+		if (!dependents.isEmpty()) {
+			// one course "needs" and gets named again, several courses "need" and get "those courses"
+			String list = String.join(", ", dependents);
+			if (dependents.size() == 1) {
+				return new PlanRemoveResult(409, list + " needs " + course.getCode() + ". Remove " + list + " first.");
+			}
+			return new PlanRemoveResult(409, list + " need " + course.getCode() + ". Remove those courses first.");
+		}
+
+		planEntryDao.delete(connection, studentId, planEntryId);
+		return new PlanRemoveResult(200, course.getCode() + " removed from " + session.getLabel() + ".");
 	}
 
 	/*
@@ -130,8 +207,13 @@ public class PlanService {
 				current.addCourse(course);
 			}
 
+			// star belongs on graduation term from Profile, not just last planned term
+			Integer gradTermId = new StudentDao().findProfile(connection, studentId).getGradTermId();
 			for (PlanTerm term : terms) {
 				addWarnings(studentId, term, courses);
+				if (gradTermId != null && gradTermId == term.getTermId()) {
+					term.markGradTerm();
+				}
 			}
 			return terms;
 		}

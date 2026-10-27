@@ -4,6 +4,9 @@
 <%@ page import="java.util.ArrayList, java.util.List" %>
 <%@ page import="com.coursecraft.util.Db" %>
 <%@ page import="com.coursecraft.service.PlanService" %>
+<%@ page import="com.coursecraft.service.ProfileService" %>
+<%@ page import="com.coursecraft.model.StudentProfile" %>
+<%@ page import="com.coursecraft.web.RegisterServlet" %>
 <%-- Catalog. Browser, Tomcat, MySQL. --%>
 <%-- TODO: move query to a servlet --%>
 <%!
@@ -297,6 +300,43 @@
 
 <%-- plan-add.js puts error text here, empty until something goes wrong --%>
 <p class="plan-toast" id="plan-message" role="status"></p>
+
+<%
+	// sign-up leaves flag once, so dialog shows only on first catalog visit after new account
+	boolean getStarted = false;
+	if (signedIn && session.getAttribute(RegisterServlet.GET_STARTED_FLAG) != null) {
+		session.removeAttribute(RegisterServlet.GET_STARTED_FLAG);
+		getStarted = true;
+		// profile form needs same lists /profile loads, ProfileService does SQL
+		ProfileService profileService = new ProfileService();
+		try {
+			StudentProfile startProfile = profileService.load(studentId);
+			request.setAttribute("profile", startProfile);
+			request.setAttribute("roadmaps", profileService.listRoadmaps());
+			request.setAttribute("terms", profileService.listTerms(startProfile.getGradTermId()));
+			request.setAttribute("categories", profileService.listCategories());
+		} catch (SQLException e) {
+			throw new ServletException("Could not load profile form.", e);
+		}
+		request.setAttribute("profileReturnTo", "catalog");
+	}
+%>
+<% if (getStarted) { %>
+<%-- get-started.js opens dialog as modal, Esc or Skip for now closes it, Profile page has same form later --%>
+<dialog class="get-started" id="get-started" aria-labelledby="get-started-title">
+	<%-- Skip sits next to title, so student sees way out as soon as dialog opens, even on short screens --%>
+	<div class="get-started__head">
+		<h2 class="get-started__title" id="get-started-title">Welcome to CourseCraft</h2>
+		<%-- method="dialog" closes dialog without sending anything to server --%>
+		<form method="dialog" class="get-started__skip">
+			<button type="submit" class="btn btn--sm btn--ghost">Skip for now</button>
+		</form>
+	</div>
+	<p class="get-started__lede">Tell us your major, graduation term and SJSU placement. CourseCraft uses them to check prerequisites and build your plan. You can change them any time on Profile.</p>
+<%@ include file="/WEB-INF/jspf/profile-form.jspf" %>
+</dialog>
+<script src="<%= context %>/js/get-started.js" defer></script>
+<% } %>
 
 <script src="<%= context %>/js/header.js" defer></script>
 <script src="<%= context %>/js/catalog.js" defer></script>

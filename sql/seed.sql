@@ -359,14 +359,14 @@ INSERT INTO requires_ge_area (roadmap_id, ge_area_code) VALUES
 
 -- SJSU gives each new student one math and one writing category, both use same four levels.
 INSERT INTO placement_categories (code, kind, name) VALUES
-  ('M-I',   'Math',    'Math Category I: GE Area 2 already met'),
-  ('M-II',  'Math',    'Math Category II: ready for GE math without support'),
-  ('M-III', 'Math',    'Math Category III: ready for supported GE math, Early Start recommended'),
-  ('M-IV',  'Math',    'Math Category IV: ready for supported GE math, Early Start strongly recommended'),
-  ('W-I',   'Writing', 'Writing Category I: GE Area 1A already met'),
-  ('W-II',  'Writing', 'Writing Category II: ready for GE writing without support'),
-  ('W-III', 'Writing', 'Writing Category III: ready for supported GE writing, Early Start recommended'),
-  ('W-IV',  'Writing', 'Writing Category IV: ready for supported GE writing, Early Start strongly recommended');
+  ('M-I',   'Math',    'GE Area 2 already met'),
+  ('M-II',  'Math',    'Ready for GE math without support'),
+  ('M-III', 'Math',    'Ready for supported GE math, Early Start recommended'),
+  ('M-IV',  'Math',    'Ready for supported GE math, Early Start strongly recommended'),
+  ('W-I',   'Writing', 'GE Area 1A already met'),
+  ('W-II',  'Writing', 'Ready for GE writing without support'),
+  ('W-III', 'Writing', 'Ready for supported GE writing, Early Start recommended'),
+  ('W-IV',  'Writing', 'Ready for supported GE writing, Early Start strongly recommended');
 
 -- bcrypt hashes (cost 10) of password123, each with its own salt.
 INSERT INTO students (student_id, email, password_hash, roadmap_id, expected_grad_term_id, ppa_score) VALUES
