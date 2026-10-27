@@ -7,77 +7,103 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-// SQL for prerequisite_groups and counts_towards tables lives here
+import com.coursecraft.model.PrerequisiteGroup;
+
+// SQL for prerequisite_groups, counts_towards and group_accepts_category tables lives here
 public class PrerequisiteDao {
 
-	/*
-	 * Finds prerequisite groups student has not met yet for one course, one string per group.
-	 * Course needs EVERY group, ANY one option inside group is enough (team rule 2).
-	 * Group is met by completed course (taken_and_passed = 1),
-	 * by course planned in term that comes BEFORE target session's term,
-	 * or by placement category student holds, with high enough PPA score when group asks for one.
-	 * Same term does not count, since prerequisite must be done first.
-	 *
-	 * Groups come from newest catalog year that is not after student's catalog year.
-	 * Each string lists choices like "MATH 19 or placement M-I (PPA 70+), M-II (PPA 70+)".
-	 * Empty list means all met. CONCAT_WS skips NULL part, so group without courses lists placement only.
-	 *
-	 * FIELD() gives season's place in year (Winter 1, Spring 2, Summer 3, Fall 4),
-	 * so year * 10 + that place puts terms in time order: Fall 2026 = 20264, Winter 2027 = 20271.
-	 */
-	public List<String> findMissing(Connection connection, int studentId, int courseId, int sessionId,
-			int catalogYear) throws SQLException {
-		String sql = "SELECT CONCAT_WS(' or ', "
-				+ "         (SELECT GROUP_CONCAT(CONCAT(c.subject, ' ', c.course_number) "
-				+ "                              ORDER BY c.subject, c.course_number SEPARATOR ' or ') "
-				+ "          FROM counts_towards ct JOIN courses c ON c.course_id = ct.course_id "
-				+ "          WHERE ct.group_id = pg.group_id), "
-				+ "         CONCAT('placement ', "
-				+ "                (SELECT GROUP_CONCAT(CONCAT(ga.category_code, "
-				+ "                                            IF(ga.min_ppa_score IS NULL, '', "
-				+ "                                               CONCAT(' (PPA ', ga.min_ppa_score, '+)'))) "
-				+ "                                     ORDER BY ga.category_code SEPARATOR ', ') "
-				+ "                 FROM group_accepts_category ga WHERE ga.group_id = pg.group_id))) AS choices "
-				+ "FROM prerequisite_groups pg "
-				+ "WHERE pg.course_id = ? "
-				+ "  AND pg.catalog_year = (SELECT MAX(pg2.catalog_year) FROM prerequisite_groups pg2 "
-				+ "                         WHERE pg2.course_id = pg.course_id AND pg2.catalog_year <= ?) "
-				+ "  AND NOT EXISTS ( "
-				+ "    SELECT 1 FROM counts_towards met "
-				+ "    WHERE met.group_id = pg.group_id "
-				+ "      AND (met.course_id IN (SELECT cm.course_id FROM completed cm "
-				+ "                             WHERE cm.student_id = ? AND cm.taken_and_passed = 1) "
-				+ "        OR met.course_id IN (SELECT pe.course_id FROM plan_entries pe "
-				+ "                             JOIN sessions ps ON ps.session_id = pe.session_id "
-				+ "                             JOIN terms pt ON pt.term_id = ps.term_id "
-				+ "                             WHERE pe.student_id = ? "
-				+ "                               AND pt.year * 10 + FIELD(pt.season, 'Winter', 'Spring', 'Summer', 'Fall') "
-				+ "                                 < (SELECT tt.year * 10 + FIELD(tt.season, 'Winter', 'Spring', 'Summer', 'Fall') "
-				+ "                                    FROM sessions ts JOIN terms tt ON tt.term_id = ts.term_id "
-				+ "                                    WHERE ts.session_id = ?)))) "
-				+ "  AND NOT EXISTS ( "
-				+ "    SELECT 1 FROM group_accepts_category ga "
-				+ "    JOIN student_placements sp ON sp.category_code = ga.category_code "
-				+ "    JOIN students st ON st.student_id = sp.student_id "
-				+ "    WHERE ga.group_id = pg.group_id AND sp.student_id = ? "
-				+ "      AND (ga.min_ppa_score IS NULL OR st.ppa_score >= ga.min_ppa_score)) "
-				+ "ORDER BY pg.group_id";
+	// lists every open group of every course, plan card and plan remove walk through these
+	public List<PrerequisiteGroup> findOpenGroups(Connection connection, int studentId, int catalogYear)
+			throws SQLException {
+		return readOpenGroups(connection, studentId, catalogYear, null);
+	}
 
-		List<String> missing = new ArrayList<>();
+	// lists open groups of one course only, plan add checks these before INSERT
+	public List<PrerequisiteGroup> findOpenGroupsForCourse(Connection connection, int studentId, int courseId,
+			int catalogYear) throws SQLException {
+		return readOpenGroups(connection, studentId, catalogYear, courseId);
+	}
+
+	/*
+	 * Runs open group query for both methods above, one row per group option.
+	 * Open means no completed course (taken_and_passed = 1) and no placement of student meets group yet.
+	 * PrerequisiteCheck then compares student's planned courses and their terms with these groups.
+	 * Groups come from newest catalog year that is not after student's catalog year.
+	 * LEFT JOIN keeps placement-only group too, its option columns come back NULL.
+	 */
+	private List<PrerequisiteGroup> readOpenGroups(Connection connection, int studentId, int catalogYear,
+			Integer courseId) throws SQLException {
+		String sql = "SELECT pg.group_id, pg.course_id, ct.course_id AS option_id, "
+				+ "       CONCAT(c.subject, ' ', c.course_number) AS option_code "
+				+ "FROM prerequisite_groups pg "
+				+ "LEFT JOIN counts_towards ct ON ct.group_id = pg.group_id "
+				+ "LEFT JOIN courses c ON c.course_id = ct.course_id "
+				+ "WHERE pg.catalog_year = (SELECT MAX(pg2.catalog_year) FROM prerequisite_groups pg2 "
+				+ "                         WHERE pg2.course_id = pg.course_id AND pg2.catalog_year <= ?) "
+				+ "  AND NOT EXISTS (SELECT 1 FROM counts_towards met "
+				+ "                  JOIN completed cm ON cm.course_id = met.course_id "
+				+ "                  WHERE met.group_id = pg.group_id AND cm.student_id = ? "
+				+ "                    AND cm.taken_and_passed = 1) "
+				+ "  AND NOT EXISTS (SELECT 1 FROM group_accepts_category ga "
+				+ "                  JOIN student_placements sp ON sp.category_code = ga.category_code "
+				+ "                  JOIN students st ON st.student_id = sp.student_id "
+				+ "                  WHERE ga.group_id = pg.group_id AND sp.student_id = ? "
+				+ "                    AND (ga.min_ppa_score IS NULL OR st.ppa_score >= ga.min_ppa_score)) ";
+		if (courseId != null) {
+			sql = sql + "  AND pg.course_id = ? ";
+		}
+		sql = sql + "ORDER BY pg.group_id, c.subject, c.course_number";
+
+		List<PrerequisiteGroup> groups = new ArrayList<>();
 		try (PreparedStatement statement = connection.prepareStatement(sql)) {
-			statement.setInt(1, courseId);
-			statement.setInt(2, catalogYear);
+			statement.setInt(1, catalogYear);
+			statement.setInt(2, studentId);
 			statement.setInt(3, studentId);
-			statement.setInt(4, studentId);
-			statement.setInt(5, sessionId);
-			statement.setInt(6, studentId);
+			if (courseId != null) {
+				statement.setInt(4, courseId);
+			}
 
 			try (ResultSet rs = statement.executeQuery()) {
+				PrerequisiteGroup current = null;
 				while (rs.next()) {
-					missing.add(rs.getString("choices"));
+					// rows come sorted by group, so new group starts when group_id changes
+					int groupId = rs.getInt("group_id");
+					if (current == null || current.getGroupId() != groupId) {
+						current = new PrerequisiteGroup(groupId, rs.getInt("course_id"));
+						groups.add(current);
+					}
+					int optionId = rs.getInt("option_id");
+					// getInt gives 0 for SQL NULL, wasNull tells placement-only group apart from real option
+					if (!rs.wasNull()) {
+						current.addOption(optionId, rs.getString("option_code"));
+					}
 				}
 			}
 		}
-		return missing;
+		return groups;
+	}
+
+	// lists placement options of one group like "M-I (PPA 70+)" or "W-II", plan add message shows them
+	public List<String> findPlacementOptions(Connection connection, int groupId) throws SQLException {
+		String sql = "SELECT category_code, min_ppa_score FROM group_accepts_category "
+				+ "WHERE group_id = ? ORDER BY category_code";
+
+		List<String> options = new ArrayList<>();
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+			statement.setInt(1, groupId);
+
+			try (ResultSet rs = statement.executeQuery()) {
+				while (rs.next()) {
+					String option = rs.getString("category_code");
+					int minScore = rs.getInt("min_ppa_score");
+					// NULL score means any PPA score works, so nothing gets added
+					if (!rs.wasNull()) {
+						option = option + " (PPA " + minScore + "+)";
+					}
+					options.add(option);
+				}
+			}
+		}
+		return options;
 	}
 }

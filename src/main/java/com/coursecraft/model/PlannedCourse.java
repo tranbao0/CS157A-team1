@@ -2,7 +2,7 @@ package com.coursecraft.model;
 
 /*
  * Holds one plan_entries row with its course and term, for plan card in catalog rail.
- * Petition fields stay null unless course depends on petition term (see PlanEntryDao).
+ * Petition fields stay null unless course depends on petition term (see PrerequisiteCheck).
  */
 public class PlannedCourse {
 
@@ -14,12 +14,13 @@ public class PlannedCourse {
 	private final int termId;
 	private final String termLabel;
 	private final String season;
+	private final int termOrder;
 	private final String riskLevel;
-	private final String petitionTermLabel;
-	private final String throughCourses;
+	private String petitionTermLabel;
+	private String throughCourses;
 
-	public PlannedCourse(int planEntryId, int courseId, String code, String title, double units, int termId, String termLabel, String season,
-			String riskLevel, String petitionTermLabel, String throughCourses) {
+	public PlannedCourse(int planEntryId, int courseId, String code, String title, double units, int termId,
+			String termLabel, String season, int termOrder, String riskLevel) {
 		this.planEntryId = planEntryId;
 		this.courseId = courseId;
 		this.code = code;
@@ -28,9 +29,8 @@ public class PlannedCourse {
 		this.termId = termId;
 		this.termLabel = termLabel;
 		this.season = season;
+		this.termOrder = termOrder;
 		this.riskLevel = riskLevel;
-		this.petitionTermLabel = petitionTermLabel;
-		this.throughCourses = throughCourses;
 	}
 
 	// gives plan_entries key, My plan Remove button sends it to POST /plan/remove
@@ -67,6 +67,11 @@ public class PlannedCourse {
 		return season;
 	}
 
+	// gives number that sorts terms in time order, like 20264 for Fall 2026
+	public int getTermOrder() {
+		return termOrder;
+	}
+
 	// gives "Low", "Medium" or "High", null when course is not scored for this term
 	public String getRiskLevel() {
 		return riskLevel;
@@ -80,5 +85,11 @@ public class PlannedCourse {
 	// gives earlier planned courses that link this course to petition term, like "CS 46B, MATH 30"
 	public String getThroughCourses() {
 		return throughCourses;
+	}
+
+	// PrerequisiteCheck calls this when course needs course from petition term
+	public void setPetitionDependency(String petitionTermLabel, String throughCourses) {
+		this.petitionTermLabel = petitionTermLabel;
+		this.throughCourses = throughCourses;
 	}
 }

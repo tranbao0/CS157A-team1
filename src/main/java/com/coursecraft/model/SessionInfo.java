@@ -13,13 +13,15 @@ public class SessionInfo {
 	private final String season;
 	private final String label;
 	private final String termLabel;
+	private final int termOrder;
 
-	public SessionInfo(int sessionId, int termId, String season, String label, String termLabel) {
+	public SessionInfo(int sessionId, int termId, String season, String label, String termLabel, int termOrder) {
 		this.sessionId = sessionId;
 		this.termId = termId;
 		this.season = season;
 		this.label = label;
 		this.termLabel = termLabel;
+		this.termOrder = termOrder;
 	}
 
 	public int getSessionId() {
@@ -40,5 +42,10 @@ public class SessionInfo {
 
 	public String getTermLabel() {
 		return termLabel;
+	}
+
+	// gives number that sorts terms in time order, like 20264 for Fall 2026
+	public int getTermOrder() {
+		return termOrder;
 	}
 }

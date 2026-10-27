@@ -15,6 +15,7 @@ public class SessionDao {
 	 * Regular session gets label "Fall 2026",
 	 * others add their name like "Summer 2026 (Summer Session 1)".
 	 * Term label skips session name, so it is "Summer 2026" for both summer sessions.
+	 * Term order is year * 10 + season place (Winter 1, Spring 2, Summer 3, Fall 4), so Fall 2026 = 20264.
 	 */
 	public SessionInfo find(Connection connection, int sessionId) throws SQLException {
 		String sql = "SELECT se.session_id, se.term_id, t.season, "
@@ -22,7 +23,8 @@ public class SessionDao {
 				+ "       CASE WHEN se.name = 'Regular' "
 				+ "            THEN CONCAT(t.season, ' ', t.year) "
 				+ "            ELSE CONCAT(t.season, ' ', t.year, ' (', se.name, ')') "
-				+ "       END AS label "
+				+ "       END AS label, "
+				+ "       t.year * 10 + FIELD(t.season, 'Winter', 'Spring', 'Summer', 'Fall') AS term_order "
 				+ "FROM sessions se JOIN terms t ON t.term_id = se.term_id "
 				+ "WHERE se.session_id = ?";
 
@@ -34,7 +36,8 @@ public class SessionDao {
 					return null;
 				}
 				return new SessionInfo(rs.getInt("session_id"), rs.getInt("term_id"),
-						rs.getString("season"), rs.getString("label"), rs.getString("term_label"));
+						rs.getString("season"), rs.getString("label"), rs.getString("term_label"),
+						rs.getInt("term_order"));
 			}
 		}
 	}
