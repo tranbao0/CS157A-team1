@@ -132,16 +132,29 @@ CREATE TABLE requires_ge_area (
   FOREIGN KEY (ge_area_code) REFERENCES ge_areas (code)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
+-- One placement result SJSU gives new students, e.g. Math Enrollment Category M-II.
+-- kind keeps Math and Writing categories apart, student holds at most one of each.
+CREATE TABLE placement_categories (
+  code VARCHAR(10),
+  kind VARCHAR(10)  NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  PRIMARY KEY (code),
+  CHECK (kind IN ('Math', 'Writing'))
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
 -- Registered user. Password never stored, only its hash.
 -- student_id is AUTO_INCREMENT so sign-up gets new ID from MySQL.
+-- ppa_score is Precalculus Proficiency Assessment score 0-100, NULL until student takes it.
 CREATE TABLE students (
   student_id            INT AUTO_INCREMENT,
   email                 VARCHAR(160) NOT NULL,
   password_hash         VARCHAR(255) NOT NULL,
   roadmap_id            INT,
   expected_grad_term_id INT,
+  ppa_score             INT,
   PRIMARY KEY (student_id),
   UNIQUE (email),
+  CHECK (ppa_score BETWEEN 0 AND 100),
   FOREIGN KEY (roadmap_id)            REFERENCES roadmaps (roadmap_id),
   FOREIGN KEY (expected_grad_term_id) REFERENCES terms (term_id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
@@ -163,6 +176,27 @@ CREATE TABLE counts_towards (
   PRIMARY KEY (group_id, course_id),
   FOREIGN KEY (group_id)  REFERENCES prerequisite_groups (group_id),
   FOREIGN KEY (course_id) REFERENCES courses (course_id)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+-- One placement category that also satisfies prerequisite group, next to courses in counts_towards.
+-- min_ppa_score: student also needs PPA score this high, NULL means no score needed.
+CREATE TABLE group_accepts_category (
+  group_id      INT         NOT NULL,
+  category_code VARCHAR(10) NOT NULL,
+  min_ppa_score INT,
+  PRIMARY KEY (group_id, category_code),
+  FOREIGN KEY (group_id)      REFERENCES prerequisite_groups (group_id),
+  FOREIGN KEY (category_code) REFERENCES placement_categories (code),
+  CHECK (min_ppa_score BETWEEN 0 AND 100)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+-- One placement category student holds. App keeps at most one per kind (Math, Writing).
+CREATE TABLE student_placements (
+  student_id    INT         NOT NULL,
+  category_code VARCHAR(10) NOT NULL,
+  PRIMARY KEY (student_id, category_code),
+  FOREIGN KEY (student_id)    REFERENCES students (student_id),
+  FOREIGN KEY (category_code) REFERENCES placement_categories (code)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- One course a student has taken.

@@ -9,6 +9,10 @@ USE coursecraft;
 -- GE areas, and the titles and GE areas of GE courses, follow
 -- the SJSU 2026-2027 catalog. Other data is sample data, not
 -- verified against the live SJSU catalog.
+-- Computer Science BS and Software Engineering BS 2025 roadmaps,
+-- their courses and 2025 prerequisites follow SJSU 2025-2026 catalog.
+-- Math and Writing Enrollment Category and PPA score rules live in
+-- placement_categories, group_accepts_category and student_placements.
 -- Students are invented. Every sample student signs in with password123.
 -- ============================================================
 
@@ -24,7 +28,12 @@ INSERT INTO terms (term_id, year, season) VALUES
   (9,  2027, 'Spring'),
   (10, 2027, 'Summer'),
   (11, 2027, 'Fall'),
-  (12, 2028, 'Spring');
+  (12, 2028, 'Spring'),
+  -- later terms let 4-year demo plans reach graduation
+  (13, 2028, 'Fall'),
+  (14, 2029, 'Spring'),
+  (15, 2029, 'Fall'),
+  (16, 2030, 'Spring');
 
 INSERT INTO sessions (session_id, term_id, name, start_date, end_date) VALUES
   (1,  1,  'Regular',          '2024-08-21', '2024-12-16'),
@@ -40,7 +49,11 @@ INSERT INTO sessions (session_id, term_id, name, start_date, end_date) VALUES
   (11, 9,  'Regular',          '2027-01-25', '2027-05-17'),
   (12, 11, 'Regular',          '2027-08-18', '2027-12-13'),
   (13, 12, 'Regular',          '2028-01-24', '2028-05-15'),
-  (14, 10, 'Summer Session 1', '2027-06-01', '2027-07-09');
+  (14, 10, 'Summer Session 1', '2027-06-01', '2027-07-09'),
+  (15, 13, 'Regular',          '2028-08-23', '2028-12-18'),
+  (16, 14, 'Regular',          '2029-01-24', '2029-05-21'),
+  (17, 15, 'Regular',          '2029-08-22', '2029-12-17'),
+  (18, 16, 'Regular',          '2030-01-23', '2030-05-20');
 
 -- Core GE areas, then upper division (UD) SJSU Studies areas.
 INSERT INTO ge_areas (code, name) VALUES
@@ -91,7 +104,40 @@ INSERT INTO courses (course_id, subject, course_number, title, units, descriptio
   (29, 'MATH', '161A', 'Applied Probability and Statistics I',            3.0, NULL, NULL),
   (30, 'CS',   '158A', 'Computer Networks',                               3.0, NULL, NULL),
   (31, 'MUSC', '10A',  'Music Appreciation',                              3.0, NULL, '3A'),
-  (32, 'PHIL', '10',   'Introduction to Philosophy',                      3.0, NULL, '3B');
+  (32, 'PHIL', '10',   'Introduction to Philosophy',                      3.0, NULL, '3B'),
+  -- rows below fill full CS and SE 2025 roadmaps, units and GE areas come from 2025-2026 catalog
+  (33, 'CS',   '147',  'Computer Architecture',                          3.0, 'How processors, memory and input/output work together, and how that affects program speed.', NULL),
+  (34, 'PHIL', '134',  'Computers, Ethics and Society',                  3.0, 'Ethical and social questions raised by computing technology.', 'UD3'),
+  (35, 'BIOL', '30',   'Principles of Biology I',                        4.0, 'Cells, genetics and evolution, with lab.', '5B'),
+  (36, 'MATH', '142',  'Introduction to Combinatorics',                  3.0, 'Counting methods, recurrences and graph basics.', NULL),
+  (37, 'ENGL', '1B',   'Argument and Analysis',                          3.0, 'Second semester writing focused on argument and reading.', '3B'),
+  (38, 'ENGR', '10',   'Introduction to Engineering',                    3.0, 'Engineering fields, design process and team projects.', NULL),
+  (39, 'CMPE', '131',  'Software Engineering I',                         3.0, 'Requirements, design and team development of a software project.', NULL),
+  (40, 'CMPE', '102',  'Assembly Language Programming',                  3.0, 'Machine level programming and how high level code maps to it.', NULL),
+  (41, 'CMPE', '120',  'Computer Organization and Architecture',         3.0, 'Data paths, memory hierarchy and instruction sets.', NULL),
+  (42, 'CMPE', '133',  'Software Engineering II',                        3.0, 'Architecture, testing and maintenance of larger software systems.', NULL),
+  (43, 'ISE',  '130',  'Engineering Probability and Statistics',         3.0, 'Probability and statistics for engineering problems.', NULL),
+  (44, 'CMPE', '148',  'Computer Networks I',                            3.0, 'Network layers, protocols and socket programming.', NULL),
+  (45, 'ENGR', '100W', 'Engineering Reports',                            3.0, 'Technical writing and reports for engineers.', 'UD2/5'),
+  (46, 'MATH', '33LA', 'Differential Equations and Linear Algebra',      3.0, 'Linear algebra and ordinary differential equations for engineers.', NULL),
+  (47, 'CMPE', '165',  'Software Engineering Process Management',        3.0, 'Planning, estimating and managing software projects.', NULL),
+  (48, 'CMPE', '172',  'Enterprise Software Platforms',                  3.0, 'Building and running large scale web and enterprise systems.', NULL),
+  (49, 'CMPE', '187',  'Software Quality Engineering',                   3.0, 'Software testing methods and quality assurance.', NULL),
+  (50, 'CMPE', '195A', 'Senior Design Project I',                        2.0, 'First half of year-long team capstone project.', 'UD4'),
+  (51, 'ENGR', '195A', 'Global and Social Issues in Engineering',        1.0, 'Social and global side of engineering, taken with capstone.', 'UD4'),
+  (52, 'CMPE', '195B', 'Senior Design Project II',                       3.0, 'Second half of year-long team capstone project.', 'UD3'),
+  (53, 'ENGR', '195B', 'Global and Social Issues in Engineering',        1.0, 'Second part of engineering and society seminar.', 'UD3'),
+  (54, 'ISE',  '164',  'Computer and Human Interaction',                 3.0, 'Designing and testing user interfaces around human needs.', NULL),
+  (55, 'CS',   '156',  'Introduction to Artificial Intelligence',        3.0, 'Search, reasoning and learning methods in AI.', NULL),
+  (56, 'CS',   '122',  'Advanced Programming with Python',               3.0, 'Python for data handling, scripting and larger programs.', NULL),
+  (57, 'CS',   '171',  'Introduction to Machine Learning',               3.0, 'Supervised and unsupervised learning algorithms.', NULL),
+  (58, 'CS',   '174',  'Server-side Web Programming',                    3.0, 'Building web applications on server side.', NULL),
+  (59, 'POLS', '15',   'Essentials of U.S. & California Government',     3.0, NULL, '4'),
+  (60, 'ENVS', '152',  'Globalization and the Environment',              3.0, NULL, 'UD2/5'),
+  (61, 'COMM', '174',  'Intercultural Comm and Structural Inequalities', 3.0, NULL, 'UD4'),
+  (62, 'KIN',  '2A',   'Beginning Swimming',                             1.0, NULL, NULL),
+  (63, 'KIN',  '2B',   'Intermediate Swimming',                          1.0, NULL, NULL),
+  (64, 'CS',   '155',  'Introduction to the Design and Analysis of Algorithms', 3.0, 'Dynamic programming, greedy methods, NP-completeness and other algorithm design topics.', NULL);
 
 -- Session 6 = Spring 2026, 7 = Summer 2026 S1, 9 = Fall 2026,
 -- 10 = Winter 2027, 11 = Spring 2027.
@@ -207,27 +253,37 @@ INSERT INTO roadmaps (roadmap_id, major_id, catalog_year) VALUES
   (12, 10, 2025);
 
 INSERT INTO requires_course (roadmap_id, course_id, suggested_term_position, requirement_type) VALUES
-  -- Computer Science, BS, 2025
+  -- Computer Science, BS, 2025 (SJSU 2025-2026 roadmap, position 1 = first fall)
+  -- Elective rows come from approved lists, one of MATH 32, 142 or 161A is required
   (2, 1,  1, 'Major'),
   (2, 15, 1, 'Support'),
+  (2, 19, 1, 'Support'),
   (2, 2,  2, 'Major'),
   (2, 16, 2, 'Support'),
-  (2, 19, 2, 'Support'),
   (2, 3,  3, 'Major'),
+  (2, 6,  3, 'Major'),
   (2, 20, 3, 'Support'),
-  (2, 6,  4, 'Major'),
+  (2, 33, 4, 'Major'),
   (2, 8,  4, 'Major'),
-  (2, 21, 4, 'Support'),
-  (2, 5,  5, 'Major'),
+  (2, 18, 4, 'Support'),
+  (2, 58, 4, 'Elective'),
   (2, 7,  5, 'Major'),
-  (2, 18, 5, 'Support'),
+  (2, 35, 5, 'Support'),
+  (2, 56, 5, 'Elective'),
   (2, 9,  6, 'Major'),
-  (2, 10, 6, 'Major'),
-  (2, 29, 6, 'Support'),
+  (2, 34, 6, 'Support'),
+  (2, 5,  6, 'Major'),
+  (2, 36, 6, 'Support'),
+  (2, 17, 6, 'Elective'),
+  (2, 29, 6, 'Elective'),
+  (2, 55, 6, 'Elective'),
+  (2, 11, 7, 'Major'),
   (2, 12, 7, 'Major'),
-  (2, 11, 7, 'Elective'),
-  (2, 13, 8, 'Elective'),
-  (2, 30, 8, 'Elective'),
+  (2, 13, 7, 'Major'),
+  (2, 30, 7, 'Elective'),
+  (2, 10, 8, 'Major'),
+  (2, 57, 8, 'Elective'),
+  (2, 64, 8, 'Elective'),
   -- Computer Science, BS, 2024
   (1, 1,  1, 'Major'),
   (1, 2,  2, 'Major'),
@@ -238,14 +294,42 @@ INSERT INTO requires_course (roadmap_id, course_id, suggested_term_position, req
   (3, 1,  1, 'Major'),
   (3, 2,  2, 'Major'),
   (3, 6,  4, 'Major'),
-  -- Software Engineering, BS, 2025
-  (4, 28, 1, 'Major'),
+  -- Software Engineering, BS, 2025 (SJSU 2025-2026 roadmap)
+  -- Elective rows are technical upper division electives, two are required
+  (4, 1,  1, 'Major'),
+  (4, 38, 1, 'Major'),
   (4, 15, 1, 'Support'),
-  (4, 19, 2, 'Support'),
   (4, 2,  2, 'Major'),
+  (4, 37, 2, 'Support'),
+  (4, 19, 2, 'Support'),
+  (4, 20, 2, 'Support'),
+  (4, 25, 3, 'Support'),
+  (4, 39, 3, 'Major'),
+  (4, 16, 3, 'Support'),
   (4, 6,  4, 'Major'),
-  (4, 11, 6, 'Major'),
-  (4, 12, 6, 'Major'),
+  (4, 17, 4, 'Support'),
+  (4, 21, 4, 'Support'),
+  (4, 40, 5, 'Major'),
+  (4, 41, 5, 'Major'),
+  (4, 42, 5, 'Major'),
+  (4, 11, 5, 'Major'),
+  (4, 29, 5, 'Support'),
+  (4, 44, 6, 'Major'),
+  (4, 7,  6, 'Major'),
+  (4, 8,  6, 'Major'),
+  (4, 45, 6, 'Major'),
+  (4, 46, 6, 'Support'),
+  (4, 47, 7, 'Major'),
+  (4, 48, 7, 'Major'),
+  (4, 49, 7, 'Major'),
+  (4, 50, 7, 'Major'),
+  (4, 13, 7, 'Major'),
+  (4, 51, 7, 'Major'),
+  (4, 52, 8, 'Major'),
+  (4, 53, 8, 'Major'),
+  (4, 54, 8, 'Major'),
+  (4, 55, 8, 'Elective'),
+  (4, 57, 8, 'Elective'),
   -- Data Science, BS, 2025
   (6, 1,  1, 'Major'),
   (6, 15, 1, 'Support'),
@@ -268,42 +352,63 @@ INSERT INTO requires_course (roadmap_id, course_id, suggested_term_position, req
 INSERT INTO requires_ge_area (roadmap_id, ge_area_code) VALUES
   (2, '1A'), (2, '1B'), (2, '1C'), (2, '2'), (2, '3A'), (2, '3B'), (2, '4'),
   (2, '5A'), (2, '5B'), (2, '5C'), (2, '6'), (2, 'UD2/5'), (2, 'UD3'), (2, 'UD4'),
-  (4, '1A'), (4, '1B'), (4, '1C'), (4, '3A'), (4, '3B'), (4, '4'), (4, '6'),
+  (4, '1A'), (4, '1C'), (4, '2'), (4, '3A'), (4, '3B'), (4, '4'), (4, '5A'),
+  (4, '5B'), (4, '5C'), (4, '6'), (4, 'UD2/5'), (4, 'UD3'), (4, 'UD4'),
   (8, '1A'), (8, '1B'), (8, '1C'), (8, '5A'), (8, '5B'), (8, '5C'),
   (11, '1A'), (11, '1C'), (11, '2'), (11, '4');
 
+-- SJSU gives each new student one math and one writing category, both use same four levels.
+INSERT INTO placement_categories (code, kind, name) VALUES
+  ('M-I',   'Math',    'Math Category I: GE Area 2 already met'),
+  ('M-II',  'Math',    'Math Category II: ready for GE math without support'),
+  ('M-III', 'Math',    'Math Category III: ready for supported GE math, Early Start recommended'),
+  ('M-IV',  'Math',    'Math Category IV: ready for supported GE math, Early Start strongly recommended'),
+  ('W-I',   'Writing', 'Writing Category I: GE Area 1A already met'),
+  ('W-II',  'Writing', 'Writing Category II: ready for GE writing without support'),
+  ('W-III', 'Writing', 'Writing Category III: ready for supported GE writing, Early Start recommended'),
+  ('W-IV',  'Writing', 'Writing Category IV: ready for supported GE writing, Early Start strongly recommended');
+
 -- bcrypt hashes (cost 10) of password123, each with its own salt.
-INSERT INTO students (student_id, email, password_hash, roadmap_id, expected_grad_term_id) VALUES
-  (1,  'jordan.lee@example.com',     '$2a$10$h9lsr0tAogrc2FQFM4ApEOE2aMJxVa9FUhzKQ.SQ1turxU/vxGi7i', 2,    12),
-  (2,  'maya.patel@example.com',     '$2a$10$bMEZsfPBfRq7g2.OubnhPOtw6dv/GLijIlYb5Zj.k.xbT6DYHXkfK', 2,    11),
-  (3,  'sam.nguyen@example.com',     '$2a$10$YFoFhHE1yPESvHd7g0RtmeTwMG0V5/cCNxJ69LzRmRLt1mmLtIW36', NULL, 12),
-  (4,  'alex.garcia@example.com',    '$2a$10$0Z.qbnHOz4MvnxcVp7rp/eVwjm6S7PFcHtMDsgEQ6wOFSDu5ac.oy', 4,    12),
-  (5,  'riley.chen@example.com',     '$2a$10$mlXmg8IPNECkKIK/kRWKoOXNEKSj6slGrSQCuHq4rNp/buvXEsG8.', 6,    NULL),
-  (6,  'taylor.kim@example.com',     '$2a$10$s9C4bYccbn1ZqxXOPAXL9uSYYICFvSV9dm5gUvuIT/pmhISgPsvk2', 2,    9),
-  (7,  'casey.brown@example.com',    '$2a$10$jC2oj37vr/yMStOyH6EmNexEAv9Q.A.uVfRFgdSpE00QL7N77q7dW', 7,    11),
-  (8,  'morgan.davis@example.com',   '$2a$10$sd06pWppkeFkilr/mmZUZuBl5bTK5gsd8kCpFjy5llzl9EhBkdrly', 9,    12),
-  (9,  'jamie.wilson@example.com',   '$2a$10$7kFpX5lYE76LpnE7RtngAe7l.GbI83SnxwegIRlqhwckXJHLryDKu', 2,    12),
-  (10, 'drew.martinez@example.com',  '$2a$10$NtvoQdP/tObQkeYs.bEw0u68y1lwVwPA2XvGlDcbarQ6M/0eKI2X2', 1,    9),
-  (11, 'avery.lopez@example.com',    '$2a$10$PYZnMF.6gv./lzXgS4kMpOO2l9Ng42/hgFbENpzwHhfxoPITrMYUq', 3,    12),
-  (12, 'quinn.harris@example.com',   '$2a$10$.rsb7EMjdTL5wqByCRvRTOUqYMZP.PRdySQSkw4/fkfOzfi1ziM8e', 10,   11);
+INSERT INTO students (student_id, email, password_hash, roadmap_id, expected_grad_term_id, ppa_score) VALUES
+  (1,  'jordan.lee@example.com',     '$2a$10$h9lsr0tAogrc2FQFM4ApEOE2aMJxVa9FUhzKQ.SQ1turxU/vxGi7i', 2,    12, NULL),
+  (2,  'maya.patel@example.com',     '$2a$10$bMEZsfPBfRq7g2.OubnhPOtw6dv/GLijIlYb5Zj.k.xbT6DYHXkfK', 2,    11, NULL),
+  (3,  'sam.nguyen@example.com',     '$2a$10$YFoFhHE1yPESvHd7g0RtmeTwMG0V5/cCNxJ69LzRmRLt1mmLtIW36', NULL, 12, 50),
+  (4,  'alex.garcia@example.com',    '$2a$10$0Z.qbnHOz4MvnxcVp7rp/eVwjm6S7PFcHtMDsgEQ6wOFSDu5ac.oy', 4,    12, NULL),
+  (5,  'riley.chen@example.com',     '$2a$10$mlXmg8IPNECkKIK/kRWKoOXNEKSj6slGrSQCuHq4rNp/buvXEsG8.', 6,    NULL, NULL),
+  (6,  'taylor.kim@example.com',     '$2a$10$s9C4bYccbn1ZqxXOPAXL9uSYYICFvSV9dm5gUvuIT/pmhISgPsvk2', 2,    9, NULL),
+  (7,  'casey.brown@example.com',    '$2a$10$jC2oj37vr/yMStOyH6EmNexEAv9Q.A.uVfRFgdSpE00QL7N77q7dW', 7,    11, NULL),
+  (8,  'morgan.davis@example.com',   '$2a$10$sd06pWppkeFkilr/mmZUZuBl5bTK5gsd8kCpFjy5llzl9EhBkdrly', 9,    12, NULL),
+  (9,  'jamie.wilson@example.com',   '$2a$10$7kFpX5lYE76LpnE7RtngAe7l.GbI83SnxwegIRlqhwckXJHLryDKu', 2,    12, NULL),
+  (10, 'drew.martinez@example.com',  '$2a$10$NtvoQdP/tObQkeYs.bEw0u68y1lwVwPA2XvGlDcbarQ6M/0eKI2X2', 1,    9, NULL),
+  (11, 'avery.lopez@example.com',    '$2a$10$PYZnMF.6gv./lzXgS4kMpOO2l9Ng42/hgFbENpzwHhfxoPITrMYUq', 3,    12, NULL),
+  (12, 'quinn.harris@example.com',   '$2a$10$.rsb7EMjdTL5wqByCRvRTOUqYMZP.PRdySQSkw4/fkfOzfi1ziM8e', 10,   11, NULL),
+  -- demo freshmen have full 4-year plans (Fall 2026 to Spring 2030), see plan_entries
+  (13, 'cs.roadmap@example.com',     '$2a$10$/9nStATbvuVAWddGy9tF8uoCs/6amPY47XAD8so8nDZ5W93SSCpH6', 2,    16, 85),
+  (14, 'se.roadmap@example.com',     '$2a$10$wozJrwLJBU2rTPU78RZtj.u2lW84oVgLwZa/yIjRymO0AngkSImMa', 4,    16, 90);
+
+-- Demo freshmen got placement from high school record. Sam placed low and took MATH 19 first.
+-- Other sample students have no placement on file yet.
+INSERT INTO student_placements (student_id, category_code) VALUES
+  (3,  'M-IV'), (3,  'W-III'),
+  (13, 'M-II'), (13, 'W-II'),
+  (14, 'M-I'),  (14, 'W-I');
 
 -- Catalog year 2025 unless noted.
 INSERT INTO prerequisite_groups (group_id, course_id, catalog_year) VALUES
-  (1,  2,  2025),  -- CS 46B: CS 46A or CS 49J
-  (2,  2,  2025),  -- CS 46B: MATH 19 or MATH 30
+  (1,  2,  2025),  -- CS 46B: CS 46A
+  (2,  2,  2025),  -- CS 46B: MATH 19, or M-I or M-II with PPA 70+
   (3,  3,  2025),  -- CS 47: CS 46B
   (4,  6,  2025),  -- CS 146: CS 46B
   (5,  6,  2025),  -- CS 146: MATH 42
   (6,  6,  2025),  -- CS 146: MATH 30
   (7,  8,  2025),  -- CS 151: CS 46B
   (8,  7,  2025),  -- CS 149: CS 146
-  (9,  7,  2025),  -- CS 149: CS 47
+  (9,  7,  2025),  -- CS 149: CS 47 or CMPE 102
   (10, 11, 2025),  -- CS 157A: CS 146
-  (11, 11, 2025),  -- CS 157A: CS 151
   (12, 12, 2025),  -- CS 160: CS 146
   (13, 12, 2025),  -- CS 160: CS 151
   (14, 9,  2025),  -- CS 152: CS 151
-  (15, 10, 2025),  -- CS 154: CS 146
+  (15, 10, 2025),  -- CS 154: CS 46B
   (16, 13, 2025),  -- CS 166: CS 146
   (17, 16, 2025),  -- MATH 31: MATH 30
   (18, 17, 2025),  -- MATH 32: MATH 31
@@ -311,28 +416,66 @@ INSERT INTO prerequisite_groups (group_id, course_id, catalog_year) VALUES
   (20, 20, 2025),  -- PHYS 50: MATH 30
   (21, 21, 2025),  -- PHYS 51: PHYS 50
   (22, 21, 2025),  -- PHYS 51: MATH 31
-  (23, 19, 2025),  -- MATH 42: MATH 19 or MATH 30
   (24, 30, 2025),  -- CS 158A: CS 146
-  (25, 5,  2025),  -- CS 100W: ENGL 1A
+  (25, 5,  2025),  -- CS 100W: PHIL 57 or ENGL 1B (GE 1B or second writing course)
   (26, 29, 2025),  -- MATH 161A: MATH 31
-  (27, 11, 2024);  -- CS 157A, 2024 catalog: CS 146 only
+  (27, 11, 2024),  -- CS 157A, 2024 catalog: CS 146 only
+  -- rows below follow 2025-2026 catalog rules for CS and SE roadmap courses
+  (28, 3,  2025),  -- CS 47: MATH 42
+  (29, 8,  2025),  -- CS 151: MATH 42
+  (30, 10, 2025),  -- CS 154: MATH 42
+  (31, 12, 2025),  -- CS 160: CS 100W
+  (32, 13, 2025),  -- CS 166: CS 47 or CMPE 102 or CMPE 120
+  (33, 30, 2025),  -- CS 158A: CS 47
+  (34, 33, 2025),  -- CS 147: CS 47 or CMPE 102
+  (35, 36, 2025),  -- MATH 142: MATH 31
+  (36, 36, 2025),  -- MATH 142: MATH 42
+  (37, 37, 2025),  -- ENGL 1B: ENGL 1A
+  (38, 39, 2025),  -- CMPE 131: CS 46B (SE major rule)
+  (39, 40, 2025),  -- CMPE 102: CS 46B
+  (40, 41, 2025),  -- CMPE 120: CS 46B
+  (41, 42, 2025),  -- CMPE 133: CMPE 131
+  (42, 43, 2025),  -- ISE 130: MATH 32
+  (43, 44, 2025),  -- CMPE 148: CMPE 120 (SE major rule)
+  (44, 44, 2025),  -- CMPE 148: CS 146 (SE major rule)
+  (45, 45, 2025),  -- ENGR 100W: ENGL 1B
+  (46, 46, 2025),  -- MATH 33LA: MATH 31
+  (47, 47, 2025),  -- CMPE 165: CMPE 131
+  (48, 48, 2025),  -- CMPE 172: CS 149
+  (49, 49, 2025),  -- CMPE 187: CMPE 131
+  (50, 51, 2025),  -- ENGR 195A: ENGR 100W
+  (51, 52, 2025),  -- CMPE 195B: CMPE 195A
+  (52, 53, 2025),  -- ENGR 195B: ENGR 195A
+  (53, 55, 2025),  -- CS 156: CS 146
+  (54, 56, 2025),  -- CS 122: CS 146
+  (55, 57, 2025),  -- CS 171: CS 146
+  (56, 58, 2025),  -- CS 174: CS 46B
+  (57, 63, 2025),  -- KIN 2B: KIN 2A
+  (58, 64, 2025),  -- CS 155: CS 146
+  -- groups below also accept placement category, see group_accepts_category
+  (59, 1,  2025),  -- CS 46A: M-I, M-II or M-III (MATH 1 not in sample data)
+  (60, 15, 2025),  -- MATH 30: MATH 19, or M-I to M-III with PPA 70+, or M-IV with PPA 80+
+  (61, 19, 2025),  -- MATH 42: MATH 19, or M-I to M-III with PPA 70+, or M-IV with PPA 80+
+  (62, 20, 2025),  -- PHYS 50: ENGL 1A, or W-I, W-II or W-III
+  (63, 35, 2025),  -- BIOL 30: ENGL 1A, or W-I or W-II
+  (64, 35, 2025),  -- BIOL 30: GE Area 2 math course, or M-I or M-II
+  (65, 38, 2025);  -- ENGR 10: ENGL 1A, or W-I or W-II
 
 INSERT INTO counts_towards (group_id, course_id) VALUES
-  (1, 1), (1, 4),
-  (2, 14), (2, 15),
+  (1, 1),
+  (2, 14),
   (3, 2),
   (4, 2),
   (5, 19),
   (6, 15),
   (7, 2),
   (8, 6),
-  (9, 3),
+  (9, 3), (9, 40),
   (10, 6),
-  (11, 8),
   (12, 6),
   (13, 8),
   (14, 8),
-  (15, 6),
+  (15, 2),
   (16, 6),
   (17, 15),
   (18, 16),
@@ -340,11 +483,58 @@ INSERT INTO counts_towards (group_id, course_id) VALUES
   (20, 15),
   (21, 20),
   (22, 16),
-  (23, 14), (23, 15),
   (24, 6),
-  (25, 22),
+  (25, 24), (25, 37),
   (26, 16),
-  (27, 6);
+  (27, 6),
+  (28, 19),
+  (29, 19),
+  (30, 19),
+  (31, 5),
+  (32, 3), (32, 40), (32, 41),
+  (33, 3),
+  (34, 3), (34, 40),
+  (35, 16),
+  (36, 19),
+  (37, 22),
+  (38, 2),
+  (39, 2),
+  (40, 2),
+  (41, 39),
+  (42, 17),
+  (43, 41),
+  (44, 6),
+  (45, 37),
+  (46, 16),
+  (47, 39),
+  (48, 7),
+  (49, 39),
+  (50, 45),
+  (51, 50),
+  (52, 51),
+  (53, 6),
+  (54, 6),
+  (55, 6),
+  (56, 2),
+  (57, 62),
+  (58, 6),
+  (60, 14),
+  (61, 14),
+  (62, 22),
+  (63, 22),
+  (64, 14), (64, 15), (64, 16), (64, 17),
+  (65, 22);
+
+-- PPA cutoffs for MATH 30 and MATH 42 come from SJSU Math department table, CS 46B cutoff comes from 2025-2026 catalog.
+INSERT INTO group_accepts_category (group_id, category_code, min_ppa_score) VALUES
+  (2,  'M-I',   70), (2,  'M-II',  70),
+  (59, 'M-I',   NULL), (59, 'M-II',  NULL), (59, 'M-III', NULL),
+  (60, 'M-I',   70), (60, 'M-II',  70), (60, 'M-III', 70), (60, 'M-IV', 80),
+  (61, 'M-I',   70), (61, 'M-II',  70), (61, 'M-III', 70), (61, 'M-IV', 80),
+  (62, 'W-I',   NULL), (62, 'W-II',  NULL), (62, 'W-III', NULL),
+  (63, 'W-I',   NULL), (63, 'W-II',  NULL),
+  (64, 'M-I',   NULL), (64, 'M-II',  NULL),
+  (65, 'W-I',   NULL), (65, 'W-II',  NULL);
 
 -- Fall 2026 courses show as 1 (in progress).
 INSERT INTO completed (student_id, course_id, taken_and_passed) VALUES
@@ -396,7 +586,91 @@ INSERT INTO plan_entries (plan_entry_id, student_id, course_id, session_id, adde
   (13, 11, 1,  11, '2026-09-26 13:25:00'),
   (14, 3,  23, 10, '2026-09-27 12:00:00'),
   (15, 7,  29, 11, '2026-09-27 15:30:00'),
-  (16, 8,  21, 11, '2026-09-28 10:05:00');
+  (16, 8,  21, 11, '2026-09-28 10:05:00'),
+  -- demo CS student 13 and SE student 14 follow full 2025 roadmap, every row passes POST /plan/add rules
+  -- sessions 9 = Fall 2026, 11 = Spring 2027, 12 = Fall 2027, 13 = Spring 2028,
+  -- 15 = Fall 2028, 16 = Spring 2029, 17 = Fall 2029, 18 = Spring 2030
+  (17, 13, 1,  9,  '2026-10-25 09:00:00'),
+  (18, 13, 15, 9,  '2026-10-25 09:01:00'),
+  (19, 13, 19, 9,  '2026-10-25 09:02:00'),
+  (20, 13, 22, 9,  '2026-10-25 09:03:00'),
+  (21, 13, 26, 9,  '2026-10-25 09:04:00'),
+  (22, 13, 2,  11, '2026-10-25 09:05:00'),
+  (23, 13, 16, 11, '2026-10-25 09:06:00'),
+  (24, 13, 59, 11, '2026-10-25 09:07:00'),
+  (25, 13, 24, 11, '2026-10-25 09:08:00'),
+  (26, 13, 62, 11, '2026-10-25 09:09:00'),
+  (27, 13, 3,  12, '2026-10-25 09:10:00'),
+  (28, 13, 6,  12, '2026-10-25 09:11:00'),
+  (29, 13, 20, 12, '2026-10-25 09:12:00'),
+  (30, 13, 23, 12, '2026-10-25 09:13:00'),
+  (31, 13, 31, 12, '2026-10-25 09:14:00'),
+  (32, 13, 33, 13, '2026-10-25 09:15:00'),
+  (33, 13, 8,  13, '2026-10-25 09:16:00'),
+  (34, 13, 18, 13, '2026-10-25 09:17:00'),
+  (35, 13, 58, 13, '2026-10-25 09:18:00'),
+  (36, 13, 32, 13, '2026-10-25 09:19:00'),
+  (37, 13, 7,  15, '2026-10-25 09:20:00'),
+  (38, 13, 35, 15, '2026-10-25 09:21:00'),
+  (39, 13, 56, 15, '2026-10-25 09:22:00'),
+  (40, 13, 27, 15, '2026-10-25 09:23:00'),
+  (41, 13, 63, 15, '2026-10-25 09:24:00'),
+  (42, 13, 9,  16, '2026-10-25 09:25:00'),
+  (43, 13, 34, 16, '2026-10-25 09:26:00'),
+  (44, 13, 5,  16, '2026-10-25 09:27:00'),
+  (45, 13, 36, 16, '2026-10-25 09:28:00'),
+  (46, 13, 55, 16, '2026-10-25 09:29:00'),
+  (47, 13, 11, 17, '2026-10-25 09:30:00'),
+  (48, 13, 12, 17, '2026-10-25 09:31:00'),
+  (49, 13, 13, 17, '2026-10-25 09:32:00'),
+  (50, 13, 30, 17, '2026-10-25 09:33:00'),
+  (51, 13, 60, 17, '2026-10-25 09:34:00'),
+  (52, 13, 10, 18, '2026-10-25 09:35:00'),
+  (53, 13, 57, 18, '2026-10-25 09:36:00'),
+  (54, 13, 61, 18, '2026-10-25 09:37:00'),
+  (55, 13, 29, 18, '2026-10-25 09:38:00'),
+  (56, 14, 1,  9,  '2026-10-25 10:00:00'),
+  (57, 14, 38, 9,  '2026-10-25 10:01:00'),
+  (58, 14, 22, 9,  '2026-10-25 10:02:00'),
+  (59, 14, 23, 9,  '2026-10-25 10:03:00'),
+  (60, 14, 15, 9,  '2026-10-25 10:04:00'),
+  (61, 14, 2,  11, '2026-10-25 10:05:00'),
+  (62, 14, 37, 11, '2026-10-25 10:06:00'),
+  (63, 14, 19, 11, '2026-10-25 10:07:00'),
+  (64, 14, 20, 11, '2026-10-25 10:08:00'),
+  (65, 14, 25, 12, '2026-10-25 10:09:00'),
+  (66, 14, 39, 12, '2026-10-25 10:10:00'),
+  (67, 14, 31, 12, '2026-10-25 10:11:00'),
+  (68, 14, 26, 12, '2026-10-25 10:12:00'),
+  (69, 14, 16, 12, '2026-10-25 10:13:00'),
+  (70, 14, 6,  13, '2026-10-25 10:14:00'),
+  (71, 14, 27, 13, '2026-10-25 10:15:00'),
+  (72, 14, 59, 13, '2026-10-25 10:16:00'),
+  (73, 14, 17, 13, '2026-10-25 10:17:00'),
+  (74, 14, 21, 13, '2026-10-25 10:18:00'),
+  (75, 14, 40, 15, '2026-10-25 10:19:00'),
+  (76, 14, 41, 15, '2026-10-25 10:20:00'),
+  (77, 14, 42, 15, '2026-10-25 10:21:00'),
+  (78, 14, 11, 15, '2026-10-25 10:22:00'),
+  (79, 14, 29, 15, '2026-10-25 10:23:00'),
+  (80, 14, 44, 16, '2026-10-25 10:24:00'),
+  (81, 14, 7,  16, '2026-10-25 10:25:00'),
+  (82, 14, 8,  16, '2026-10-25 10:26:00'),
+  (83, 14, 45, 16, '2026-10-25 10:27:00'),
+  (84, 14, 46, 16, '2026-10-25 10:28:00'),
+  (85, 14, 47, 17, '2026-10-25 10:29:00'),
+  (86, 14, 48, 17, '2026-10-25 10:30:00'),
+  (87, 14, 49, 17, '2026-10-25 10:31:00'),
+  (88, 14, 50, 17, '2026-10-25 10:32:00'),
+  (89, 14, 13, 17, '2026-10-25 10:33:00'),
+  (90, 14, 51, 17, '2026-10-25 10:34:00'),
+  (91, 14, 52, 18, '2026-10-25 10:35:00'),
+  (92, 14, 53, 18, '2026-10-25 10:36:00'),
+  (93, 14, 54, 18, '2026-10-25 10:37:00'),
+  (94, 14, 55, 18, '2026-10-25 10:38:00'),
+  (95, 14, 57, 18, '2026-10-25 10:39:00'),
+  -- CS 155 fills last 3 of 17 major elective units, so CS demo plan reaches 120 units
+  (96, 13, 64, 18, '2026-10-25 09:39:00');
 
 INSERT INTO bottleneck_scores (
     score_id, course_id, term_id, computed_at,

@@ -45,6 +45,10 @@
 						<c:forEach var="course" items="${term.courses}">
 							<li class="plan-course">
 								<span class="plan-course__code"><c:out value="${course.code}"/></span>
+								<%-- full page has room for course name, narrow rail card shows code only --%>
+								<c:if test="${pageMode}">
+									<span class="plan-course__title"><c:out value="${course.title}"/></span>
+								</c:if>
 								<c:if test="${not empty course.riskLevel}">
 									<span class="risk risk--<c:out value='${fn:toLowerCase(course.riskLevel)}'/>"><c:out value="${course.riskLevel}"/></span>
 								</c:if>

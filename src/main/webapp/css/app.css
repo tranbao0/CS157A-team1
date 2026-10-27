@@ -860,8 +860,14 @@ a.chip.is-on:hover {
 /* term name grows to page heading scale here, since it heads its own panel */
 .plan-terms--page .plan-term__name { font-size: 1.125rem; }
 .plan-terms--page .plan-term__units { font-size: .875rem; }
-.plan-terms--page .plan-term__courses { gap: .625rem; margin-top: .875rem; }
+.plan-terms--page .plan-term__courses { gap: .75rem; margin-top: .875rem; }
 .plan-terms--page .plan-course__code { font-size: .9375rem; }
+/* course name follows code in muted ink, so code stays easy to scan down list, text contrast is 6.9:1 */
+.plan-course__title { flex: 1 1 10rem; min-width: 0; font-size: .875rem; color: var(--ink-3); }
+/* page rows line up on first text line, so code stays level with first line of long wrapped title */
+.plan-terms--page .plan-course { align-items: baseline; }
+/* badge hangs 5px over row edges, so rows with and without badge keep same height and list keeps even rhythm */
+.plan-terms--page .plan-course .risk { margin-block: -.3125rem; }
 
 /* empty plan gets dashed panel like .state, so blank page still looks intentional */
 .plan-summary--page:has(> .card__title) {

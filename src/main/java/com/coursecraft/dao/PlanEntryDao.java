@@ -56,7 +56,8 @@ public class PlanEntryDao {
 	 *
 	 * planned holds student's plan rows with term order (year * 10 + season place, see PrerequisiteDao).
 	 * petition_terms finds Fall or Spring terms where planned units go over normal limit (19).
-	 * open_groups keeps prerequisite groups for student's catalog year that completed courses do not already meet.
+	 * open_groups keeps prerequisite groups for student's catalog year that completed courses
+	 *   and student's placement do not already meet.
 	 * affected starts with every course in petition term, then keeps adding later planned courses
 	 *   that need affected course through open group. WITH RECURSIVE repeats that step
 	 *   until no new course joins, so chains like CS 46A -> CS 46B -> CS 47 are found.
@@ -89,6 +90,11 @@ public class PlanEntryDao {
 				+ "                    JOIN completed cm ON cm.course_id = ct.course_id "
 				+ "                    WHERE ct.group_id = pg.group_id AND cm.student_id = ? "
 				+ "                      AND cm.taken_and_passed = 1) "
+				+ "    AND NOT EXISTS (SELECT 1 FROM group_accepts_category ga "
+				+ "                    JOIN student_placements sp ON sp.category_code = ga.category_code "
+				+ "                    JOIN students st ON st.student_id = sp.student_id "
+				+ "                    WHERE ga.group_id = pg.group_id AND sp.student_id = ? "
+				+ "                      AND (ga.min_ppa_score IS NULL OR st.ppa_score >= ga.min_ppa_score)) "
 				+ "), "
 				// CAST gives first row's empty column real number type, MySQL sizes column from first row
 				+ "affected (course_id, term_order, petition_term_label, through_course_id) AS ( "
@@ -111,7 +117,7 @@ public class PlanEntryDao {
 				+ "  JOIN courses tc ON tc.course_id = a.through_course_id "
 				+ "  GROUP BY a.course_id "
 				+ ") "
-				+ "SELECT p.course_id, CONCAT(c.subject, ' ', c.course_number) AS code, c.units, "
+				+ "SELECT p.course_id, CONCAT(c.subject, ' ', c.course_number) AS code, c.title, c.units, "
 				+ "       p.term_id, p.term_label, p.season, "
 				+ "       (SELECT b.risk_level FROM bottleneck_scores b "
 				+ "        WHERE b.course_id = p.course_id AND b.term_id = p.term_id "
@@ -128,12 +134,14 @@ public class PlanEntryDao {
 			statement.setDouble(2, normalLimit);
 			statement.setInt(3, catalogYear);
 			statement.setInt(4, studentId);
+			statement.setInt(5, studentId);
 
 			try (ResultSet rs = statement.executeQuery()) {
 				while (rs.next()) {
 					courses.add(new PlannedCourse(
 							rs.getInt("course_id"),
 							rs.getString("code"),
+							rs.getString("title"),
 							rs.getDouble("units"),
 							rs.getInt("term_id"),
 							rs.getString("term_label"),
