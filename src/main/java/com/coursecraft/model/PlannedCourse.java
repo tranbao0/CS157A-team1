@@ -8,6 +8,7 @@ public class PlannedCourse {
 
 	private final int courseId;
 	private final String code;
+	private final String title;
 	private final double units;
 	private final int termId;
 	private final String termLabel;
@@ -16,10 +17,11 @@ public class PlannedCourse {
 	private final String petitionTermLabel;
 	private final String throughCourses;
 
-	public PlannedCourse(int courseId, String code, double units, int termId, String termLabel, String season,
+	public PlannedCourse(int courseId, String code, String title, double units, int termId, String termLabel, String season,
 			String riskLevel, String petitionTermLabel, String throughCourses) {
 		this.courseId = courseId;
 		this.code = code;
+		this.title = title;
 		this.units = units;
 		this.termId = termId;
 		this.termLabel = termLabel;
@@ -35,6 +37,11 @@ public class PlannedCourse {
 
 	public String getCode() {
 		return code;
+	}
+
+	// gives full name like "Data Structures and Algorithms", My plan page shows it next to code
+	public String getTitle() {
+		return title;
 	}
 
 	public double getUnits() {
