@@ -30,14 +30,6 @@
 	</c:otherwise>
 </c:choose>
 <c:choose>
-	<c:when test="${navPage == 'transcript'}">
-		<a class="nav-link is-active" aria-current="page" href="${pageContext.request.contextPath}/transcript">My courses</a>
-	</c:when>
-	<c:otherwise>
-		<a class="nav-link" href="${pageContext.request.contextPath}/transcript">My courses</a>
-	</c:otherwise>
-</c:choose>
-<c:choose>
 	<c:when test="${navPage == 'plan'}">
 		<a class="nav-link is-active" aria-current="page" href="${pageContext.request.contextPath}/plan">My plan</a>
 	</c:when>
