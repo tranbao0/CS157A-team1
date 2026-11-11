@@ -77,7 +77,8 @@
   /* header slide, rail and course card glide and art fade follow it, so all share this one */
   --glide:  300ms;
 
-  --gutter: 2.5rem;
+  --page-max: 85rem;
+  --gutter: max(2.5rem, calc((100vw - var(--page-max)) / 2));
   --rail:   21rem;
   /* gap between catalog table and right column */
   --layout-gap: 1.75rem;
@@ -433,6 +434,8 @@ a:hover { color: var(--sjsu-dark); }
   gap: .5rem;
   margin-top: 1.25rem;
 }
+/* term chips wrap as one group, same gap as other chips */
+.filterbar__terms { display: flex; flex-wrap: wrap; gap: .5rem; }
 
 .chip {
   display: inline-flex;
@@ -464,6 +467,8 @@ a.chip.is-on:hover {
   padding: 1.5rem var(--gutter) 3rem;
   align-items: start;
 }
+/* message banner spans every column */
+.layout > .banner { grid-column: 1 / -1; }
 
 /* 7. Catalog table. A real table, for screen readers. */
 .catalog-wrap { position: relative; overflow-x: auto; }
@@ -508,7 +513,7 @@ a.chip.is-on:hover {
 .col-instructor { width: 5rem; }
 .col-seats      { width: 4rem; text-align: right; }
 .col-risk       { width: 7.5rem; }
-.col-action     { width: 5.75rem; }
+.col-action     { width: 6.75rem; }
 
 .section-code {
   display: block;
@@ -541,8 +546,10 @@ a.chip.is-on:hover {
   font-variant-numeric: tabular-nums;
 }
 .seats--none { color: var(--danger); }
+/* section with no seat data shows dash, phone layout hides that cell */
+.seats:empty::after { content: "\2013"; font-weight: 400; color: var(--ink-4); }
 
-/* 8. Risk badge and info affordance */
+/* 8. Risk badge */
 .risk-cell { display: flex; align-items: center; gap: .125rem; }
 
 .risk {
@@ -560,69 +567,6 @@ a.chip.is-on:hover {
 .risk--medium { color: var(--med-ink);  background: var(--med-bg);  border-color: var(--med-line); }
 .risk--low    { color: var(--low-ink);  background: var(--low-bg);  border-color: var(--low-line); }
 
-/* Signed out: risk withheld. */
-.risk--locked {
-  gap: .375rem;
-  color: var(--ink-3);
-  background: var(--band);
-  border: 1px dashed var(--line-3);
-  font-weight: 500;
-}
-
-.risk-info {
-  width: 2.125rem;
-  height: 2.75rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-.risk-info__glyph {
-  width: 1.1875rem;
-  height: 1.1875rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: .75rem;
-  font-weight: 700;
-  font-style: italic;
-  color: var(--high-ink);
-  border: 1.4px solid var(--high-glyph);
-  border-radius: var(--r-round);
-  transition: background-color var(--fast) ease-out;
-}
-.risk-info:hover .risk-info__glyph { background: var(--high-bg); }
-
-/* Fixed, on <body>: .catalog-wrap scrolls and would clip it. */
-.popover {
-  position: fixed;
-  z-index: 50;
-  width: 19.625rem;
-  max-width: calc(100vw - 2rem);
-  padding: .875rem 1rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  box-shadow: var(--shadow-pop);
-}
-.popover[hidden] { display: none; }
-.popover__title {
-  display: block;
-  margin-bottom: .375rem;
-  font-size: .8125rem;
-  font-weight: 700;
-  color: var(--high-ink);
-}
-.popover__body {
-  display: block;
-  font-size: .8125rem;
-  line-height: 1.55;
-  color: var(--ink-3);
-}
-
 /* 9. Right rail */
 .rail,
 .rail__stack,
@@ -631,7 +575,7 @@ a.chip.is-on:hover {
 .card {
   padding: 1.5rem;
   /* same see-through glass as sign-in card, rail art (section 17) shows through */
-  background: color-mix(in srgb, var(--surface) 52%, transparent);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
   -webkit-backdrop-filter: blur(3px) saturate(1.1);
   backdrop-filter: blur(3px) saturate(1.1);
   border: 1px solid var(--line);
@@ -650,6 +594,7 @@ a.chip.is-on:hover {
   font-weight: 700;
   letter-spacing: -.01em;
 }
+.card__term { margin-left: .375rem; font-size: .8125rem; font-weight: 500; color: var(--ink-3); }
 /* title that opens card names whole card, so no gap above it */
 .card > .card__title:first-child { margin-top: 0; }
 /* second heading inside card, like "Nothing saved yet" under "Your plan" */
@@ -1023,41 +968,55 @@ a.chip.is-on:hover {
 .banner--ok    { color: var(--low-ink); background: var(--low-bg); border-color: var(--low-line); }
 
 /*
-  plan message floats at bottom center so table does not shift, plan-add.js fills it when add fails.
-  z-index 60 sits over sticky header (20) and risk popover (50), under skip link (100).
-  max-width keeps 1rem gap each side on phones, same as sign-in card at 40rem.
+  Shared message box (WEB-INF/jspf/toast.jspf, js/toast.js), bottom center over page.
+  Box is always in page so screen readers hear new text, without .is-shown it paints nothing and lets clicks through.
 */
-.plan-toast {
+.toast {
   position: fixed;
-  bottom: 1.5rem;
   left: 50%;
-  z-index: 60;
+  transform: translateX(-50%);
+  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  z-index: 100;
   width: max-content;
-  max-width: min(32rem, calc(100vw - 2rem));
-  margin: 0;
-  padding: .75rem 1rem;
+  max-width: min(34rem, calc(100vw - 2rem));
+  pointer-events: none;
+}
+.toast.is-shown {
+  display: flex;
+  align-items: flex-start;
+  gap: .5rem;
+  padding: .5rem .5rem .5rem 1rem;
   font-size: .875rem;
   line-height: 1.55;
   color: var(--ink);
-  background: var(--surface);
-  border: 1px solid var(--line);
+  border: 1px solid;
   border-radius: var(--r-md);
   box-shadow: var(--shadow-pop);
-  transform: translateX(-50%);
+  pointer-events: auto;
+  animation: toast-enter var(--medium) var(--ease-out) backwards;
+  transition: opacity var(--fast);
 }
-/* empty message box paints nothing and lets clicks through, but stays in accessibility tree so screen readers hear next message */
-.plan-toast:empty {
-  padding: 0;
-  background: none;
-  border: 0;
-  box-shadow: none;
-  pointer-events: none;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .plan-toast:not(:empty) { animation: toast-in var(--medium) var(--ease-out) both; }
-}
-@keyframes toast-in {
+.toast--ok.is-shown { background: var(--low-bg); border-color: var(--low-line); }
+/* red left edge, so error does not depend on tint alone */
+.toast--error.is-shown { background: var(--high-bg); border-color: var(--high-line); border-left: 4px solid var(--danger); }
+.toast__text { margin: 0; }
+.toast__text:empty { display: none; }
+.toast.is-shown .toast__text { padding: .375rem 0; flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.toast--error .toast__text { font-weight: 500; }
+.toast__close { display: none; width: 2.5rem; height: 2.5rem; flex: none; padding: 0; background: none; border: 0; border-radius: var(--r-sm); color: var(--ink-3); cursor: pointer; }
+.toast.is-shown .toast__close { display: block; }
+.toast__close:hover { color: var(--ink); background: rgba(22, 35, 63, .06); }
+.toast__close:focus-visible { outline: 2px solid var(--sjsu); outline-offset: 2px; }
+.toast__close svg { width: 1rem; height: 1rem; vertical-align: middle; }
+.toast.is-leaving { opacity: 0; }
+@keyframes toast-enter {
   from { opacity: 0; transform: translate(-50%, .5rem); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast.is-shown { animation-name: toast-enter-still; }
+  @keyframes toast-enter-still {
+    from { opacity: 0; }
+  }
 }
 
 /* 11. Sign-in form, see-through glass panel over road art (section 15) */
@@ -1086,8 +1045,8 @@ body:has(> .narrow) > .site-footer {
   max-width: 27rem;
   margin: auto;
   padding: 2.5rem 2.25rem 2.25rem;
-  /* light frost only, so road and dot stay readable behind card, fields keep solid white */
-  background: color-mix(in srgb, var(--surface) 52%, transparent);
+  /* frost keeps text clear over road art, fields keep solid white */
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
   -webkit-backdrop-filter: blur(3px) saturate(1.1);
   backdrop-filter: blur(3px) saturate(1.1);
   border: 1px solid color-mix(in srgb, var(--line-2) 85%, transparent);
@@ -1184,6 +1143,17 @@ body:has(> .narrow) > .site-footer {
   border: 1px solid var(--line-2);
   border-radius: var(--r-xl);
   box-shadow: var(--shadow-pop);
+}
+/*
+  save button stays in view while long form scrolls inside dialog, white ring covers fields that pass under it.
+  scroll padding keeps field that gets focus above button.
+*/
+.get-started { padding-bottom: 0; scroll-padding-bottom: 5rem; }
+.get-started form:not([method="dialog"]) { padding-bottom: 2.25rem; }
+.get-started form:not([method="dialog"]) > .btn--block {
+  position: sticky;
+  bottom: 1.25rem;
+  box-shadow: 0 0 0 .75rem var(--surface), 0 1.25rem 0 .75rem var(--surface);
 }
 /*
   Backdrop dims catalog with ink tint.
@@ -1292,11 +1262,16 @@ body:has(> .get-started[open]) { overflow: hidden; }
 }
 
 /*
-  phones: table no longer fits even without Mode and Type, and sideways scroll hid Risk and + Plan.
-  Each row turns into small block instead: section and + Plan on top, title under it, seats and risk last.
+  phone rows show section, title, mode and type, then seats and risk.
+  plan button sits at right beside section, title and metadata.
   Header row stays for screen readers only, seat count gets "open" after it so number still makes sense.
 */
 @media (max-width: 40rem) {
+  .site-header.is-compact { clip-path: inset(0 0 calc(100% - var(--topbar-total-h)) 0); }
+  /* inset line, clip cuts off header's own bottom border and a real border would change header height */
+  .site-header.is-compact .topbar { box-shadow: inset 0 -1px 0 var(--header-line); }
+  /* section with no mode shows type alone, without dot in front */
+  .catalog td.col-when:empty + td.col-instructor::before { content: none; }
   .catalog-wrap { overflow-x: visible; }
   .catalog { display: block; min-width: 0; }
   .catalog thead {
@@ -1308,13 +1283,14 @@ body:has(> .get-started[open]) { overflow: hidden; }
   .catalog tbody { display: block; }
   .catalog tbody tr {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: max-content max-content minmax(0, 1fr) auto;
     grid-template-areas:
-      "section section action"
-      "title   title   action"
-      "seats   risk    risk";
+      "section section section action"
+      "title   title   title   action"
+      "mode    type    .       action"
+      "seats   risk    risk    risk";
     align-items: center;
-    gap: .375rem .75rem;
+    gap: .375rem .375rem;
     padding: .875rem 0;
     border-bottom: 1px solid var(--line-2);
   }
@@ -1323,12 +1299,15 @@ body:has(> .get-started[open]) { overflow: hidden; }
   .catalog td.col-section .section-num { margin: 0; }
   .catalog td.col-title { grid-area: title; }
   .catalog td.col-when,
-  .catalog td.col-instructor { display: none; }
+  .catalog td.col-instructor { display: block; font-size: .8125rem; color: var(--ink-3); }
+  .catalog td.col-when { grid-area: mode; }
+  .catalog td.col-instructor { grid-area: type; }
+  .catalog td.col-instructor::before { content: "\00B7"; margin: 0 .25rem; }
   .catalog td.col-seats { grid-area: seats; text-align: left; }
   .catalog .seats::after { content: " open"; font-weight: 500; }
   /* no snapshot yet means no count, so risk moves into seats spot instead of leaving gap */
   .catalog td.col-seats:has(.seats:empty) { display: none; }
-  .catalog tr:has(.seats:empty) td.col-risk { grid-column: 1 / 3; }
+  .catalog tr:has(.seats:empty) td.col-risk { grid-column: 1 / -1; }
   .catalog td.col-risk { grid-area: risk; }
   .catalog td.col-action { grid-area: action; }
   /* button grows to full tap target size, row has room for it */
@@ -1615,7 +1594,7 @@ body:has(> .get-started[open]) { overflow: hidden; }
     top: -8rem;
     left: calc(-1 * var(--layout-gap));
     z-index: -1;
-    width: calc(var(--rail) + var(--gutter) + var(--layout-gap));
+    width: calc(var(--rail) + 2.5rem + var(--layout-gap));
     height: 25rem;
     overflow: visible;
     pointer-events: none;
@@ -1645,16 +1624,16 @@ body:has(> .get-started[open]) { overflow: hidden; }
 .rail-art__stop--mid  { stop-color: var(--art-disc-2); }
 .rail-art__stop--edge { stop-color: var(--surface); stop-opacity: 0; }
 
-/* Links from the catalog to the course page.*/
-.course-link,
-.course-link .section-code,
-.course-link .course-title { color: var(--ink); text-decoration: none; }
+/* Links to course page. Code and "Details" keep normal link look, with lighter underline so table of them stays calm. */
+.course-link { text-decoration-color: var(--sjsu-line); text-underline-offset: 3px; }
+.course-link .section-code { color: inherit; }
 .course-link:hover,
-.course-link:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
-.course-link:hover .section-code,
-.course-link:hover .course-title,
-.course-link:focus-visible .section-code,
-.course-link:focus-visible .course-title { color: var(--ink-3); }
+.course-link:focus-visible { text-decoration-color: currentColor; }
+/* title in catalog row is second link to same page as code next to it, so it reads as text and underlines on hover */
+.col-title .course-link { color: var(--ink); text-decoration: none; }
+.col-title .course-link .course-title { color: inherit; }
+.col-title .course-link:hover,
+.col-title .course-link:focus-visible { color: var(--ink-3); text-decoration: underline; }
 
 /* Course detail page. */
 .detail { min-width: 0; }
@@ -1760,3 +1739,58 @@ body:has(> .site-footer) {
 }
 /* one line on wide screens, pretty wrap keeps single word from hanging alone on narrower ones */
 .site-footer p { margin: 0; max-width: 66rem; text-wrap: pretty; }
+
+/* 19. Transcript page (transcript.jsp). Two even halves, transcript left and search right, stacked on narrow screens. */
+.layout--split { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 56rem) {
+  .layout--split { grid-template-columns: minmax(0, 1fr); }
+}
+.tx-form { min-width: 0; }
+.tx-search { min-width: 0; }
+.tx-section__title { margin: 0 0 .25rem; font-size: 1.375rem; font-weight: 700; letter-spacing: -.015em; }
+.tx-search__form { display: flex; flex-wrap: wrap; gap: .625rem; margin: 0 0 1.25rem; }
+.tx-search__form .search-input { flex: 1 1 14rem; width: auto; min-width: 0; }
+.tx-search__form .tx-search__area { flex: 0 1 18rem; cursor: pointer; }
+.tx-empty { margin: .5rem 0 1.5rem; font-size: .9375rem; color: var(--ink-3); }
+.tx-section__head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; margin: 0 0 1rem; }
+.tx-section__head .tx-section__title { margin: 0; }
+
+/* transcript upload, sits in page head */
+.tx-import { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem 2rem; }
+.tx-import .pagehead__text { flex: 1 1 24rem; max-width: 40rem; }
+.tx-import__controls { display: flex; flex-direction: column; align-items: center; gap: .5rem; flex: 0 1 26rem; min-width: 0; text-align: center; }
+.tx-import__file { max-width: 100%; font: inherit; font-size: .875rem; color: var(--ink-3); }
+.tx-import__file::file-selector-button {
+  min-height: 2.75rem;
+  margin-right: .75rem;
+  padding: 0 1.125rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--on-ink);
+  background: var(--ink);
+  border: 0;
+  border-radius: var(--r-md);
+  cursor: pointer;
+}
+.tx-import__file:focus-visible { outline: 2px solid var(--sjsu); outline-offset: 2px; border-radius: var(--r-md); }
+.tx-import__status { margin: 0; font-size: .875rem; color: var(--ink-2); }
+.tx-import__status:empty { display: none; }
+.tx-actions { display: flex; justify-content: flex-end; }
+
+.tx-group { margin: 0 0 2rem; }
+.tx-group__title { display: flex; align-items: baseline; flex-wrap: wrap; gap: .25rem .75rem; margin: 0; font-size: 1.125rem; font-weight: 700; letter-spacing: -.01em; }
+.tx-group__count { font-size: .8125rem; font-weight: 500; color: var(--ink-3); }
+.tx-group__note { margin: .125rem 0 .75rem; font-size: .875rem; color: var(--ink-3); }
+.tx-list { margin: 0; padding: 0; list-style: none; overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); }
+.tx-list--empty { padding: 0; font-size: .875rem; color: var(--ink-3); background: none; border: 0; border-radius: 0; }
+.tx-group__title + .tx-list { margin-top: .75rem; }
+.tx-row { display: flex; align-items: center; gap: .875rem; min-height: 3rem; padding: .5rem 1rem; border-top: 1px solid var(--line-2); transition: background-color var(--fast) ease-out; }
+.tx-row:first-child { border-top: 0; }
+.tx-row:hover { background: var(--canvas); }
+.tx-row input[type="checkbox"] { flex-shrink: 0; width: 1.125rem; height: 1.125rem; margin: 0; cursor: pointer; }
+/* course code on top, title under it, so long title gets whole row width to wrap in */
+.tx-label { display: flex; flex: 1 1 auto; flex-direction: column; gap: .125rem; min-width: 0; cursor: pointer; }
+.tx-code { font-size: .9375rem; font-weight: 600; }
+.tx-title { font-size: .875rem; color: var(--ink-2); overflow-wrap: anywhere; }
+.tx-units { font-size: .8125rem; color: var(--ink-3); white-space: nowrap; }
+.tx-view { font-size: .875rem; white-space: nowrap; }

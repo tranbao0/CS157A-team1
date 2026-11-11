@@ -2,11 +2,11 @@
 (function () {
   'use strict';
 
-  // puts text in status area under page, role="status" makes screen readers read it out loud
-  function showMessage(text) {
-    var box = document.getElementById('plan-message');
-    if (box !== null) {
-      box.textContent = text;
+  // button works again after refusal, and gets focus back that it lost while it was disabled
+  function giveBack(btn) {
+    btn.disabled = false;
+    if (document.activeElement === document.body) {
+      btn.focus();
     }
   }
 
@@ -39,7 +39,7 @@
     btn.disabled = true;
     btn.classList.add('is-busy');
     btn.setAttribute('aria-busy', 'true');
-    showMessage('');
+    window.hideToast();
 
     // URL has no leading slash, so /coursecraft/catalog.jsp sends to /coursecraft/plan/add
     fetch('plan/add', {
@@ -49,9 +49,12 @@
     }).then(function (response) {
       stopBusy(btn);
 
-      // sign-in ran out, login page brings student back to catalog after
+      // sign-in keeps current page and query after session ends
       if (response.status === 401) {
-        window.location.href = 'login';
+        // pages sit one path part below context, so last slash ends context
+        var path = window.location.pathname;
+        var next = path.substring(path.lastIndexOf('/')) + window.location.search;
+        window.location.href = 'login?next=' + encodeURIComponent(next);
         return;
       }
 
@@ -62,7 +65,7 @@
         // plan-summary.js listens for this and reloads plan card
         document.dispatchEvent(new CustomEvent('plan-changed'));
       } else {
-        btn.disabled = false;
+        giveBack(btn);
       }
 
       // 200, 400, 409 and 422 come with JSON message from PlanAddServlet, 500 is HTML error page
@@ -70,15 +73,15 @@
       var type = response.headers.get('Content-Type');
       if (type !== null && type.indexOf('application/json') === 0) {
         return response.json().then(function (data) {
-          showMessage(data.message);
+          window.showToast(data.message, response.ok ? 'ok' : 'error');
         });
       }
-      showMessage('Could not add course, try again.');
+      window.showToast('Could not add course, try again.', 'error');
     }).catch(function () {
       // fetch only lands here when request never got answer
       stopBusy(btn);
-      btn.disabled = false;
-      showMessage('Could not reach server, check connection and try again.');
+      giveBack(btn);
+      window.showToast('Could not reach server, check connection and try again.', 'error');
     });
   }
 

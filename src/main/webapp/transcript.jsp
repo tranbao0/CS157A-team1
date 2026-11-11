@@ -3,6 +3,7 @@
 <%@ page import="java.net.URLEncoder, java.nio.charset.StandardCharsets" %>
 <%@ page import="java.util.ArrayList, java.util.Arrays, java.util.HashSet, java.util.LinkedHashMap, java.util.List, java.util.Locale, java.util.Map, java.util.Set" %>
 <%@ page import="com.coursecraft.util.Db" %>
+<%@ page import="com.coursecraft.dao.PrerequisiteDao, com.coursecraft.dao.StudentDao" %>
 <%-- Transcript. Lists the courses a student has completed, and searches unfinished categories for more. TODO: move the queries to a servlet. --%>
 <%!
 	// Escapes HTML.
@@ -181,16 +182,22 @@
 				return;
 			}
 
-			// Every course, with whether it is a prerequisite, has prerequisites, and is passed.
+			int catalogYear = PrerequisiteDao.yearOrNewest(new StudentDao().findCatalogYear(connection, studentId));
+
+			// Every course, with prerequisite flags for the student's catalog year and its passed state.
 			// Numeric part first, so 46A comes before 100W.
 			courses = select(connection,
 				"SELECT c.course_id, c.subject, c.course_number, c.title, c.units, c.ge_area_code, "
-				+ "       EXISTS (SELECT 1 FROM counts_towards ct WHERE ct.course_id = c.course_id) AS is_prereq, "
-				+ "       EXISTS (SELECT 1 FROM prerequisite_groups pg WHERE pg.course_id = c.course_id) AS has_prereq, "
+				+ "       EXISTS (SELECT 1 FROM counts_towards ct "
+				+ "               JOIN prerequisite_groups pg ON pg.group_id = ct.group_id "
+				+ "               WHERE ct.course_id = c.course_id "
+				+ "               AND pg.catalog_year = (SELECT MAX(pg2.catalog_year) FROM prerequisite_groups pg2 "
+				+ "                                      WHERE pg2.course_id = pg.course_id AND pg2.catalog_year <= ?)) AS is_prereq, "
+				+ "       EXISTS (SELECT 1 FROM prerequisite_groups pg WHERE pg.course_id = c.course_id AND pg.catalog_year <= ?) AS has_prereq, "
 				+ "       (SELECT cp.taken_and_passed FROM completed cp "
 				+ "        WHERE cp.student_id = ? AND cp.course_id = c.course_id) AS passed "
 				+ "FROM courses c "
-				+ "ORDER BY c.subject, CAST(c.course_number AS UNSIGNED), c.course_number", studentId);
+				+ "ORDER BY c.subject, CAST(c.course_number AS UNSIGNED), c.course_number", catalogYear, catalogYear, studentId);
 
 			geAreas = select(connection, "SELECT code, name FROM ge_areas ORDER BY code");
 		}
@@ -285,11 +292,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Transcript - CourseCraft</title>
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
-	<link rel="stylesheet" href="<%= context %>/css/app.css">
-	<link rel="stylesheet" href="<%= context %>/css/motion.css">
+	<%@ include file="/WEB-INF/jspf/head.jspf" %>
 </head>
 <body>
 
@@ -326,10 +329,6 @@
 <% } else if (noStudent) { %>
 	<div class="banner banner--warn" role="alert">No student account matches <%= esc(email) %>, so there is no transcript to edit.</div>
 <% } else { %>
-<% if (saved) { %>
-	<%-- popup, shows for 2 seconds then fades out (app.css), script below removes it after --%>
-	<div class="toast" id="saved-toast" role="status"><%= esc(savedMessage) %></div>
-<% } %>
 
 	<form class="tx-form" id="transcript-form" method="post" action="<%= context %>/transcript.jsp">
 		<%-- carried through the save so the redirect lands back on the same search --%>
@@ -446,7 +445,11 @@
 	} %>]</script>
 <% } %>
 </main>
+<%@ include file="/WEB-INF/jspf/footer.jspf" %>
+<% if (saved) { request.setAttribute("toastText", savedMessage); } %>
+<%@ include file="/WEB-INF/jspf/toast.jspf" %>
 
+<script src="<%= context %>/js/toast.js" defer></script>
 <script src="<%= context %>/js/header.js" defer></script>
 <script src="<%= context %>/js/transcript.js" defer></script>
 <% if (saved) { %>
@@ -457,8 +460,6 @@
 		url.searchParams.delete("saved");
 		url.searchParams.delete("imported");
 		history.replaceState(null, "", url.pathname + url.search + url.hash);
-		var toast = document.getElementById("saved-toast");
-		toast.addEventListener("animationend", function () { toast.remove(); });
 	})();
 </script>
 <% } %>

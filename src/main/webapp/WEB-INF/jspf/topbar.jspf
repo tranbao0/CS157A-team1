@@ -1,6 +1,6 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%-- shared top bar for every JSP page, goes inside <header class="site-header"> --%>
-<%-- page sets request attribute navPage first ("home", "catalog", "roadmap", "transcript", "plan", "profile", "auth" or "error") so right nav item shows as current --%>
+<%-- page sets request attribute navPage first ("home", "catalog", "transcript", "plan", "profile", "auth" or "error") so right nav item shows as current, page without nav item (like roadmap) sets its own name and none shows as current --%>
 <%-- c:out escapes email, so stored address cant inject tags into page --%>
 <div class="topbar">
 	<a class="topbar__brand" href="${pageContext.request.contextPath}/">CourseCraft</a>
@@ -15,18 +15,10 @@
 </c:choose>
 <c:choose>
 	<c:when test="${navPage == 'transcript'}">
-		<a class="nav-link is-active" aria-current="page" href="${pageContext.request.contextPath}/transcript.jsp">My Transcript</a>
+		<a class="nav-link is-active" aria-current="page" href="${pageContext.request.contextPath}/transcript.jsp">My transcript</a>
 	</c:when>
 	<c:otherwise>
-		<a class="nav-link" href="${pageContext.request.contextPath}/transcript.jsp">My Transcript</a>
-	</c:otherwise>
-</c:choose>
-<c:choose>
-	<c:when test="${navPage == 'roadmap'}">
-		<a class="nav-link is-active" aria-current="page" href="${pageContext.request.contextPath}/roadmap">Roadmap</a>
-	</c:when>
-	<c:otherwise>
-		<a class="nav-link" href="${pageContext.request.contextPath}/roadmap">Roadmap</a>
+		<a class="nav-link" href="${pageContext.request.contextPath}/transcript.jsp">My transcript</a>
 	</c:otherwise>
 </c:choose>
 <c:choose>

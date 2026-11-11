@@ -4,7 +4,7 @@
 /*
   page timing, easing curves come from app.css tokens.
   New page only settles once transition ends, so every ms here adds to each click.
-  Old 380ms in plus 40ms delay made pages feel slow, short fade keeps smooth swap without wait.
+  Short fades keep page changes smooth and quick.
 */
 :root {
   --page-out:   90ms;
@@ -20,8 +20,7 @@
 
 /*
   each page has one site header, named so it holds still while content swaps.
-  Whole header and not just bar row, since its glass and bottom line belong to header,
-  bar alone left that line in moving page and drew it twice mid swap.
+  Header carries name, since its glass and bottom line belong to it, so snapshot keeps line still during swap.
   Landing has no .site-header, its fixed .topbar is same glass bar.
 */
 .site-header,

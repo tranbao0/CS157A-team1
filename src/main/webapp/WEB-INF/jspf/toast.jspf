@@ -1,0 +1,9 @@
+<%-- shared message box for every page that includes it, js/toast.js fills, times and closes it --%>
+<%-- page can show message on load: set request attributes toastText and toastKind ("ok" or "error") before this include --%>
+<%-- both text lines stay in page all the time, screen reader only reads new text out loud when its line was there before --%>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<div class="toast ${toastKind == 'error' ? 'toast--error' : 'toast--ok'}<c:if test="${not empty toastText}"> is-shown</c:if>" id="toast">
+	<p class="toast__text" role="status"><c:if test="${toastKind != 'error'}"><c:out value="${toastText}"/></c:if></p>
+	<p class="toast__text" role="alert"><c:if test="${toastKind == 'error'}"><c:out value="${toastText}"/></c:if></p>
+	<button class="toast__close" type="button" aria-label="Close message"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg></button>
+</div>

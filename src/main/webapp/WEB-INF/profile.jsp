@@ -30,12 +30,19 @@
 	</c:if>
 	<%-- refused form comes back with error, role="alert" reads it out right away --%>
 	<c:if test="${not empty error}">
-		<div class="banner banner--error" role="alert"><c:out value="${error}"/></div>
+		<div class="banner banner--error" role="alert" tabindex="-1"><c:out value="${error}"/></div>
 	</c:if>
 
 <%@ include file="/WEB-INF/jspf/profile-form.jspf" %>
 </main>
 <%@ include file="/WEB-INF/jspf/footer.jspf" %>
 
+<script>
+(function () {
+	'use strict';
+	var error = document.querySelector('.banner--error');
+	if (error) { error.focus(); }
+}());
+</script>
 </body>
 </html>

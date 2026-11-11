@@ -23,7 +23,14 @@
     }
   }
 
+  // phone shows only top bar while page is scrolled past header, app.css clips rest away
+  function compact() {
+    header.classList.toggle('is-compact', window.scrollY > header.offsetHeight);
+  }
+
   function measure() {
+    // window can change width while page is scrolled, so compact state follows new header height
+    compact();
     root.style.setProperty('--site-header-h', header.offsetHeight + 'px');
     if (stack) {
       root.style.setProperty('--rail-stack-h', stack.offsetHeight + 'px');
@@ -32,6 +39,7 @@
 
   window.addEventListener('scroll', function () {
     var y = window.scrollY;
+    compact();
     var moved = y - lastY;
     lastY = y;
 
@@ -41,7 +49,13 @@
   }, { passive: true });
 
   // keyboard user tabbing into hidden header needs to see where focus went
-  header.addEventListener('focusin', function () { show(true); });
+  header.addEventListener('focusin', function (event) {
+    show(true);
+    // focus inside page head brings whole head back, so focused filter is never clipped
+    if (event.target.closest('.pagehead')) {
+      header.classList.remove('is-compact');
+    }
+  });
 
   // header height changes with screen width and wrapped chips, stack grows when plan card gets new term
   if ('ResizeObserver' in window) {

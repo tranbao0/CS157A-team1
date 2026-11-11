@@ -12,6 +12,14 @@ import com.coursecraft.model.PrerequisiteGroup;
 // SQL for prerequisite_groups, counts_towards and group_accepts_category tables lives here
 public class PrerequisiteDao {
 
+	// student with no roadmap yet and visitor (null) get newest catalog year, since MAX in prerequisite SQL then picks newest
+	public static int yearOrNewest(Integer catalogYear) {
+		if (catalogYear == null) {
+			return Integer.MAX_VALUE;
+		}
+		return catalogYear;
+	}
+
 	// lists every open group of every course, plan card and plan remove walk through these
 	public List<PrerequisiteGroup> findOpenGroups(Connection connection, int studentId, int catalogYear)
 			throws SQLException {
@@ -52,7 +60,7 @@ public class PrerequisiteDao {
 		if (courseId != null) {
 			sql = sql + "  AND pg.course_id = ? ";
 		}
-		sql = sql + "ORDER BY pg.group_id, c.subject, c.course_number";
+		sql = sql + "ORDER BY pg.group_id, c.subject, CAST(c.course_number AS UNSIGNED), c.course_number";
 
 		List<PrerequisiteGroup> groups = new ArrayList<>();
 		try (PreparedStatement statement = connection.prepareStatement(sql)) {

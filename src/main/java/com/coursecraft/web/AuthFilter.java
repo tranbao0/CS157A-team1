@@ -17,9 +17,9 @@ import jakarta.servlet.http.HttpSession;
 /*
  * Runs before every request to pages that need signed-in student.
  * Add new protected paths to list below, servlet itself needs no login code then.
- * /plan/* also covers later routes like POST /plan/add, same for /transcript/*.
+ * /plan/* also covers routes under it like POST /plan/add.
  */
-@WebFilter({ "/plan", "/plan/*", "/transcript", "/transcript/*", "/roadmap", "/profile" })
+@WebFilter({ "/plan", "/plan/*", "/roadmap", "/profile" })
 public class AuthFilter implements Filter {
 
 	@Override
@@ -55,9 +55,6 @@ public class AuthFilter implements Filter {
 			httpResponse.sendRedirect(loginUrl);
 			return;
 		}
-
-		// private page, browser must not keep copy that Back button could show after sign-out
-		httpResponse.setHeader("Cache-Control", "no-store");
 
 		// signed in, let request go on to servlet
 		chain.doFilter(request, response);
