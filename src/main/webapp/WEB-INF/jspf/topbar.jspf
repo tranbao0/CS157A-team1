@@ -15,10 +15,10 @@
 </c:choose>
 <c:choose>
 	<c:when test="${navPage == 'transcript'}">
-		<a class="nav-link is-active" aria-current="page" href="${pageContext.request.contextPath}/transcript.jsp">My Transcript</a>
+		<a class="nav-link is-active" aria-current="page" href="${pageContext.request.contextPath}/transcript">My Transcript</a>
 	</c:when>
 	<c:otherwise>
-		<a class="nav-link" href="${pageContext.request.contextPath}/transcript.jsp">My Transcript</a>
+		<a class="nav-link" href="${pageContext.request.contextPath}/transcript">My Transcript</a>
 	</c:otherwise>
 </c:choose>
 <c:choose>
