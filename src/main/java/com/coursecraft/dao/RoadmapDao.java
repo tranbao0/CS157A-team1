@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.coursecraft.model.Major;
 import com.coursecraft.model.Roadmap;
 
 // SQL for roadmaps and majors tables lives here
@@ -27,5 +28,35 @@ public class RoadmapDao {
 			}
 		}
 		return roadmaps;
+	}
+
+	// majors that have at least one roadmap, since a major without one cannot be saved on student
+	public List<Major> findMajorsWithRoadmap(Connection connection) throws SQLException {
+		String sql = "SELECT DISTINCT m.major_id, m.name FROM majors m JOIN roadmaps r ON r.major_id = m.major_id";
+
+		List<Major> majors = new ArrayList<>();
+		try (PreparedStatement statement = connection.prepareStatement(sql);
+				ResultSet rs = statement.executeQuery()) {
+			while (rs.next()) {
+				majors.add(new Major(rs.getInt("major_id"), rs.getString("name")));
+			}
+		}
+		return majors;
+	}
+
+	// roadmap with newest catalog year for one major, null when major has none
+	public Integer findNewestForMajor(Connection connection, int majorId) throws SQLException {
+		String sql = "SELECT roadmap_id FROM roadmaps WHERE major_id = ? ORDER BY catalog_year DESC LIMIT 1";
+
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+			statement.setInt(1, majorId);
+
+			try (ResultSet rs = statement.executeQuery()) {
+				if (!rs.next()) {
+					return null;
+				}
+				return rs.getInt("roadmap_id");
+			}
+		}
 	}
 }

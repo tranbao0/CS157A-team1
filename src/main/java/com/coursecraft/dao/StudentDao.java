@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 
+import com.coursecraft.model.Major;
 import com.coursecraft.model.Student;
 import com.coursecraft.model.StudentProfile;
 import com.coursecraft.util.Db;
@@ -116,6 +117,36 @@ public class StudentDao {
 			setInteger(statement, 2, gradTermId);
 			setInteger(statement, 3, ppaScore);
 			statement.setInt(4, studentId);
+			statement.executeUpdate();
+		}
+	}
+
+	// major of student's roadmap, null until student picks one
+	public Major findMajor(Connection connection, int studentId) throws SQLException {
+		String sql = "SELECT m.major_id, m.name FROM students s "
+				+ "JOIN roadmaps r ON r.roadmap_id = s.roadmap_id "
+				+ "JOIN majors m ON m.major_id = r.major_id "
+				+ "WHERE s.student_id = ?";
+
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+			statement.setInt(1, studentId);
+
+			try (ResultSet rs = statement.executeQuery()) {
+				if (!rs.next()) {
+					return null;
+				}
+				return new Major(rs.getInt("major_id"), rs.getString("name"));
+			}
+		}
+	}
+
+	// changes only major and catalog year, grad term and PPA score stay as they are
+	public void updateRoadmap(Connection connection, int studentId, int roadmapId) throws SQLException {
+		String sql = "UPDATE students SET roadmap_id = ? WHERE student_id = ?";
+
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+			statement.setInt(1, roadmapId);
+			statement.setInt(2, studentId);
 			statement.executeUpdate();
 		}
 	}
