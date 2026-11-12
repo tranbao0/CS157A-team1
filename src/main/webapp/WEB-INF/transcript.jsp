@@ -133,11 +133,11 @@
 			</c:when>
 			<c:otherwise>
 			<ul class="tx-list">
-				<c:forEach var="ge" items="${audit.remainingGeAreas}">
+				<c:forEach var="geArea" items="${audit.remainingGeAreas}">
 				<li class="tx-row">
-					<span class="tx-code">Area <c:out value="${ge.code}"/></span>
-					<span class="tx-title"><c:out value="${ge.name}"/></span>
-					<a class="course-link tx-view" href="${context}/transcript?area=ge-${ge.code}">Find courses</a>
+					<span class="tx-code">Area <c:out value="${geArea.code}"/></span>
+					<span class="tx-title"><c:out value="${geArea.name}"/></span>
+					<a class="course-link tx-view" href="${context}/transcript?area=ge-${geArea.code}">Find courses</a>
 				</li>
 				</c:forEach>
 			</ul>
