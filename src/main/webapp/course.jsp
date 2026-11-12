@@ -1,9 +1,10 @@
+<%@ taglib prefix="cc" tagdir="/WEB-INF/tags" %>
+<%@ page import="com.coursecraft.service.PlanAvailability" %>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.sql.Connection, java.sql.PreparedStatement, java.sql.ResultSet, java.sql.ResultSetMetaData, java.sql.SQLException" %>
 <%@ page import="java.net.URLEncoder, java.nio.charset.StandardCharsets" %>
 <%@ page import="java.util.ArrayList, java.util.LinkedHashMap, java.util.List, java.util.Map" %>
 <%@ page import="com.coursecraft.util.Db" %>
-<%@ page import="com.coursecraft.dao.PlanEntryDao" %>
 <%@ page import="com.coursecraft.dao.PrerequisiteDao, com.coursecraft.dao.StudentDao" %>
 <%-- Course detail. TODO: move the queries to a servlet. --%>
 <%!
@@ -80,8 +81,6 @@
 	Map<String, String> section = null;
 	Map<String, String> bottleneck = null;
 	boolean completed = false;
-	// true when course already sits in student's plan, + Plan then shows In plan
-	boolean inPlan = false;
 
 	int courseId = -1;
 	try {
@@ -218,8 +217,6 @@
 						studentId, courseId);
 					completed = !done.isEmpty() && "1".equals(done.get(0).get("taken_and_passed"));
 
-					// same check POST /plan/add uses for duplicates, so button and server agree
-					inPlan = new PlanEntryDao().findPlannedSessionId(connection, studentId, courseId) != null;
 				}
 			}
 		} catch (SQLException e) {
@@ -241,6 +238,18 @@
 		rest = (section == null ? "" : " Sec-" + section.get("section_code")) + " " + course.get("title");
 	}
 %>
+<%
+    PlanAvailability planAvailability = null;
+    if (signedIn) {
+        try {
+            int availabilityStudent = 0;
+            if (studentId != null) { availabilityStudent = studentId; }
+            planAvailability = PlanAvailability.read(availabilityStudent);
+        } catch (SQLException e) {
+            getServletContext().log("Could not check plan prerequisites.", e);
+        }
+    }
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -258,6 +267,12 @@
 <header class="site-header">
 <%@ include file="/WEB-INF/jspf/topbar.jspf" %>
 </header>
+<% String planMessage = (String) session.getAttribute("planMessage");
+   session.removeAttribute("planMessage");
+   if (planMessage != null) { %>
+<p class="banner" role="status"><%= esc(planMessage) %></p>
+<% } %>
+
 
 <%-- page head and detail columns share one main element, so skip link lands on course title --%>
 <main id="main">
@@ -363,24 +378,11 @@ for (int g = 0; g < groups.size(); g++) {
 				</label>
 				<noscript><button class="btn" type="submit">Save</button></noscript>
 <% } %>
-<%-- passed course needs no plan button, checked box above already tells its state --%>
-<% if (completed) { %>
-<% } else if (inPlan) { %>
-				<button class="btn btn--primary is-added" type="button" disabled>In plan</button>
-<% } else { %>
-<% if (canEdit && section != null) { %>
-				<%-- plan-add.js sends course and session of shown section to POST /plan/add, same as catalog --%>
-				<button class="btn btn--primary js-plan-add" type="button"
-				        data-course-id="<%= esc(course.get("course_id")) %>" data-session-id="<%= esc(section.get("session_id")) %>">+ Plan</button>
-<% } else if (!signedIn) { %>
-				<%-- visitor gets working sign-in link instead of disabled button, hidden text says where it goes --%>
-				<a class="btn btn--primary" href="<%= esc(signInHref) %>">+ Plan<span class="visually-hidden">, sign in to add <%= esc(course.get("subject")) %> <%= esc(course.get("course_number")) %></span></a>
-<% } else { %>
-				<%-- course has no active section or email has no student row, so there is no term to plan it in --%>
-				<button class="btn btn--primary" type="button" disabled>+ Plan</button>
-<% } %>
-<% } %>
-			</form>
+            </form>
+            <cc:planAction buttonClass="btn btn--primary" courseId='<%= course.get("course_id") %>'
+                sessionId='<%= section == null ? "0" : section.get("session_id") %>'
+                actionId="plan-course" signedIn="<%= signedIn %>" signInHref="<%= signInHref %>"
+                returnTo="<%= nextPath %>" availability="<%= planAvailability %>"/>
 		</div>
 	</aside>
 <% } %>

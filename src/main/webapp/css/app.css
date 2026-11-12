@@ -513,7 +513,7 @@ a.chip.is-on:hover {
 .col-instructor { width: 5rem; }
 .col-seats      { width: 4rem; text-align: right; }
 .col-risk       { width: 7.5rem; }
-.col-action     { width: 6.75rem; }
+.col-action     { width: 12rem; }
 
 .section-code {
   display: block;
@@ -1262,11 +1262,11 @@ body:has(> .get-started[open]) { overflow: hidden; }
 }
 
 /*
-  phone rows show section, title, mode and type, then seats and risk.
-  plan button sits at right beside section, title and metadata.
+  Narrow rows show section, title, mode and type, then seats and risk.
+  The plan action and its reason sit below the course facts.
   Header row stays for screen readers only, seat count gets "open" after it so number still makes sense.
 */
-@media (max-width: 40rem) {
+@media (max-width: 56rem) {
   /* section with no mode shows type alone, without dot in front */
   .catalog td.col-when:empty + td.col-instructor::before { content: none; }
   .catalog-wrap { overflow-x: visible; }
@@ -1282,10 +1282,11 @@ body:has(> .get-started[open]) { overflow: hidden; }
     display: grid;
     grid-template-columns: max-content max-content minmax(0, 1fr) auto;
     grid-template-areas:
-      "section section section action"
-      "title   title   title   action"
-      "mode    type    .       action"
-      "seats   risk    risk    risk";
+      "section section section section"
+      "title   title   title   title"
+      "mode    type    .       ."
+      "seats   risk    risk    risk"
+      "action  action  action  action";
     align-items: center;
     gap: .375rem .375rem;
     padding: .875rem 0;
@@ -1306,7 +1307,9 @@ body:has(> .get-started[open]) { overflow: hidden; }
   .catalog td.col-seats:has(.seats:empty) { display: none; }
   .catalog tr:has(.seats:empty) td.col-risk { grid-column: 1 / -1; }
   .catalog td.col-risk { grid-area: risk; }
-  .catalog td.col-action { grid-area: action; }
+  .catalog td.col-action { grid-area: action; margin-top: .25rem; }
+  .catalog .plan-action { grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: .75rem; }
+  .catalog .plan-action__reason { max-width: none; }
   /* button grows to full tap target size, row has room for it */
   .catalog td.col-action .btn { min-height: 2.75rem; }
 }
@@ -1987,3 +1990,16 @@ details.rm-term:not(.is-done) > summary .tx-group__count { color: var(--ink-3); 
 .catalog-rail-tabs a[aria-selected="true"], .catalog-rail-tabs a[aria-current="page"] { color: var(--sjsu); border-bottom-color: var(--sjsu); font-weight: 600; }
 .catalog-rail-tabs a:focus-visible { outline-offset: 3px; }
 #catalog-rail { scroll-margin-top: calc(var(--site-header-h) + 1rem); }
+
+/* Plan reasons stay visible beside their action at every screen width. */
+.plan-action { display: grid; gap: .375rem; justify-items: start; }
+.plan-action__form { margin: 0; }
+.detail-actions + .plan-action { margin-top: 1rem; }
+.plan-action__reason { margin: 0; max-width: 28ch; color: var(--ink-3); font-size: .75rem; line-height: 1.45; overflow-wrap: anywhere; }
+.plan-action .btn[aria-disabled="true"] { background: #e6e6e6; border-color: #c4c4c4; color: #555; opacity: 1; cursor: not-allowed; }
+.plan-action__reason:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+/* Empty rail panels use the same spacing and offer one next step. */
+.rail-empty { display: grid; gap: .75rem; padding: .5rem 0 .25rem; }
+.rail-empty > .card__subtitle, .rail-empty > .card__body { margin: 0; }
+.rail-empty > .btn { margin-top: .5rem; }

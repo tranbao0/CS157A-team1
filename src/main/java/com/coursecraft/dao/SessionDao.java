@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
+import java.util.HashMap;
 
 import com.coursecraft.model.SessionInfo;
 
@@ -19,6 +21,20 @@ public class SessionDao {
 				return rs.next();
 			}
 		}
+	}
+
+	// Reads the target term of every session still open for planning in one query.
+	public Map<Integer, Integer> findOpenTermOrders(Connection connection) throws SQLException {
+		Map<Integer, Integer> terms = new HashMap<>();
+		String sql = "SELECT se.session_id, t.year * 10 + FIELD(t.season, 'Winter', 'Spring', 'Summer', 'Fall') AS term_order "
+				+ "FROM sessions se JOIN terms t ON t.term_id = se.term_id WHERE se.end_date >= CURDATE()";
+		try (PreparedStatement statement = connection.prepareStatement(sql);
+				ResultSet rs = statement.executeQuery()) {
+			while (rs.next()) {
+				terms.put(rs.getInt("session_id"), rs.getInt("term_order"));
+			}
+		}
+		return terms;
 	}
 
 	/*

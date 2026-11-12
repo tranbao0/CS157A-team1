@@ -2,14 +2,6 @@
 (function () {
   'use strict';
 
-  // button works again after refusal, and gets focus back that it lost while it was disabled
-  function giveBack(btn) {
-    btn.disabled = false;
-    if (document.activeElement === document.body) {
-      btn.focus();
-    }
-  }
-
   // removes busy look, runs on every answer and on network failure
   function stopBusy(btn) {
     btn.classList.remove('is-busy');
@@ -65,7 +57,7 @@
         // plan-summary.js listens for this and reloads plan card
         document.dispatchEvent(new CustomEvent('plan-changed'));
       } else {
-        giveBack(btn);
+        refreshAvailability();
       }
 
       // 200, 400, 409 and 422 come with JSON message from PlanAddServlet, 500 is HTML error page
@@ -80,16 +72,65 @@
     }).catch(function () {
       // fetch only lands here when request never got answer
       stopBusy(btn);
-      giveBack(btn);
+      refreshAvailability();
       window.showToast('Could not reach server, check connection and try again.', 'error');
     });
   }
 
-  document.addEventListener('click', function (e) {
-    // closest() walks up from clicked element, so click on button text still finds button
-    var btn = e.target.closest('.js-plan-add');
-    if (btn !== null && !btn.disabled) {
-      add(btn);
-    }
+  document.addEventListener('submit', function (event) {
+    var form = event.target.closest('.plan-action__form');
+    if (!form) { return; }
+    event.preventDefault();
+    var button = form.querySelector('.js-plan-add');
+    if (!button.disabled && button.getAttribute('aria-disabled') !== 'true') { add(button); }
   });
+  var refreshVersion = 0;
+  function refreshAvailability() {
+    var version = ++refreshVersion;
+    var activeId = null;
+    var active = document.activeElement.closest('[data-plan-action]');
+    if (active) { activeId = active.id; }
+    document.querySelectorAll('.js-plan-add').forEach(function (button) { button.disabled = true; });
+    fetch(window.location.href, { cache: 'no-store', headers: { 'Accept': 'text/html' } })
+      .then(function (response) {
+        if (!response.ok) { throw new Error('Could not check prerequisites'); }
+        return response.text();
+      }).then(function (html) {
+        if (version !== refreshVersion) { return; }
+        var page = new DOMParser().parseFromString(html, 'text/html');
+        var actions = Array.from(document.querySelectorAll('[data-plan-action]'));
+        if (actions.some(function (action) { return !page.getElementById(action.id); })) {
+          throw new Error('Plan actions are missing');
+        }
+        actions.forEach(function (action) { action.replaceWith(page.getElementById(action.id)); });
+        if (activeId) {
+          var replacement = document.getElementById(activeId);
+          var control = replacement && replacement.querySelector('button:not(:disabled), [tabindex="0"]');
+          if (control) { control.focus({ preventScroll: true }); }
+        }
+      }).catch(function () {
+        if (version !== refreshVersion) { return; }
+        document.querySelectorAll('[data-plan-action]').forEach(function (action) {
+          var button = action.querySelector('.js-plan-add');
+          if (!button || button.classList.contains('is-added')) { return; }
+          var reason = action.querySelector('.plan-action__reason');
+          if (!reason) {
+            reason = document.createElement('p');
+            reason.className = 'plan-action__reason';
+            reason.id = action.id + '-reason';
+            reason.tabIndex = 0;
+            action.appendChild(reason);
+          }
+          button.disabled = true;
+          button.setAttribute('aria-disabled', 'true');
+          button.setAttribute('aria-describedby', reason.id);
+          reason.textContent = 'Could not check prerequisites. Reload the page to try again.';
+        });
+      });
+  }
+  document.addEventListener('plan-changed', refreshAvailability);
+  window.addEventListener('pageshow', function (event) {
+    if (event.persisted) { refreshAvailability(); }
+  });
+  window.addEventListener('focus', refreshAvailability);
 })();

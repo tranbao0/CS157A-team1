@@ -6,6 +6,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 import com.coursecraft.model.PrerequisiteGroup;
 
@@ -89,6 +91,28 @@ public class PrerequisiteDao {
 			}
 		}
 		return groups;
+	}
+
+	// Reads placement labels once for a batch of prerequisite results.
+	public Map<Integer, List<String>> findPlacementOptions(Connection connection) throws SQLException {
+		Map<Integer, List<String>> options = new HashMap<>();
+		String sql = "SELECT group_id, category_code, min_ppa_score FROM group_accepts_category ORDER BY group_id, category_code";
+		try (PreparedStatement statement = connection.prepareStatement(sql);
+				ResultSet rs = statement.executeQuery()) {
+			while (rs.next()) {
+				int groupId = rs.getInt("group_id");
+				String option = rs.getString("category_code");
+				int score = rs.getInt("min_ppa_score");
+				if (!rs.wasNull()) {
+					option = option + " (PPA " + score + "+)";
+				}
+				if (!options.containsKey(groupId)) {
+					options.put(groupId, new ArrayList<>());
+				}
+				options.get(groupId).add(option);
+			}
+		}
+		return options;
 	}
 
 	// lists placement options of one group like "M-I (PPA 70+)" or "W-II", plan add message shows them

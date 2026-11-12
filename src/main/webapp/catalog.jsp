@@ -1,3 +1,5 @@
+<%@ page import="com.coursecraft.service.PlanAvailability" %>
+<%@ page import="com.coursecraft.model.TranscriptCourse" %>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.sql.Connection, java.sql.PreparedStatement, java.sql.ResultSet, java.sql.SQLException" %>
 <%@ page import="java.net.URLEncoder, java.nio.charset.StandardCharsets" %>
@@ -49,10 +51,13 @@
 	String email = (String) session.getAttribute("email");
 	boolean signedIn = email != null;
 
-	// signed out has no studentId, 0 matches no plan row since AUTO_INCREMENT IDs start at 1
+	// Guests have no student ID.
 	int studentId = 0;
 	if (signedIn) {
-		studentId = (Integer) session.getAttribute("studentId");
+		Integer sessionStudent = (Integer) session.getAttribute("studentId");
+		if (sessionStudent != null) {
+			studentId = sessionStudent;
+		}
 	}
 
 	// visitor + Plan links go to sign-in, next brings student back to this exact page and filters
@@ -109,20 +114,14 @@
 		+ "       (SELECT b.risk_level FROM bottleneck_scores b "
 		+ "        JOIN terms t ON t.term_id = b.term_id "
 		+ "        WHERE b.course_id = c.course_id "
-		+ "        ORDER BY t.term_id DESC, b.computed_at DESC LIMIT 1) AS risk_level, "
-		+ "       EXISTS (SELECT 1 FROM plan_entries pe "
-		+ "               WHERE pe.student_id = ? AND pe.course_id = c.course_id) AS in_plan, "
-		+ "       EXISTS (SELECT 1 FROM completed cp "
-		+ "               WHERE cp.student_id = ? AND cp.course_id = c.course_id AND cp.taken_and_passed = 1) AS completed "
+		+ "        ORDER BY t.term_id DESC, b.computed_at DESC LIMIT 1) AS risk_level "
 		+ "FROM courses c "
 		+ "JOIN sections s ON c.course_id = s.course_id "
 		+ "JOIN sessions se ON se.session_id = s.session_id "
 		+ "WHERE se.term_id = ? AND se.end_date >= CURDATE() AND s.status = 'Active'");
 
-	// list holds Objects, since studentId is number and search text is string
+	// Parameters include the numeric term ID and the search text.
 	List<Object> params = new ArrayList<>();
-	params.add(studentId);
-	params.add(studentId);
 	params.add(termId);
 
 	if (!query.isEmpty()) {
@@ -166,9 +165,7 @@
 						String.valueOf(result.getInt("course_id")),
 						String.valueOf(result.getInt("section_id")),
 						result.getString("risk_level"), // null if course is not scored
-						String.valueOf(result.getInt("session_id")), // + Plan button sends this with course_id
-						String.valueOf(result.getInt("in_plan")), // 1 when course is already in student's plan
-						String.valueOf(result.getInt("completed")) // 1 when student passed course
+						String.valueOf(result.getInt("session_id")) // + Plan button sends this with course_id
 					});
 				}
 			}
@@ -180,6 +177,16 @@
 			}
 		}
 	}
+%>
+<%
+    PlanAvailability planAvailability = null;
+    if (signedIn) {
+        try {
+            planAvailability = PlanAvailability.read(studentId);
+        } catch (SQLException e) {
+            getServletContext().log("Could not check plan prerequisites.", e);
+        }
+    }
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -198,6 +205,12 @@
 <header class="site-header">
 <%@ include file="/WEB-INF/jspf/topbar.jspf" %>
 </header>
+<% String planMessage = (String) session.getAttribute("planMessage");
+   session.removeAttribute("planMessage");
+   if (planMessage != null) { %>
+<p class="banner" role="status"><%= esc(planMessage) %></p>
+<% } %>
+
 	<div class="pagehead">
 		<div class="pagehead__text">
 			<h1 class="pagehead__title"><% if (termId != 0) { %><span class="pagehead__term"><%= esc(termLabel) %></span> course catalog<% } else { %>Course catalog<% } %></h1>
@@ -281,20 +294,9 @@
 						</div>
 					</td>
 					<td role="cell" class="col-action">
-<% if (signedIn && "1".equals(row[13])) { %>
-						<%-- passed course shows completed for every section --%>
-						<button class="btn btn--sm is-added" type="button" disabled>Completed</button>
-<% } else if (signedIn && "1".equals(row[12])) { %>
-						<%-- course is already planned in some term, so every section of it shows In plan --%>
-						<button class="btn btn--sm is-added" type="button" disabled>In plan</button>
-<% } else if (signedIn) { %>
-						<%-- plan-add.js sends course and session of this row to POST /plan/add --%>
-						<button class="btn btn--sm js-plan-add" type="button"
-						        data-course-id="<%= esc(row[8]) %>" data-session-id="<%= esc(row[11]) %>">+ Plan</button>
-<% } else { %>
-						<%-- visitor gets working sign-in link instead of disabled button, hidden text says where it goes --%>
-						<a class="btn btn--sm" href="<%= esc(signInHref) %>">+ Plan<span class="visually-hidden">, sign in to add <%= esc(row[0]) %></span></a>
-<% } %>
+<cc:planAction buttonClass="btn btn--sm" courseId="<%= row[8] %>" sessionId="<%= row[11] %>"
+                            actionId='<%= "plan-section-" + row[9] %>' signedIn="<%= signedIn %>"
+                            signInHref="<%= signInHref %>" returnTo="<%= nextPath %>" availability="<%= planAvailability %>"/>
 					</td>
 				</tr>
 <%
@@ -333,7 +335,7 @@
             <div id="rail-plan" aria-labelledby="rail-tab-plan"<% if (completedTab) { %> hidden<% } %>>
 <% if (signedIn) {
     boolean planLoaded = false;
-    if (loadError == null) {
+    if (loadError == null && planAvailability != null && planAvailability.hasStudent()) {
         try {
             request.setAttribute("planTerms", new PlanService().summarize(studentId));
             planLoaded = true;
@@ -350,24 +352,33 @@
 <% } %>
                 </div>
 <% } else { %>
-                <h2 class="card__subtitle">Nothing saved yet</h2>
-                <p class="card__body">Sign in to save courses to a term-by-term plan. CourseCraft checks prerequisites and SJSU unit limits each time you add a course.</p>
-                <a class="btn btn--block" href="<%= esc(signInHref) %>">Sign in</a>
+                <cc:railEmpty title="Start your plan"
+                    text="Sign in to add courses from the catalog. Your saved courses appear here by term."
+                    href="<%= signInHref %>" action="Sign in"/>
 <% } %>
             </div>
             <div class="completed-panel" id="rail-completed" aria-labelledby="rail-tab-completed"<% if (!completedTab) { %> hidden<% } %>>
 <% if (signedIn) {
     boolean completedLoaded = false;
+    boolean hasCompletedCourses = false;
     if (loadError == null) {
         try {
-            request.setAttribute("completedCourses", new TranscriptService().listCourses(studentId));
+            List<TranscriptCourse> completedCourses = new TranscriptService().listCourses(studentId);
+            request.setAttribute("completedCourses", completedCourses);
+            for (TranscriptCourse course : completedCourses) {
+                if (course.isPassed()) { hasCompletedCourses = true; }
+            }
             completedLoaded = true;
         } catch (SQLException e) {
             getServletContext().log("Could not load completed courses.", e);
         }
     }
-    if (completedLoaded) {
+    if (completedLoaded && !hasCompletedCourses) {
 %>
+            <cc:railEmpty title="Add your completed courses"
+                text="No completed courses yet. Upload a transcript or add courses on My progress to check your prerequisites."
+                href='<%= context + "/progress" %>' action="Open my progress"/>
+<% } else if (completedLoaded) { %>
             <form id="transcript-form" method="post" action="<%= context %>/transcript">
                 <input type="hidden" name="returnTo" value="catalog">
                 <input type="hidden" name="term" value="<%= termId %>">
@@ -380,15 +391,15 @@
                 <p class="tx-group__note" id="progress-edit-help">Clear a tick to remove a completion.</p>
                 <button class="btn" type="submit" form="transcript-form" id="progress-save">Save changes</button>
             </div>
-<% } else { %>
-            <p class="card__body">Could not load completed courses. Try reloading the page.</p>
-<% } %>
             <a class="btn btn--block" href="<%= context %>/progress#completed-courses">Open my progress</a>
             <a class="course-link completed-upload" href="<%= context %>/progress">Upload transcript or add courses</a>
 <% } else { %>
-            <p class="card__body">Sign in to view and edit your completed courses.</p>
-            <a class="btn btn--block" href="<%= context %>/login?next=<%= URLEncoder.encode(catalogHref("", termId, openOnly, query) + "&rail=completed#catalog-rail", StandardCharsets.UTF_8) %>">Sign in</a>
-            <a class="course-link completed-upload" href="<%= context %>/login?next=/progress">Upload transcript</a>
+            <p class="card__body">Could not load completed courses. Try reloading the page.</p>
+<% } %>
+<% } else { %>
+            <cc:railEmpty title="Add your completed courses"
+                text="Sign in to upload a transcript or add completed courses on My progress."
+                href='<%= context + "/login?next=" + URLEncoder.encode(catalogHref("", termId, openOnly, query) + "&rail=completed#catalog-rail", StandardCharsets.UTF_8) %>' action="Sign in"/>
 <% } %>
             </div>
         </section>
