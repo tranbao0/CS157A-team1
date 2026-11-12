@@ -1,6 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%-- My Transcript page, TranscriptServlet forwards here. Lists completed courses, and searches unfinished categories for more. --%>
+<%-- My Transcript page, TranscriptServlet forwards here. Lists completed courses, remaining requirements audit, and searches unfinished categories for more. --%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -38,7 +38,7 @@
 	</div>
 </header>
 
-<%-- two halves: transcript on the left, search on the right, stacked on narrow screens --%>
+<%-- two halves: transcript on the left, audit and search on the right, stacked on narrow screens --%>
 <main class="layout layout--split" id="main">
 <c:if test="${not empty savedMessage}">
 	<%-- popup, shows for 2 seconds then fades out (app.css), script below removes it after --%>
@@ -92,8 +92,61 @@
 		</div>
 	</form>
 
-	<%-- search lives outside the save form (forms cannot nest), its checkboxes join it through form="transcript-form" --%>
+	<%-- right column: remaining requirements audit + course search --%>
 	<section class="tx-search" aria-labelledby="tx-search-title">
+		<h2 class="tx-section__title">Remaining requirements</h2>
+<c:choose>
+	<c:when test="${empty audit}">
+		<p class="tx-empty">Set your major on <a class="course-link" href="${context}/profile">Profile</a> to see your remaining degree requirements.</p>
+	</c:when>
+	<c:otherwise>
+		<p class="tx-group__note"><c:out value="${audit.roadmap.label}"/> &mdash; <a class="course-link" href="${context}/roadmap">View full roadmap</a></p>
+
+		<div class="tx-group">
+			<h3 class="tx-group__title">Required courses
+				<span class="tx-group__count">${audit.doneCourses} of ${audit.totalCourses}</span></h3>
+		<c:choose>
+			<c:when test="${empty audit.remainingCourses}">
+			<p class="tx-list tx-list--empty">All required roadmap courses completed.</p>
+			</c:when>
+			<c:otherwise>
+			<ul class="tx-list">
+				<c:forEach var="req" items="${audit.remainingCourses}">
+				<li class="tx-row">
+					<span class="tx-code"><c:out value="${req.code}"/></span>
+					<span class="tx-title"><c:out value="${req.title}"/> (Term ${req.suggestedTerm} &middot; <c:out value="${req.requirementType}"/>)</span>
+					<span class="tx-units"><c:out value="${req.units}"/> units</span>
+					<a class="course-link tx-view" href="${context}/course.jsp?id=${req.courseId}">Details</a>
+				</li>
+				</c:forEach>
+			</ul>
+			</c:otherwise>
+		</c:choose>
+		</div>
+
+		<div class="tx-group">
+			<h3 class="tx-group__title">General education areas
+				<span class="tx-group__count">${audit.doneGe} of ${audit.totalGe}</span></h3>
+		<c:choose>
+			<c:when test="${empty audit.remainingGeAreas}">
+			<p class="tx-list tx-list--empty">All required GE areas fulfilled.</p>
+			</c:when>
+			<c:otherwise>
+			<ul class="tx-list">
+				<c:forEach var="ge" items="${audit.remainingGeAreas}">
+				<li class="tx-row">
+					<span class="tx-code">Area <c:out value="${ge.code}"/></span>
+					<span class="tx-title"><c:out value="${ge.name}"/></span>
+					<a class="course-link tx-view" href="${context}/transcript?area=ge-${ge.code}">Find courses</a>
+				</li>
+				</c:forEach>
+			</ul>
+			</c:otherwise>
+		</c:choose>
+		</div>
+	</c:otherwise>
+</c:choose>
+
 		<h2 class="tx-section__title" id="tx-search-title">Add completed courses</h2>
 		<p class="tx-group__note">Search courses in categories you have not finished, tick the ones you passed, then save.</p>
 <c:choose>

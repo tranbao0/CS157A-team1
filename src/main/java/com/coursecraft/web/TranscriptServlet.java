@@ -10,8 +10,10 @@ import java.util.List;
 import java.util.Set;
 
 import com.coursecraft.model.Major;
+import com.coursecraft.model.RemainingAudit;
 import com.coursecraft.model.TranscriptCourse;
 import com.coursecraft.model.TranscriptGroup;
+import com.coursecraft.service.RoadmapService;
 import com.coursecraft.service.TranscriptService;
 
 import jakarta.servlet.ServletException;
@@ -50,11 +52,13 @@ public class TranscriptServlet extends HttpServlet {
 		List<TranscriptGroup> groups;
 		List<Major> majors;
 		Major major;
+		RemainingAudit audit;
 		try {
 			courses = service.listCourses(studentId);
 			groups = service.group(courses);
 			majors = service.listMajors();
 			major = service.findMajor(studentId);
+			audit = new RoadmapService().loadAudit(studentId);
 		} catch (SQLException e) {
 			throw new ServletException("Could not load transcript.", e);
 		}
@@ -90,6 +94,7 @@ public class TranscriptServlet extends HttpServlet {
 		request.setAttribute("searching", searching);
 		request.setAttribute("results", results);
 		request.setAttribute("resultCount", resultCount);
+		request.setAttribute("audit", audit);
 		request.setAttribute("coursesJson", coursesJson(courses));
 		request.setAttribute("majorsJson", majorsJson(majors));
 		request.setAttribute("currentMajorId", major == null ? "" : String.valueOf(major.getMajorId()));
