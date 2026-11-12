@@ -3,7 +3,8 @@
 <%-- one GE area row in remaining requirements, Find courses jumps to search when catalog has courses for area --%>
 <%@ attribute name="area" required="true" type="com.coursecraft.model.RoadmapGeStatus" %>
 <c:set var="context" value="${pageContext.request.contextPath}"/>
-				<li class="tx-row">
+				<li class="tx-row rm-row">
+					<span class="rm-mark" aria-hidden="true"></span>
 					<span class="tx-label tx-label--static">
 						<span class="tx-code">Area <c:out value="${area.code}"/></span>
 						<span class="tx-title"><c:out value="${area.name}"/></span>

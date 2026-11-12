@@ -203,7 +203,7 @@
                     </c:forEach>
                     <c:set var="termLabel" value="${term.label}"/>
                     <c:if test="${term.termNumber > 0}">
-                        <c:set var="termLabel">Year <fmt:formatNumber value="${(term.termNumber + 1 - (term.termNumber + 1) % 2) / 2}" maxFractionDigits="0"/> · ${term.termNumber % 2 == 1 ? 'Fall' : 'Spring'}</c:set>
+                        <c:set var="termLabel">Year <fmt:formatNumber value="${(term.termNumber + 1 - (term.termNumber + 1) % 2) / 2}" pattern="0"/> · ${term.termNumber % 2 == 1 ? 'Fall' : 'Spring'}</c:set>
                     </c:if>
                     <details class="tx-group rm-term ${termDone == fn:length(term.courses) ? 'is-done' : ''}" ${termDone == fn:length(term.courses) ? '' : 'open'}>
                         <summary class="tx-group__title">
@@ -223,7 +223,7 @@
 		<div class="tx-group">
 			<h3 class="tx-group__title">General education areas
 				<c:if test="${audit.totalGe > 0}">
-					<span class="tx-group__count">${audit.doneGe} of ${audit.totalGe}</span>
+					<span class="tx-group__count">${audit.doneGe} of ${audit.totalGe} met</span>
 				</c:if>
 			</h3>
 		<c:choose>
