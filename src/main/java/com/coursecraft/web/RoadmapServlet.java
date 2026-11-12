@@ -1,6 +1,10 @@
 package com.coursecraft.web;
 
 import java.io.IOException;
+import java.sql.SQLException;
+
+import com.coursecraft.model.RoadmapPageData;
+import com.coursecraft.service.RoadmapService;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -20,7 +24,16 @@ public class RoadmapServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		// TODO: load requires_course and requires_ge_area for student's roadmap_id, compare against completed
+		int studentId = (Integer) request.getSession().getAttribute("studentId");
+
+		RoadmapPageData roadmapData;
+		try {
+			roadmapData = new RoadmapService().loadFullRoadmap(studentId);
+		} catch (SQLException e) {
+			throw new ServletException("Could not load roadmap.", e);
+		}
+
+		request.setAttribute("roadmapData", roadmapData);
 		request.getRequestDispatcher(VIEW).forward(request, response);
 	}
 }
