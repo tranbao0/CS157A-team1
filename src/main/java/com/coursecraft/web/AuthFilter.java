@@ -19,7 +19,7 @@ import jakarta.servlet.http.HttpSession;
  * Add new protected paths to list below, servlet itself needs no login code then.
  * /plan/* also covers routes under it like POST /plan/add.
  */
-@WebFilter({ "/plan", "/plan/*", "/roadmap", "/profile" })
+@WebFilter({ "/plan", "/plan/*", "/transcript", "/roadmap", "/profile" })
 public class AuthFilter implements Filter {
 
 	@Override
