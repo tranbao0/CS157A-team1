@@ -1,4 +1,5 @@
 <%@ page import="com.coursecraft.service.PlanAvailability" %>
+<%@ page import="com.coursecraft.model.TranscriptCourse" %>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.sql.Connection, java.sql.PreparedStatement, java.sql.ResultSet, java.sql.SQLException" %>
 <%@ page import="java.net.URLEncoder, java.nio.charset.StandardCharsets" %>
@@ -351,24 +352,33 @@
 <% } %>
                 </div>
 <% } else { %>
-                <h2 class="card__subtitle">Nothing saved yet</h2>
-                <p class="card__body">Sign in to save courses to a term-by-term plan. CourseCraft checks prerequisites and SJSU unit limits each time you add a course.</p>
-                <a class="btn btn--block" href="<%= esc(signInHref) %>">Sign in</a>
+                <cc:railEmpty title="Start your plan"
+                    text="Sign in to add courses from the catalog. Your saved courses appear here by term."
+                    href="<%= signInHref %>" action="Sign in"/>
 <% } %>
             </div>
             <div class="completed-panel" id="rail-completed" aria-labelledby="rail-tab-completed"<% if (!completedTab) { %> hidden<% } %>>
 <% if (signedIn) {
     boolean completedLoaded = false;
+    boolean hasCompletedCourses = false;
     if (loadError == null) {
         try {
-            request.setAttribute("completedCourses", new TranscriptService().listCourses(studentId));
+            List<TranscriptCourse> completedCourses = new TranscriptService().listCourses(studentId);
+            request.setAttribute("completedCourses", completedCourses);
+            for (TranscriptCourse course : completedCourses) {
+                if (course.isPassed()) { hasCompletedCourses = true; }
+            }
             completedLoaded = true;
         } catch (SQLException e) {
             getServletContext().log("Could not load completed courses.", e);
         }
     }
-    if (completedLoaded) {
+    if (completedLoaded && !hasCompletedCourses) {
 %>
+            <cc:railEmpty title="Add your completed courses"
+                text="No completed courses yet. Upload a transcript or add courses on My progress to check your prerequisites."
+                href='<%= context + "/progress" %>' action="Open my progress"/>
+<% } else if (completedLoaded) { %>
             <form id="transcript-form" method="post" action="<%= context %>/transcript">
                 <input type="hidden" name="returnTo" value="catalog">
                 <input type="hidden" name="term" value="<%= termId %>">
@@ -381,15 +391,15 @@
                 <p class="tx-group__note" id="progress-edit-help">Clear a tick to remove a completion.</p>
                 <button class="btn" type="submit" form="transcript-form" id="progress-save">Save changes</button>
             </div>
-<% } else { %>
-            <p class="card__body">Could not load completed courses. Try reloading the page.</p>
-<% } %>
             <a class="btn btn--block" href="<%= context %>/progress#completed-courses">Open my progress</a>
             <a class="course-link completed-upload" href="<%= context %>/progress">Upload transcript or add courses</a>
 <% } else { %>
-            <p class="card__body">Sign in to view and edit your completed courses.</p>
-            <a class="btn btn--block" href="<%= context %>/login?next=<%= URLEncoder.encode(catalogHref("", termId, openOnly, query) + "&rail=completed#catalog-rail", StandardCharsets.UTF_8) %>">Sign in</a>
-            <a class="course-link completed-upload" href="<%= context %>/login?next=/progress">Upload transcript</a>
+            <p class="card__body">Could not load completed courses. Try reloading the page.</p>
+<% } %>
+<% } else { %>
+            <cc:railEmpty title="Add your completed courses"
+                text="Sign in to upload a transcript or add completed courses on My progress."
+                href='<%= context + "/login?next=" + URLEncoder.encode(catalogHref("", termId, openOnly, query) + "&rail=completed#catalog-rail", StandardCharsets.UTF_8) %>' action="Sign in"/>
 <% } %>
             </div>
         </section>

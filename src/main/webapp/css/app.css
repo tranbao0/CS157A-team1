@@ -1998,3 +1998,8 @@ details.rm-term:not(.is-done) > summary .tx-group__count { color: var(--ink-3); 
 .plan-action__reason { margin: 0; max-width: 28ch; color: var(--ink-3); font-size: .75rem; line-height: 1.45; overflow-wrap: anywhere; }
 .plan-action .btn[aria-disabled="true"] { background: #e6e6e6; border-color: #c4c4c4; color: #555; opacity: 1; cursor: not-allowed; }
 .plan-action__reason:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+/* Empty rail panels use the same spacing and offer one next step. */
+.rail-empty { display: grid; gap: .75rem; padding: .5rem 0 .25rem; }
+.rail-empty > .card__subtitle, .rail-empty > .card__body { margin: 0; }
+.rail-empty > .btn { margin-top: .5rem; }

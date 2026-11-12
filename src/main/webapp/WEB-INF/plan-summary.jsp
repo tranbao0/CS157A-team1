@@ -1,11 +1,13 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="cc" tagdir="/WEB-INF/tags" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <%-- Catalog plan summary, also refreshed by GET /plan/summary after an add. --%>
 <c:choose>
     <c:when test="${empty planTerms}">
-        <h3 class="card__subtitle">Nothing saved yet</h3>
-        <p class="card__body">Use + Plan on a course row to add it to a term.</p>
+        <cc:railEmpty title="Start your plan"
+            text="Use + Plan in the catalog to add a course. Your saved courses appear here by term."
+            href="#q" action="Find a course"/>
     </c:when>
     <c:otherwise>
         <ol class="plan-terms" tabindex="0" aria-label="Planned terms">
