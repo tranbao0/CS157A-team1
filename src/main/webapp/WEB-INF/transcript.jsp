@@ -56,16 +56,9 @@
 <%-- every category shows, even with nothing completed, so the student sees what is left --%>
 <c:forEach var="group" items="${groups}">
 		<section class="tx-group">
+			<%-- W-I placement meets Area 1A and M-I meets Area 2, so those show as met instead of 0 of N --%>
 			<h3 class="tx-group__title"><c:out value="${group.title}"/>
-	<%-- W-I placement meets Area 1A and M-I meets Area 2, so those show as met instead of 0 of N --%>
-	<c:choose>
-		<c:when test="${not empty group.metByPlacement}">
-				<span class="tx-group__count">Met by <c:out value="${group.metByPlacement}"/> placement</span></h3>
-		</c:when>
-		<c:otherwise>
-				<span class="tx-group__count">${group.done} of ${group.total}</span></h3>
-		</c:otherwise>
-	</c:choose>
+				<span class="tx-group__count"><c:out value="${group.statusText}"/></span></h3>
 			<p class="tx-group__note"><c:out value="${group.note}"/></p>
 	<c:choose>
 		<c:when test="${group.done == 0 and not empty group.metByPlacement}">
@@ -234,7 +227,7 @@
 			<select class="search-input tx-search__area" id="area" name="area">
 				<option value="">All unfinished categories</option>
 			<c:forEach var="group" items="${openGroups}">
-				<option value="<c:out value='${group.key}'/>"${group.key == areaKey ? ' selected' : ''}><c:out value="${group.title}"/> (${group.done} of ${group.total})</option>
+				<option value="<c:out value='${group.key}'/>"${group.key == areaKey ? ' selected' : ''}><c:out value="${group.title}"/> (<c:out value="${group.statusText}"/>)</option>
 			</c:forEach>
 			</select>
 			<button class="btn" type="submit">Search</button>
@@ -252,7 +245,7 @@
 				<c:forEach var="group" items="${results}">
 		<div class="tx-group">
 			<h3 class="tx-group__title"><c:out value="${group.title}"/>
-				<span class="tx-group__count">${group.done} of ${group.total}</span></h3>
+				<span class="tx-group__count"><c:out value="${group.statusText}"/></span></h3>
 			<ul class="tx-list">
 					<c:forEach var="course" items="${group.courses}">
 				<li class="tx-row">

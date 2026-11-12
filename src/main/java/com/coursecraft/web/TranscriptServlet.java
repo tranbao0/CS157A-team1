@@ -63,11 +63,11 @@ public class TranscriptServlet extends HttpServlet {
 			throw new ServletException("Could not load transcript.", e);
 		}
 
-		// search runs only over unfinished categories, and only once student types or picks a category
+		// search runs only over categories with courses not passed yet, and only once student types or picks one
 		List<TranscriptGroup> openGroups = new ArrayList<>();
 		boolean anyDone = false;
 		for (TranscriptGroup group : groups) {
-			if (!group.isFinished()) {
+			if (group.isHasCoursesLeft()) {
 				openGroups.add(group);
 			}
 			if (group.getDone() > 0) {

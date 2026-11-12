@@ -84,4 +84,15 @@ public class TranscriptGroup {
 	public boolean isFinished() {
 		return metByPlacement != null || done == total;
 	}
+
+	// tells if some course in category is not passed yet, so search still offers it
+	// even when placement meets the area, since a major can require MATH 30 from a placement-met Area 2
+	public boolean isHasCoursesLeft() {
+		return done < total;
+	}
+
+	// count shown next to category name, like "2 of 4" or "Met by M-I placement"
+	public String getStatusText() {
+		return metByPlacement != null ? "Met by " + metByPlacement + " placement" : done + " of " + total;
+	}
 }
