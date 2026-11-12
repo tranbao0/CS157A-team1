@@ -28,7 +28,7 @@ import jakarta.servlet.http.HttpSession;
  * POST saves checkboxes, both from the page and from transcript import (js/transcript.js).
  * AuthFilter makes sure only signed-in students get here.
  */
-@WebServlet("/transcript")
+@WebServlet({ "/transcript", "/progress" })
 public class TranscriptServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 1L;
@@ -41,6 +41,16 @@ public class TranscriptServlet extends HttpServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		if ("/transcript".equals(request.getServletPath())) {
+			String query = request.getQueryString();
+			response.sendRedirect(request.getContextPath() + "/progress" + (query == null ? "" : "?" + query));
+			return;
+		}
+		show(request, response);
+	}
+
+	static void show(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		// AuthFilter already checked login, so studentId is always there
 		int studentId = (Integer) request.getSession().getAttribute("studentId");
@@ -59,6 +69,7 @@ public class TranscriptServlet extends HttpServlet {
 			majors = service.listMajors();
 			major = service.findMajor(studentId);
 			audit = new RoadmapService().loadAudit(studentId);
+			ProgressPage.prepare(request, studentId, courses, audit);
 		} catch (SQLException e) {
 			throw new ServletException("Could not load transcript.", e);
 		}
@@ -135,7 +146,20 @@ public class TranscriptServlet extends HttpServlet {
 		// redirect after POST, so Refresh reloads page instead of sending form again, search stays as it was
 		String query = text(request.getParameter("q"));
 		String areaKey = text(request.getParameter("area"));
-		String back = request.getContextPath() + "/transcript";
+		if ("catalog".equals(request.getParameter("returnTo"))) {
+			String term = text(request.getParameter("term"));
+			String back = request.getContextPath() + "/catalog.jsp?q="
+					+ URLEncoder.encode(query, StandardCharsets.UTF_8);
+			if (term.matches("\\d{1,9}")) {
+				back += "&term=" + term;
+			}
+			if ("1".equals(request.getParameter("open"))) {
+				back += "&open=1";
+			}
+			response.sendRedirect(back + "&rail=completed#catalog-rail");
+			return;
+		}
+		String back = request.getContextPath() + "/progress";
 		if (!query.isEmpty() || !areaKey.isEmpty()) {
 			back += "?q=" + URLEncoder.encode(query, StandardCharsets.UTF_8)
 					+ "&area=" + URLEncoder.encode(areaKey, StandardCharsets.UTF_8);
@@ -144,7 +168,7 @@ public class TranscriptServlet extends HttpServlet {
 	}
 
 	// missing parameter becomes empty text, spaces cut
-	private String text(String value) {
+	private static String text(String value) {
 		return value == null ? "" : value.trim();
 	}
 
@@ -163,7 +187,7 @@ public class TranscriptServlet extends HttpServlet {
 	}
 
 	// every catalog course, so import can match transcript codes to course IDs
-	private String coursesJson(List<TranscriptCourse> courses) {
+	private static String coursesJson(List<TranscriptCourse> courses) {
 		StringBuilder out = new StringBuilder("[");
 		for (TranscriptCourse course : courses) {
 			if (out.length() > 1) {
@@ -177,7 +201,7 @@ public class TranscriptServlet extends HttpServlet {
 	}
 
 	// every major with a roadmap, so import can match transcript's plan line
-	private String majorsJson(List<Major> majors) {
+	private static String majorsJson(List<Major> majors) {
 		StringBuilder out = new StringBuilder("[");
 		for (Major major : majors) {
 			if (out.length() > 1) {
@@ -193,7 +217,7 @@ public class TranscriptServlet extends HttpServlet {
 	 * JSON string for inline <script>. Quotes, backslash, < > & and control characters become
 	 * unicode escapes, so text cannot close the script tag.
 	 */
-	private String json(String value) {
+	private static String json(String value) {
 		StringBuilder out = new StringBuilder("\"");
 		for (int i = 0; i < value.length(); i++) {
 			char c = value.charAt(i);

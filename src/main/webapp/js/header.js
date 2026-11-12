@@ -13,6 +13,7 @@
   var root = document.documentElement;
   // only catalog has rail stack, other pages skip that measurement
   var stack = document.querySelector('.rail__stack');
+  var rail = document.querySelector('.rail');
   var lastY = window.scrollY;
 
   function show(visible) {
@@ -23,38 +24,31 @@
     }
   }
 
-  // phone shows only top bar while page is scrolled past header, app.css clips rest away
-  function compact() {
-    header.classList.toggle('is-compact', window.scrollY > header.offsetHeight);
-  }
-
   function measure() {
-    // window can change width while page is scrolled, so compact state follows new header height
-    compact();
     root.style.setProperty('--site-header-h', header.offsetHeight + 'px');
     if (stack) {
       root.style.setProperty('--rail-stack-h', stack.offsetHeight + 'px');
+      var gap = parseFloat(window.getComputedStyle(rail).top) || 0;
+      root.classList.toggle('has-tall-rail',
+        stack.offsetHeight + header.offsetHeight + 2 * gap > window.innerHeight);
     }
   }
 
+  window.addEventListener('resize', measure);
+
   window.addEventListener('scroll', function () {
     var y = window.scrollY;
-    compact();
     var moved = y - lastY;
     lastY = y;
 
     // small moves are jitter, only hide once header itself is scrolled past
-    if (moved > 6 && y > header.offsetHeight) { show(false); }
+    if (moved > 6 && y > header.offsetHeight && !header.contains(document.activeElement)) { show(false); }
     if (moved < -6) { show(true); }
   }, { passive: true });
 
   // keyboard user tabbing into hidden header needs to see where focus went
-  header.addEventListener('focusin', function (event) {
+  header.addEventListener('focusin', function () {
     show(true);
-    // focus inside page head brings whole head back, so focused filter is never clipped
-    if (event.target.closest('.pagehead')) {
-      header.classList.remove('is-compact');
-    }
   });
 
   // header height changes with screen width and wrapped chips, stack grows when plan card gets new term

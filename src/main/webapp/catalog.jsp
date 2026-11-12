@@ -5,7 +5,9 @@
 <%@ page import="com.coursecraft.util.Db" %>
 <%@ page import="com.coursecraft.dao.TermDao" %>
 <%@ page import="com.coursecraft.model.Term" %>
+<%@ page import="com.coursecraft.service.TranscriptService" %>
 <%@ page import="com.coursecraft.service.PlanService" %>
+<%@ taglib prefix="cc" tagdir="/WEB-INF/tags" %>
 <%@ page import="com.coursecraft.service.ProfileService" %>
 <%@ page import="com.coursecraft.model.StudentProfile" %>
 <%@ page import="com.coursecraft.web.RegisterServlet" %>
@@ -64,6 +66,7 @@
 	query = query == null ? "" : query.trim();
 
 	boolean openOnly = "1".equals(request.getParameter("open"));
+    boolean completedTab = "completed".equals(request.getParameter("rail"));
 
 	String loadError = null;
 	// terms not over yet that have active section, in time order, first one is default
@@ -190,10 +193,11 @@
 
 <a class="skip-link" href="#catalog">Skip to catalog</a>
 
-<%-- site header: shared top bar plus this page's head, slides away together on scroll (header.js) --%>
+<%-- Navigation stays available while the catalog controls scroll with the page. --%>
 <% request.setAttribute("navPage", "catalog"); %>
 <header class="site-header">
 <%@ include file="/WEB-INF/jspf/topbar.jspf" %>
+</header>
 	<div class="pagehead">
 		<div class="pagehead__text">
 			<h1 class="pagehead__title"><% if (termId != 0) { %><span class="pagehead__term"><%= esc(termLabel) %></span> course catalog<% } else { %>Course catalog<% } %></h1>
@@ -213,9 +217,9 @@
 			<a class="chip<% if (openOnly) { %> is-on<% } %>"
 			   href="<%= esc(catalogHref(context, termId, !openOnly, query)) %>"<% if (openOnly) { %> aria-current="true"<% } %>>Open seats only</a>
 <% } %>
+            <a class="chip catalog-completed-link" data-open-completed href="<%= esc(catalogHref(context, termId, openOnly, query)) %>&amp;rail=completed#catalog-rail">Completed courses</a>
 		</div>
 	</div>
-</header>
 
 <main class="layout" id="catalog">
 	<div class="catalog-wrap">
@@ -317,60 +321,86 @@
 <% if (openOnly) { %>
 			<input type="hidden" name="open" value="1">
 <% } %>
+            <input type="hidden" name="rail" value="<%= completedTab ? "completed" : "plan" %>">
 			<button class="btn" type="submit">Search</button>
 		</form>
 		<div class="rail__cards">
-<% if (signedIn) { %>
-<%
-			// plan summary loads only while catalog data is available
-			boolean planLoaded = false;
-			if (loadError == null) {
-				try {
-					request.setAttribute("planTerms", new PlanService().summarize(studentId));
-					planLoaded = true;
-				} catch (SQLException e) {
-					getServletContext().log("Could not load plan.", e);
-				}
-			}
+        <section class="card catalog-rail" id="catalog-rail" aria-label="Catalog tools">
+            <nav class="catalog-rail-tabs" aria-label="Catalog tools">
+                <a id="rail-tab-plan" href="<%= esc(catalogHref(context, termId, openOnly, query)) %>#catalog-rail" data-rail-tab="plan" aria-controls="rail-plan"<% if (!completedTab) { %> aria-current="page"<% } %>>Plan</a>
+                <a id="rail-tab-completed" href="<%= esc(catalogHref(context, termId, openOnly, query)) %>&amp;rail=completed#catalog-rail" data-rail-tab="completed" aria-controls="rail-completed"<% if (completedTab) { %> aria-current="page"<% } %>>Completed courses</a>
+            </nav>
+            <div id="rail-plan" aria-labelledby="rail-tab-plan"<% if (completedTab) { %> hidden<% } %>>
+<% if (signedIn) {
+    boolean planLoaded = false;
+    if (loadError == null) {
+        try {
+            request.setAttribute("planTerms", new PlanService().summarize(studentId));
+            planLoaded = true;
+        } catch (SQLException e) {
+            getServletContext().log("Could not load plan.", e);
+        }
+    }
 %>
-		<div class="card">
-			<h2 class="card__title">Your plan</h2>
-<%@ include file="/WEB-INF/jspf/plan-road.jspf" %>
-			<%-- plan-add.js swaps this div with fresh copy from GET /plan/summary after each add --%>
-			<div class="plan-summary" id="plan-summary">
+                <div class="plan-summary" id="plan-summary">
 <% if (planLoaded) { %>
-				<jsp:include page="/WEB-INF/plan-summary.jsp"/>
+                    <jsp:include page="/WEB-INF/plan-summary.jsp"/>
 <% } else { %>
-				<p class="card__body">Could not load your plan.</p>
+                    <p class="card__body">Could not load your plan. Try reloading the page.</p>
 <% } %>
-			</div>
-		</div>
+                </div>
 <% } else { %>
-		<div class="card">
-			<h2 class="card__title">Your plan</h2>
-<%@ include file="/WEB-INF/jspf/plan-road.jspf" %>
-			<h3 class="card__subtitle">Nothing saved yet</h3>
-			<p class="card__body">Sign in to save courses to a term-by-term plan. CourseCraft checks prerequisites and SJSU unit limits each time you add a course.</p>
-			<a class="btn btn--primary btn--block" href="<%= context %>/register">Create account</a>
-			<%-- signInHref brings student back to same search and filters after sign-in --%>
-			<a class="btn btn--block" href="<%= esc(signInHref) %>">Sign in</a>
-		</div>
+                <h2 class="card__subtitle">Nothing saved yet</h2>
+                <p class="card__body">Sign in to save courses to a term-by-term plan. CourseCraft checks prerequisites and SJSU unit limits each time you add a course.</p>
+                <a class="btn btn--block" href="<%= esc(signInHref) %>">Sign in</a>
 <% } %>
-		<div class="card card--dashed">
-			<h2 class="card__title">Upload transcript</h2>
-			<p class="card__body">Marks the courses you passed as completed, so prerequisite checks know what you have done.</p>
-<% if (signedIn) { %>
-			<a class="btn btn--block" href="<%= context %>/transcript">Upload transcript</a>
+            </div>
+            <div class="completed-panel" id="rail-completed" aria-labelledby="rail-tab-completed"<% if (!completedTab) { %> hidden<% } %>>
+<% if (signedIn) {
+    boolean completedLoaded = false;
+    if (loadError == null) {
+        try {
+            request.setAttribute("completedCourses", new TranscriptService().listCourses(studentId));
+            completedLoaded = true;
+        } catch (SQLException e) {
+            getServletContext().log("Could not load completed courses.", e);
+        }
+    }
+    if (completedLoaded) {
+%>
+            <form id="transcript-form" method="post" action="<%= context %>/transcript">
+                <input type="hidden" name="returnTo" value="catalog">
+                <input type="hidden" name="term" value="<%= termId %>">
+                <input type="hidden" name="open" value="<%= openOnly ? "1" : "0" %>">
+                <input type="hidden" name="q" value="<%= esc(query) %>">
+            </form>
+            <cc:completedCourses courses="${completedCourses}"/>
+            <div class="completed-actions">
+                <button class="btn btn--ghost" type="button" id="progress-edit" aria-pressed="false" hidden>Edit completed courses</button>
+                <p class="tx-group__note" id="progress-edit-help">Clear a tick to remove a completion.</p>
+                <button class="btn" type="submit" form="transcript-form" id="progress-save">Save changes</button>
+            </div>
 <% } else { %>
-			<%-- next sends the student on to the transcript page once they sign in --%>
-			<a class="btn btn--block" href="<%= context %>/login?next=/transcript">Sign in to upload</a>
+            <p class="card__body">Could not load completed courses. Try reloading the page.</p>
 <% } %>
-		</div>
+            <a class="btn btn--block" href="<%= context %>/progress#completed-courses">Open my progress</a>
+            <a class="course-link completed-upload" href="<%= context %>/progress">Upload transcript or add courses</a>
+<% } else { %>
+            <p class="card__body">Sign in to view and edit your completed courses.</p>
+            <a class="btn btn--block" href="<%= context %>/login?next=<%= URLEncoder.encode(catalogHref("", termId, openOnly, query) + "&rail=completed#catalog-rail", StandardCharsets.UTF_8) %>">Sign in</a>
+            <a class="course-link completed-upload" href="<%= context %>/login?next=/progress">Upload transcript</a>
+<% } %>
+            </div>
+        </section>
 		</div>
 		</div>
 	</aside>
 </main>
 <%@ include file="/WEB-INF/jspf/footer.jspf" %>
+<% if (signedIn) {
+    request.setAttribute("toastText", session.getAttribute("transcriptSaved"));
+    session.removeAttribute("transcriptSaved");
+} %>
 <%@ include file="/WEB-INF/jspf/toast.jspf" %>
 
 
@@ -416,6 +446,8 @@
 <script src="<%= context %>/js/toast.js" defer></script>
 <script src="<%= context %>/js/header.js" defer></script>
 <script src="<%= context %>/js/plan-add.js" defer></script>
+<script src="<%= context %>/js/progress.js" defer></script>
+<script src="<%= context %>/js/catalog-rail.js" defer></script>
 <script src="<%= context %>/js/plan-summary.js" defer></script>
 </body>
 </html>

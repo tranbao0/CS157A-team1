@@ -229,8 +229,8 @@ a:hover { color: var(--sjsu-dark); }
 
 /*
   4. Site header, same rules on every page as landing.
-  <header class="site-header"> holds shared top bar (WEB-INF/jspf/topbar.jspf) and optional page head
-  (title, meta line, filters). Whole block is glass, sticks to top, slides away going down and comes back
+  <header class="site-header"> holds the shared navigation bar.
+  The bar is glass, sticks to top, slides away going down and comes back
   going up (js/header.js). Landing keeps its own fixed .topbar driven by landing-loop.js, same look.
 */
 .site-header {
@@ -1267,9 +1267,6 @@ body:has(> .get-started[open]) { overflow: hidden; }
   Header row stays for screen readers only, seat count gets "open" after it so number still makes sense.
 */
 @media (max-width: 40rem) {
-  .site-header.is-compact { clip-path: inset(0 0 calc(100% - var(--topbar-total-h)) 0); }
-  /* inset line, clip cuts off header's own bottom border and a real border would change header height */
-  .site-header.is-compact .topbar { box-shadow: inset 0 -1px 0 var(--header-line); }
   /* section with no mode shows type alone, without dot in front */
   .catalog td.col-when:empty + td.col-instructor::before { content: none; }
   .catalog-wrap { overflow-x: visible; }
@@ -1740,7 +1737,7 @@ body:has(> .site-footer) {
 /* one line on wide screens, pretty wrap keeps single word from hanging alone on narrower ones */
 .site-footer p { margin: 0; max-width: 66rem; text-wrap: pretty; }
 
-/* 19. Transcript page (transcript.jsp). Two even halves, transcript left, remaining requirements and search right, stacked on narrow screens. */
+/* 19. Course progress rows, completion search, and degree requirements. */
 .layout--split { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (max-width: 56rem) {
   .layout--split { grid-template-columns: minmax(0, 1fr); }
@@ -1875,3 +1872,118 @@ details.rm-term:not(.is-done) > summary .tx-group__count { color: var(--ink-3); 
   details.rm-term > summary .tx-group__count { grid-column: 1; }
   details.rm-term > summary::after { grid-column: 2; }
 }
+
+/* My progress: one course row holds its completion and every saved plan entry. */
+.progress-page [hidden] { display: none !important; }
+.progress-page { width: min(100%, 68rem); margin: 0 auto; padding: 2rem 1.5rem 3rem; }
+.progress-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.progress-head h1 { margin: 0; font-size: 2rem; letter-spacing: -.02em; }
+.progress-upload { position: relative; cursor: pointer; }
+.progress-upload:focus-within { outline: 2px solid var(--sjsu); outline-offset: 3px; }
+.progress-upload input { inset: 0; width: 100%; height: 100%; clip: auto; opacity: 0; cursor: pointer; }
+.progress-help { margin: .75rem 0 1.75rem; color: var(--ink-3); font-size: .875rem; }
+.progress-help > summary { cursor: pointer; color: var(--sjsu); }
+.progress-help p { max-width: 70ch; line-height: 1.5; }
+.progress-tools { margin: 1.5rem 0; border-block: 1px solid var(--line); }
+.progress-terms > summary .tx-group__count { margin-left: .5rem; }
+.progress-tools > details { padding: .875rem 0; }
+.progress-tools > details + details { border-top: 1px solid var(--line); }
+.progress-tools > details > summary { cursor: pointer; color: var(--sjsu); min-height: 1.5rem; }
+.progress-tools > details[open] > summary { margin-bottom: 1rem; }
+.progress-plan-term { margin: 1.25rem 0; }
+.progress-plan-term h3 { font-size: 1rem; font-weight: 600; margin: 0 0 .5rem; }
+.progress-edit-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-bottom: 1.5rem; }
+.progress-edit-bar .tx-group__note { flex: 1 1 20rem; margin: 0; }
+.progress-page .tx-audit { padding: 0; border: 0; }
+.progress-page .tx-section__title { font-size: 1.375rem; }
+.progress-page .tx-list { border: 0; border-radius: 0; }
+.progress-page .rm-progress { margin: 1rem 0; }
+.progress-page .rm-bar { max-width: 34rem; }
+.progress-page .rm-term { margin: 1.5rem 0; }
+.progress-page .rm-term > summary { grid-template-columns: auto 1fr auto; padding: .5rem 0; border: 0; background: none; border-radius: 0; color: var(--ink); }
+.progress-page .rm-term > summary::after { grid-column: 3; }
+.progress-page .rm-term > summary .tx-group__count { grid-column: auto; text-align: right; }
+.progress-page .rm-term.is-done > summary { color: var(--low-ink); }
+.progress-page .rm-row { min-height: 4rem; padding: .75rem; gap: .875rem; }
+.progress-page .rm-row.is-done { background: none; }
+.progress-page .rm-row.is-planned { background: var(--canvas); }
+.progress-page .tx-label { gap: .25rem; }
+.progress-course-link { display: flex; flex-wrap: wrap; gap: .25rem .875rem; align-items: baseline; width: fit-content; text-decoration: none; }
+.progress-course-link .tx-code { text-decoration: underline; text-decoration-color: var(--sjsu-line); text-underline-offset: .2em; }
+.progress-course-link .tx-title { color: var(--ink-2); }
+.progress-plan { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem 1rem; font-size: .8125rem; }
+.progress-plan form { margin-left: auto; }
+.progress-plan .btn { min-height: 2.75rem; }
+.progress-plan .plan-course__dep { flex-basis: 100%; }
+.progress-check { accent-color: var(--sjsu); }
+.progress-page .progress-check { width: 1.25rem; height: 1.25rem; flex: none; }
+.progress-page:not(.has-progress-script) .rm-row:has(.progress-check) > .rm-mark { display: none; }
+.has-progress-script:not(.is-editing) .progress-check { display: none; }
+.has-progress-script.is-editing .rm-row:has(.progress-check) > .rm-mark { display: none; }
+.has-progress-script:not(.is-editing) .progress-search-row .progress-check { display: block; }
+.has-progress-script .progress-search-row > .rm-mark { display: none; }
+.progress-result { justify-content: space-between; flex-wrap: wrap; }
+.progress-ge { margin-top: 2.5rem; }
+.progress-ge .tx-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 2rem; }
+.progress-ge .rm-row { padding-inline: 0; border-top: 1px solid var(--line-2); }
+.progress-ge .rm-done { display: none; }
+.progress-other { margin-top: 2.5rem; }
+.progress-browse { display: inline-block; margin-top: 1.5rem; }
+.progress-page [id], #catalog, .filterbar { scroll-margin-top: calc(var(--site-header-h) + 1rem); }
+@media (max-width: 40rem) {
+  .progress-page { padding: 1.5rem 1.25rem 2.5rem; }
+  .progress-head { align-items: flex-start; flex-wrap: wrap; }
+  .progress-head h1 { font-size: 1.75rem; }
+  .progress-page .rm-row { padding: .75rem .5rem; gap: .75rem; }
+  .progress-course-link { display: block; }
+  .progress-course-link .tx-title { display: block; margin-top: .125rem; }
+  .progress-page .rm-term > summary { grid-template-columns: 1fr auto; }
+  .progress-page .rm-term > summary .tx-group__count { grid-column: 1; text-align: left; }
+  .progress-page .rm-term > summary::after { grid-column: 2; }
+  .progress-ge .tx-list { display: block; }
+  .progress-ge .tx-view { white-space: normal; max-width: 5rem; }
+  .progress-page .tx-search__form .search-input { flex-basis: 100%; }
+}
+.progress-page .tx-label:has(> .progress-plan:only-of-type) { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 1rem; }
+.progress-page .tx-label:has(> .progress-plan:only-of-type) > .progress-course-link,
+.progress-page .tx-label:has(> .progress-plan:only-of-type) > .tx-meta { grid-column: 1; }
+.progress-plan:only-of-type { display: contents; }
+.progress-plan:only-of-type > span { grid-column: 1; }
+.progress-plan:only-of-type > form { grid-column: 2; grid-row: 1 / span 4; align-self: center; }
+.progress-page.has-progress-script #progress-save:not([hidden]) { position: fixed; right: max(1.25rem, calc((100vw - 65rem) / 2)); bottom: 1.25rem; z-index: 25; box-shadow: var(--shadow-pop); }
+
+/* Both pages edit the same saved completed-course records. */
+.completed-courses { margin: 1.5rem 0 1rem; border-bottom: 1px solid var(--line); padding-bottom: 1rem; }
+.completed-courses > summary { color: var(--sjsu); cursor: pointer; }
+.completed-count { margin: .75rem 0; font-size: .875rem; color: var(--ink-3); }
+.completed-list { padding: 0; margin: 0; list-style: none; }
+.completed-course { display: flex; align-items: center; gap: .75rem; padding: .75rem 0; border-top: 1px solid var(--line-2); }
+.completed-course a { min-width: 0; text-decoration: none; }
+.completed-course a strong { font-size: .9375rem; text-decoration: underline; text-decoration-color: var(--sjsu-line); text-underline-offset: .2em; }
+.completed-course a span { display: block; margin-top: .125rem; font-size: .875rem; color: var(--ink-2); overflow-wrap: anywhere; }
+.completed-course-mark { color: var(--low-ink); flex: none; width: 1.25rem; text-align: center; }
+.completed-course .progress-check { width: 1.25rem; height: 1.25rem; flex: none; accent-color: var(--sjsu); }
+.completed-panel [hidden] { display: none !important; }
+.completed-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin: 1rem 0; }
+.completed-upload { display: block; text-align: center; margin-top: 1rem; font-size: .875rem; }
+.is-editing .completed-course-mark { display: none; }
+.completed-panel:not(.has-progress-script) .completed-course-mark { display: none; }
+.progress-page:not(.has-progress-script) .completed-course-mark { display: none; }
+.progress-completion-edit { font-size: .875rem; }
+.has-progress-script:not(.is-editing) .progress-completion-edit { display: none; }
+
+.catalog-completed-link { display: none; }
+@media (max-width: 75rem) { .catalog-completed-link { display: inline-flex; } }
+
+@media (min-width: 75.001rem) {
+  html:not(.is-measured) .rail, .has-tall-rail .rail { position: static; height: auto; margin-top: 0; }
+  html:not(.is-measured) .rail__stack, .has-tall-rail .rail__stack { transform: none; transition: none; }
+}
+
+/* Only the selected catalog tool contributes to the rail height and focus order. */
+.catalog-rail [hidden] { display: none !important; }
+.catalog-rail-tabs { display: flex; gap: 1rem; border-bottom: 1px solid var(--line); margin-bottom: 1rem; }
+.catalog-rail-tabs a { display: flex; align-items: center; min-height: 2.75rem; padding: .5rem 0; font-size: .9375rem; text-decoration: none; color: var(--ink-3); border-bottom: 2px solid transparent; }
+.catalog-rail-tabs a[aria-selected="true"], .catalog-rail-tabs a[aria-current="page"] { color: var(--sjsu); border-bottom-color: var(--sjsu); font-weight: 600; }
+.catalog-rail-tabs a:focus-visible { outline-offset: 3px; }
+#catalog-rail { scroll-margin-top: calc(var(--site-header-h) + 1rem); }

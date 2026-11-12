@@ -8,7 +8,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-// My plan page, AuthFilter makes sure only signed-in students get here
+// Saved plan links lead to My progress after sign-in.
 @WebServlet("/plan")
 public class PlanServlet extends HttpServlet {
 
@@ -17,7 +17,6 @@ public class PlanServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		// PlanPage loads same data as plan card in catalog rail, so page and card always agree
-		PlanPage.show(request, response, null);
+		response.sendRedirect(request.getContextPath() + "/progress");
 	}
 }
