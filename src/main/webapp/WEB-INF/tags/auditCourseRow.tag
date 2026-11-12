@@ -11,5 +11,16 @@
 						<span class="tx-meta"><c:out value="${meta}"/></span>
 					</span>
 					<span class="tx-units"><c:out value="${course.units}"/> units</span>
+					<c:choose>
+						<c:when test="${course.passed}">
+							<span class="risk risk--low">Completed</span>
+						</c:when>
+						<c:when test="${not empty course.plannedTermLabel}">
+							<span class="risk risk--medium">Planned: <c:out value="${course.plannedTermLabel}"/></span>
+						</c:when>
+						<c:otherwise>
+							<span class="cell-muted">Remaining</span>
+						</c:otherwise>
+					</c:choose>
 					<a class="course-link tx-view" href="${context}/course.jsp?id=${course.courseId}">Details</a>
 				</li>

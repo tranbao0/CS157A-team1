@@ -95,19 +95,20 @@ public class RoadmapDao {
 		}
 	}
 
-	// required courses for student's roadmap in suggested term order, checking both completed courses and placements
+	// required courses for student's roadmap in suggested term order, with passed flag and earliest planned term
 	public List<RoadmapCourse> findCoursesForStudent(Connection connection, int studentId) throws SQLException {
 		String sql = "SELECT c.course_id, c.subject, c.course_number, c.title, c.units, "
 				+ "       rc.suggested_term_position, rc.requirement_type, "
-				+ "       (EXISTS (SELECT 1 FROM completed cp "
-				+ "                WHERE cp.student_id = s.student_id AND cp.course_id = c.course_id "
-				+ "                  AND cp.taken_and_passed = 1) "
-				+ "        OR (c.subject = 'ENGL' AND c.course_number = '1A' "
-				+ "            AND EXISTS (SELECT 1 FROM student_placements sp "
-				+ "                        WHERE sp.student_id = s.student_id AND sp.category_code = 'W-I')) "
-				+ "        OR (c.subject = 'MATH' AND c.course_number = '19' "
-				+ "            AND EXISTS (SELECT 1 FROM student_placements sp "
-				+ "                        WHERE sp.student_id = s.student_id AND sp.category_code IN ('M-I', 'M-II')))) AS passed "
+				+ "       EXISTS (SELECT 1 FROM completed cp "
+				+ "               WHERE cp.student_id = s.student_id AND cp.course_id = c.course_id "
+				+ "                 AND cp.taken_and_passed = 1) AS passed, "
+				+ "       (SELECT CONCAT(t.season, ' ', t.year) "
+				+ "        FROM plan_entries pe "
+				+ "        JOIN sessions se ON se.session_id = pe.session_id "
+				+ "        JOIN terms t ON t.term_id = se.term_id "
+				+ "        WHERE pe.student_id = s.student_id AND pe.course_id = c.course_id "
+				+ "        ORDER BY t.year, FIELD(t.season, 'Winter', 'Spring', 'Summer', 'Fall') "
+				+ "        LIMIT 1) AS planned_term "
 				+ "FROM students s "
 				+ "JOIN requires_course rc ON rc.roadmap_id = s.roadmap_id "
 				+ "JOIN courses c ON c.course_id = rc.course_id "
@@ -129,14 +130,15 @@ public class RoadmapDao {
 							rs.getString("units"),
 							rs.getInt("suggested_term_position"),
 							rs.getString("requirement_type"),
-							rs.getBoolean("passed")));
+							rs.getBoolean("passed"),
+							rs.getString("planned_term")));
 				}
 			}
 		}
 		return courses;
 	}
 
-	// required GE areas for student's roadmap, checking completed courses, placements (M-I -> 2, W-I -> 1A), and catalog availability
+	// required GE areas for student's roadmap, checking completed courses, placements (M-I -> 2, W-I -> 1A), and 5C science lab
 	public List<RoadmapGeStatus> findGeAreasForStudent(Connection connection, int studentId) throws SQLException {
 		String sql = "SELECT ga.code, ga.name, "
 				+ "       COALESCE( "
@@ -152,7 +154,16 @@ public class RoadmapDao {
 				+ "            WHERE sp.student_id = s.student_id "
 				+ "              AND ((ga.code = '1A' AND sp.category_code = 'W-I') "
 				+ "                OR (ga.code = '2' AND sp.category_code = 'M-I')) "
-				+ "            LIMIT 1) "
+				+ "            LIMIT 1), "
+				+ "           (SELECT CONCAT(c.subject, ' ', c.course_number, ' (Lab)') "
+				+ "            FROM completed cp "
+				+ "            JOIN courses c ON c.course_id = cp.course_id "
+				+ "            WHERE ga.code = '5C' "
+				+ "              AND cp.student_id = s.student_id "
+				+ "              AND cp.taken_and_passed = 1 "
+				+ "              AND c.ge_area_code IN ('5A', '5B') "
+				+ "              AND c.units >= 4.0 "
+				+ "            ORDER BY c.subject, CAST(c.course_number AS UNSIGNED), c.course_number LIMIT 1) "
 				+ "       ) AS fulfilled_by, "
 				+ "       EXISTS (SELECT 1 FROM courses c WHERE c.ge_area_code = ga.code) AS has_courses "
 				+ "FROM students s "

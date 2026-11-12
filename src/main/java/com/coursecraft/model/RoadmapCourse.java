@@ -1,6 +1,5 @@
 package com.coursecraft.model;
 
-// holds one required course from requires_course with whether student has passed it
 public class RoadmapCourse {
 
 	private final int courseId;
@@ -11,9 +10,10 @@ public class RoadmapCourse {
 	private final int suggestedTerm;
 	private final String requirementType;
 	private final boolean passed;
+	private final String plannedTermLabel;
 
 	public RoadmapCourse(int courseId, String subject, String courseNumber, String title, String units,
-			int suggestedTerm, String requirementType, boolean passed) {
+			int suggestedTerm, String requirementType, boolean passed, String plannedTermLabel) {
 		this.courseId = courseId;
 		this.subject = subject;
 		this.courseNumber = courseNumber;
@@ -22,6 +22,7 @@ public class RoadmapCourse {
 		this.suggestedTerm = suggestedTerm;
 		this.requirementType = requirementType;
 		this.passed = passed;
+		this.plannedTermLabel = plannedTermLabel;
 	}
 
 	public int getCourseId() {
@@ -50,5 +51,9 @@ public class RoadmapCourse {
 
 	public boolean isPassed() {
 		return passed;
+	}
+
+	public String getPlannedTermLabel() {
+		return plannedTermLabel;
 	}
 }

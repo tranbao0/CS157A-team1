@@ -12,75 +12,14 @@ import com.coursecraft.model.RemainingAudit;
 import com.coursecraft.model.Roadmap;
 import com.coursecraft.model.RoadmapCourse;
 import com.coursecraft.model.RoadmapGeStatus;
-import com.coursecraft.model.RoadmapPageData;
 import com.coursecraft.model.RoadmapTerm;
 import com.coursecraft.util.Db;
 
-// roadmap comparison rules live here, used by both TranscriptServlet and RoadmapServlet
+// roadmap comparison rules live here, used by TranscriptServlet
 public class RoadmapService {
 
-	// compares student's roadmap against completed courses and placements, returns null when student has no major set
+	// loads student's term-by-term roadmap grid and remaining GE areas for transcript page, null when no major is set
 	public RemainingAudit loadAudit(int studentId) throws SQLException {
-		try (Connection connection = Db.getConnection()) {
-			RoadmapDao dao = new RoadmapDao();
-			Roadmap roadmap = dao.findForStudent(connection, studentId);
-			if (roadmap == null) {
-				return null;
-			}
-
-			List<RoadmapCourse> allCourses = dao.findCoursesForStudent(connection, studentId);
-			List<RoadmapCourse> remainingCourses = new ArrayList<>();
-			List<RoadmapCourse> remainingElectives = new ArrayList<>();
-			int doneCourses = 0;
-			int totalCourses = 0;
-			int doneElectives = 0;
-			int totalElectives = 0;
-
-			for (RoadmapCourse course : allCourses) {
-				if ("Elective".equalsIgnoreCase(course.getRequirementType())) {
-					totalElectives++;
-					if (course.isPassed()) {
-						doneElectives++;
-					} else {
-						remainingElectives.add(course);
-					}
-				} else {
-					totalCourses++;
-					if (course.isPassed()) {
-						doneCourses++;
-					} else {
-						remainingCourses.add(course);
-					}
-				}
-			}
-
-			List<RoadmapGeStatus> allGe = dao.findGeAreasForStudent(connection, studentId);
-			List<RoadmapGeStatus> remainingGe = new ArrayList<>();
-			int doneGe = 0;
-			for (RoadmapGeStatus area : allGe) {
-				if (area.isFulfilled()) {
-					doneGe++;
-				} else {
-					remainingGe.add(area);
-				}
-			}
-
-			return new RemainingAudit(
-					roadmap,
-					remainingCourses,
-					remainingElectives,
-					remainingGe,
-					doneCourses,
-					totalCourses,
-					doneElectives,
-					totalElectives,
-					doneGe,
-					allGe.size());
-		}
-	}
-
-	// loads full roadmap grouped by suggested term alongside GE fulfillment status for /roadmap
-	public RoadmapPageData loadFullRoadmap(int studentId) throws SQLException {
 		try (Connection connection = Db.getConnection()) {
 			RoadmapDao dao = new RoadmapDao();
 			Roadmap roadmap = dao.findForStudent(connection, studentId);
@@ -107,23 +46,25 @@ public class RoadmapService {
 						doneCourses++;
 					}
 				}
-				int termNum = course.getSuggestedTerm();
-				RoadmapTerm bucket = byTerm.computeIfAbsent(termNum, RoadmapTerm::new);
+				RoadmapTerm bucket = byTerm.computeIfAbsent(course.getSuggestedTerm(), RoadmapTerm::new);
 				bucket.addCourse(course);
 			}
 
 			List<RoadmapGeStatus> allGe = dao.findGeAreasForStudent(connection, studentId);
+			List<RoadmapGeStatus> remainingGe = new ArrayList<>();
 			int doneGe = 0;
 			for (RoadmapGeStatus area : allGe) {
 				if (area.isFulfilled()) {
 					doneGe++;
+				} else {
+					remainingGe.add(area);
 				}
 			}
 
-			return new RoadmapPageData(
+			return new RemainingAudit(
 					roadmap,
 					new ArrayList<>(byTerm.values()),
-					allGe,
+					remainingGe,
 					doneCourses,
 					totalCourses,
 					doneElectives,
