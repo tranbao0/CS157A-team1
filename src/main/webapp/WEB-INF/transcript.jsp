@@ -2,160 +2,102 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <%@ taglib prefix="cc" tagdir="/WEB-INF/tags" %>
-<%-- My Transcript page, TranscriptServlet forwards here. Lists completed courses, remaining requirements audit, and searches courses not passed yet. --%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Transcript - CourseCraft</title>
-	<%@ include file="/WEB-INF/jspf/head.jspf" %>
-	<script src="<%= request.getContextPath() %>/js/header.js" defer></script>
-	<script src="<%= request.getContextPath() %>/js/transcript.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My progress - CourseCraft</title>
+    <%@ include file="/WEB-INF/jspf/head.jspf" %>
+    <script src="${pageContext.request.contextPath}/js/header.js" defer></script>
+    <script src="${pageContext.request.contextPath}/js/transcript.js" defer></script>
+    <script src="${pageContext.request.contextPath}/js/progress.js" defer></script>
+    <script src="${pageContext.request.contextPath}/js/plan-summary.js" defer></script>
 </head>
 <body>
 <c:set var="context" value="${pageContext.request.contextPath}"/>
-
-<a class="skip-link" href="#main">Skip to transcript</a>
-
-<%-- site header: shared top bar plus this page's head, slides away together on scroll (header.js) --%>
-<% request.setAttribute("navPage", "transcript"); %>
+<a class="skip-link" href="#main">Skip to progress</a>
+<% request.setAttribute("navPage", "progress"); %>
 <header class="site-header">
 <%@ include file="/WEB-INF/jspf/topbar.jspf" %>
-	<div class="pagehead tx-import">
-		<div class="pagehead__text">
-			<h1 class="pagehead__title">Import your transcript</h1>
-			<p class="pagehead__meta">
-				Upload your MySJSU unofficial transcript, saved from the browser as a web page (.html).
-				Upload SJ_SA_CUSTOM.SJ_TR_SS_TSCRPT.html from the "_files" folder.
-				Every course that you passed is marked as completed.
-			</p>
-		</div>
-		<div class="tx-import__controls">
-			<label class="visually-hidden" for="tx-file">Unofficial transcript file</label>
-			<%-- multiple, so the saved page and the inner frame file in its _files folder can go in together --%>
-			<input class="tx-import__file" id="tx-file" type="file" accept=".html,.htm,text/html" multiple>
-			<p class="tx-import__status" id="tx-import-status" role="status" aria-live="polite"></p>
-		</div>
-	</div>
 </header>
-
-<%-- keep transcript left, stack audit and search right, stack both columns on narrow screens --%>
-<main class="layout layout--split" id="main">
-	<form class="tx-form" id="transcript-form" method="post" action="${context}/transcript">
-		<%-- carried through the save so the redirect lands back on the same search --%>
-		<input type="hidden" name="q" value="<c:out value='${query}'/>">
-		<input type="hidden" name="area" value="<c:out value='${areaKey}'/>">
-		<div class="tx-section__head">
-			<h2 class="tx-section__title">Transcript</h2>
-			<button class="btn btn--primary" type="submit">Save changes</button>
-		</div>
-<c:if test="${not anyDone}">
-		<p class="tx-empty">No completed courses yet. Import your transcript or use the search to add some.</p>
-</c:if>
-<%-- every category shows, even with nothing completed, so the student sees what is left --%>
-<c:forEach var="group" items="${groups}">
-		<section class="tx-group">
-			<%-- statusText: GE area says "Met by MATH 30", "Met by W-I placement" or "Not met yet", other categories "2 of 4" --%>
-			<h3 class="tx-group__title"><c:out value="${group.title}"/>
-				<span class="tx-group__count"><c:out value="${group.statusText}"/></span></h3>
-			<p class="tx-group__note"><c:out value="${group.note}"/></p>
-	<c:choose>
-		<c:when test="${group.done == 0 and not empty group.metByPlacement}">
-			<p class="tx-list tx-list--empty">No course needed, your <c:out value="${group.metByPlacement}"/> placement meets this area.</p>
-		</c:when>
-		<c:when test="${group.done == 0}">
-			<p class="tx-list tx-list--empty">Nothing completed yet.</p>
-		</c:when>
-		<c:otherwise>
-			<ul class="tx-list">
-			<c:forEach var="course" items="${group.courses}">
-				<c:if test="${course.passed}">
-				<li class="tx-row">
-					<input type="hidden" name="shown" value="${course.courseId}">
-					<input type="checkbox" id="course-${course.courseId}" name="completed" value="${course.courseId}" checked>
-					<label class="tx-label" for="course-${course.courseId}">
-						<span class="tx-code"><c:out value="${course.code}"/></span>
-						<span class="tx-title"><c:out value="${course.title}"/></span>
-					</label>
-					<span class="tx-units"><c:out value="${course.units}"/> units</span>
-					<a class="course-link tx-view" href="${context}/course.jsp?id=${course.courseId}">Details</a>
-				</li>
-				</c:if>
-			</c:forEach>
-			</ul>
-		</c:otherwise>
-	</c:choose>
-		</section>
-</c:forEach>
-		<div class="tx-actions">
-			<button class="btn btn--primary" type="submit">Save changes</button>
-		</div>
-	</form>
-
-	<%-- group audit and course search in right column --%>
-	<div class="tx-side">
-
-	<section class="tx-search" aria-labelledby="tx-search-title">
-		<h2 class="tx-section__title" id="tx-search-title">Add completed courses</h2>
-		<p class="tx-group__note">Search courses you have not marked as passed, tick the ones you passed, then save.</p>
-<c:choose>
-	<c:when test="${empty openGroups}">
-		<p class="tx-empty">Every category is complete.</p>
-	</c:when>
-	<c:otherwise>
-		<form class="tx-search__form" role="search" method="get" action="${context}/transcript">
-			<label class="visually-hidden" for="q">Search courses</label>
-			<input class="search-input" id="q" name="q" type="search"
-			       placeholder="Search course or title" value="<c:out value='${query}'/>">
-			<label class="visually-hidden" for="area">Category</label>
-			<select class="search-input tx-search__area" id="area" name="area">
-				<option value="">All categories</option>
-			<c:forEach var="group" items="${openGroups}">
-				<option value="<c:out value='${group.key}'/>"${group.key == areaKey ? ' selected' : ''}><c:out value="${group.title}"/> (<c:out value="${group.statusText}"/>)</option>
-			</c:forEach>
-			</select>
-			<button class="btn" type="submit">Search</button>
-		<c:if test="${searching}">
-			<a class="btn btn--ghost" href="${context}/transcript">Clear</a>
-		</c:if>
-		</form>
-	<c:if test="${searching}">
-		<c:choose>
-			<c:when test="${empty results}">
-		<p class="tx-empty">No courses left to add match your search.</p>
-			</c:when>
-			<c:otherwise>
-		<p class="tx-group__note">${resultCount} ${resultCount == 1 ? 'course' : 'courses'} found</p>
-				<c:forEach var="group" items="${results}">
-		<div class="tx-group">
-			<h3 class="tx-group__title"><c:out value="${group.title}"/>
-				<span class="tx-group__count"><c:out value="${group.statusText}"/></span></h3>
-			<ul class="tx-list">
-					<c:forEach var="course" items="${group.courses}">
-				<li class="tx-row">
-					<input type="hidden" name="shown" value="${course.courseId}" form="transcript-form">
-					<input type="checkbox" id="add-${course.courseId}" name="completed" value="${course.courseId}" form="transcript-form">
-					<label class="tx-label" for="add-${course.courseId}">
-						<span class="tx-code"><c:out value="${course.code}"/></span>
-						<span class="tx-title"><c:out value="${course.title}"/></span>
-					</label>
-					<span class="tx-units"><c:out value="${course.units}"/> units</span>
-					<a class="course-link tx-view" href="${context}/course.jsp?id=${course.courseId}">Details</a>
-				</li>
-					</c:forEach>
-			</ul>
-		</div>
-				</c:forEach>
-			</c:otherwise>
-		</c:choose>
-	</c:if>
-	</c:otherwise>
-</c:choose>
-	</section>
-
+<main class="progress-page" id="main">
+    <div class="progress-head">
+        <h1>My progress</h1>
+        <label class="btn btn--primary progress-upload" for="tx-file">Upload transcript
+            <input class="visually-hidden" id="tx-file" type="file" accept=".html,.htm,text/html" multiple>
+        </label>
+    </div>
+    <details class="progress-help">
+        <summary>How to upload your transcript</summary>
+        <p>Save your MySJSU unofficial transcript as a web page (.html). Upload SJ_SA_CUSTOM.SJ_TR_SS_TSCRPT.html from its "_files" folder. Every course you passed is marked as completed.</p>
+    </details>
+    <p class="tx-import__status" id="tx-import-status" role="status" aria-live="polite"></p>
+    <c:if test="${not empty planMessage}"><div class="banner banner--ok" role="status"><c:out value="${planMessage}"/></div></c:if>
+    <c:if test="${not empty planError}"><div class="banner banner--error" role="alert"><c:out value="${planError}"/></div></c:if>
+    <form id="transcript-form" method="post" action="${context}/transcript">
+        <input type="hidden" name="q" value="<c:out value='${query}'/>">
+        <input type="hidden" name="area" value="<c:out value='${areaKey}'/>">
+    </form>
+    <div class="progress-tools">
+        <details class="progress-terms">
+            <summary>Planned terms <span class="tx-group__count">${planCount} ${planCount == 1 ? 'course' : 'courses'}</span></summary>
+            <c:if test="${empty planTerms}"><p class="tx-empty">No courses planned yet. <a href="${context}/catalog.jsp">Browse the catalog</a> to add a course.</p></c:if>
+            <c:forEach var="term" items="${planTerms}">
+                <section class="progress-plan-term">
+                    <h3><c:out value="${term.label}"/> · <c:out value="${term.unitsText}"/> units<c:if test="${term.gradTerm}"> · Expected graduation</c:if></h3>
+                    <c:forEach var="warning" items="${term.warnings}">
+                        <details class="plan-warn plan-warn--<c:out value='${warning.kind}'/>" data-warn-key="<c:out value='${warning.key}'/>" open>
+                            <summary class="plan-warn__summary"><span class="plan-warn__title"><c:out value="${warning.title}"/></span><span class="plan-warn__toggle"><span class="plan-warn__hide">Minimize</span><span class="plan-warn__show">Show</span></span></summary>
+                            <p class="plan-warn__text"><c:out value="${warning.text}"/></p>
+                        </details>
+                    </c:forEach>
+                </section>
+            </c:forEach>
+        </details>
+        <details class="tx-search" id="completion-search" ${searching ? 'open' : ''}>
+            <summary id="tx-search-title">Add completed courses</summary>
+            <p class="tx-group__note">Search for courses you passed. Tick each completed course, then save changes.</p>
+            <form class="tx-search__form" role="search" method="get" action="${context}/progress#tx-search-title">
+                <label class="visually-hidden" for="q">Search courses</label>
+                <input class="search-input" id="q" name="q" type="search" placeholder="Search course or title" value="<c:out value='${query}'/>">
+                <label class="visually-hidden" for="area">Category</label>
+                <select class="search-input tx-search__area" id="area" name="area">
+                    <option value="">All categories</option>
+                    <c:forEach var="group" items="${openGroups}"><option value="<c:out value='${group.key}'/>"${group.key == areaKey ? ' selected' : ''}><c:out value="${group.title}"/></option></c:forEach>
+                </select>
+                <button class="btn" type="submit">Search</button>
+                <c:if test="${searching}"><a class="btn btn--ghost" href="${context}/progress">Clear</a></c:if>
+            </form>
+            <c:if test="${searching}">
+                <p class="tx-group__note">${resultCount} ${resultCount == 1 ? 'course' : 'courses'} found</p>
+                <c:if test="${empty results}"><p class="tx-empty">No courses left to add match your search.</p></c:if>
+                <ul class="tx-list">
+                    <c:forEach var="group" items="${results}">
+                        <c:forEach var="course" items="${group.courses}">
+                            <c:choose>
+                                <c:when test="${progressCourseIds.contains(course.courseId)}">
+                                    <li class="tx-row progress-result"><a class="course-link" href="#progress-course-${course.courseId}" data-edit-course="${course.courseId}"><c:out value="${course.code}"/> · <c:out value="${course.title}"/></a><span class="tx-meta">Edit in course row</span></li>
+                                </c:when>
+                                <c:otherwise><cc:auditCourseRow course="${course}" meta="${group.title}" search="true"/></c:otherwise>
+                            </c:choose>
+                        </c:forEach>
+                    </c:forEach>
+                </ul>
+            </c:if>
+        </details>
+    </div>
+    <details class="completed-courses" id="completed-courses">
+        <summary>Completed courses</summary>
+        <cc:completedCourses courses="${completedCourses}"/>
+    </details>
+    <div class="progress-edit-bar">
+        <button class="btn btn--ghost" type="button" id="progress-edit" aria-pressed="false" hidden>Edit completed courses</button>
+        <p class="tx-group__note" id="progress-edit-help">Tick the courses you passed. Clear a tick to remove a completion.</p>
+        <button class="btn" type="submit" form="transcript-form" id="progress-save">Save changes</button>
+    </div>
 	<section class="tx-audit" aria-labelledby="tx-audit-title">
-		<h2 class="tx-section__title" id="tx-audit-title">4-Year Roadmap</h2>
+		<h2 class="tx-section__title" id="tx-audit-title">Degree roadmap</h2>
 <c:choose>
 	<c:when test="${empty audit}">
 		<p class="tx-empty">Set your major on <a class="course-link" href="${context}/profile">Profile</a> to see your remaining degree requirements.</p>
@@ -194,7 +136,8 @@
 				<p class="tx-list tx-list--empty">No 4-Year Roadmap courses are on file for this major yet.</p>
 			</c:when>
 			<c:otherwise>
-                <h3 class="tx-group__title">Required courses and elective options by term</h3>
+                <h3 class="tx-group__title">Suggested course sequence</h3>
+                <p class="tx-group__note">Year and season show the suggested sequence. Your planned term appears on each saved course.</p>
                 <c:forEach var="term" items="${audit.terms}">
                     <c:set var="termDone" value="0"/>
                     <c:forEach var="req" items="${term.courses}">
@@ -220,7 +163,7 @@
 			</c:otherwise>
 		</c:choose>
 
-		<div class="tx-group">
+		<div class="tx-group progress-ge">
 			<h3 class="tx-group__title">General education areas
 				<c:if test="${audit.totalGe > 0}">
 					<span class="tx-group__count">${audit.doneGe} of ${audit.totalGe} met</span>
@@ -244,20 +187,22 @@
 
 	</section>
 
-	</div>
-
-	<%-- import posts here: transcript.js adds a shown + completed pair for each passed course it finds --%>
-	<form id="import-form" method="post" action="${context}/transcript" hidden>
-		<input type="hidden" name="q" value="<c:out value='${query}'/>">
-		<input type="hidden" name="area" value="<c:out value='${areaKey}'/>">
-		<input type="hidden" name="imported" value="0">
-	</form>
-
-	<%-- every catalog course, so the import can match transcript codes to course ids. TranscriptServlet escapes it for <script>. --%>
-	<script type="application/json" id="tx-courses">${coursesJson}</script>
-
-	<%-- every major with a roadmap, so the import can match the transcript's plan line; data-current is the student's major --%>
-	<script type="application/json" id="tx-majors" data-current="<c:out value='${currentMajorId}'/>">${majorsJson}</script>
+    <c:if test="${not empty otherCourses}">
+        <section class="progress-other" aria-labelledby="other-title">
+            <h2 class="tx-section__title" id="other-title">Other planned courses</h2>
+            <p class="tx-group__note">Planned courses outside your suggested sequence.</p>
+            <ul class="tx-list"><c:forEach var="course" items="${otherCourses}"><cc:auditCourseRow course="${course}" meta=""/></c:forEach></ul>
+        </section>
+    </c:if>
+    <c:if test="${not anyDone}"><p class="tx-empty">No completed courses yet. Upload your transcript or add completed courses.</p></c:if>
+    <a class="course-link progress-browse" href="${context}/catalog.jsp">Browse catalog to plan a course</a>
+    <form id="import-form" method="post" action="${context}/transcript" hidden>
+        <input type="hidden" name="q" value="<c:out value='${query}'/>">
+        <input type="hidden" name="area" value="<c:out value='${areaKey}'/>">
+        <input type="hidden" name="imported" value="0">
+    </form>
+    <script type="application/json" id="tx-courses">${coursesJson}</script>
+    <script type="application/json" id="tx-majors" data-current="<c:out value='${currentMajorId}'/>">${majorsJson}</script>
 </main>
 <%@ include file="/WEB-INF/jspf/footer.jspf" %>
 <c:set var="toastText" value="${savedMessage}" scope="request"/>
