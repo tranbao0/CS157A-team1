@@ -42,9 +42,9 @@ public class TranscriptServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		if ("/transcript".equals(request.getServletPath())) {
+		if ("/progress".equals(request.getServletPath())) {
 			String query = request.getQueryString();
-			response.sendRedirect(request.getContextPath() + "/progress" + (query == null ? "" : "?" + query));
+			response.sendRedirect(request.getContextPath() + "/transcript" + (query == null ? "" : "?" + query));
 			return;
 		}
 		show(request, response);
@@ -69,7 +69,7 @@ public class TranscriptServlet extends HttpServlet {
 			majors = service.listMajors();
 			major = service.findMajor(studentId);
 			audit = new RoadmapService().loadAudit(studentId);
-			ProgressPage.prepare(request, studentId, courses, audit);
+			request.setAttribute("completedCourses", courses);
 		} catch (SQLException e) {
 			throw new ServletException("Could not load transcript.", e);
 		}
@@ -159,7 +159,7 @@ public class TranscriptServlet extends HttpServlet {
 			response.sendRedirect(back + "&rail=completed#catalog-rail");
 			return;
 		}
-		String back = request.getContextPath() + "/progress";
+		String back = request.getContextPath() + "/transcript";
 		if (!query.isEmpty() || !areaKey.isEmpty()) {
 			back += "?q=" + URLEncoder.encode(query, StandardCharsets.UTF_8)
 					+ "&area=" + URLEncoder.encode(areaKey, StandardCharsets.UTF_8);

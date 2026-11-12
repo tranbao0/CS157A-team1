@@ -1,4 +1,4 @@
-// Completion edits use the course's existing row and the transcript save form.
+// Completion edits post the saved course list and search results through the transcript form.
 (function () {
   'use strict';
   var page = document.querySelector('.progress-page, .completed-panel');
@@ -33,30 +33,6 @@
       save.classList.toggle('btn--primary', dirty);
     });
   });
-  page.querySelectorAll('[data-edit-completed]').forEach(function (link) {
-    link.addEventListener('click', function (event) {
-      event.preventDefault();
-      editing(true);
-      var input = document.getElementById('complete-' + link.dataset.editCompleted);
-      var fold = input.closest('details');
-      if (fold) { fold.open = true; }
-      input.focus();
-      input.scrollIntoView({ block: 'center' });
-    });
-  });
   var completedFold = document.getElementById('completed-courses');
   if (completedFold && window.location.hash === '#completed-courses') { completedFold.open = true; }
-  page.querySelectorAll('[data-edit-course]').forEach(function (link) {
-    link.addEventListener('click', function () {
-      var row = document.getElementById('progress-course-' + link.dataset.editCourse);
-      if (!row) { return; }
-      editing(true);
-      var fold = row.closest('details');
-      if (fold) { fold.open = true; }
-      window.requestAnimationFrame(function () {
-        row.querySelector('.progress-check').focus();
-        row.scrollIntoView({ block: 'center' });
-      });
-    });
-  });
 }());

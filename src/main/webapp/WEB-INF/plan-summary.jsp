@@ -44,6 +44,6 @@
 				</li>
 			</c:forEach>
         </ol>
-        <a class="btn btn--block" href="${pageContext.request.contextPath}/progress">Open my progress</a>
+        <a class="btn btn--block" href="${pageContext.request.contextPath}/plan">Open my plan</a>
     </c:otherwise>
 </c:choose>

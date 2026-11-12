@@ -216,10 +216,11 @@
 			<h1 class="pagehead__title"><% if (termId != 0) { %><span class="pagehead__term"><%= esc(termLabel) %></span> course catalog<% } else { %>Course catalog<% } %></h1>
 			<%-- TODO: show scrape date --%>
 			<p class="pagehead__meta"><%= rows.size() %> sections &middot; sample data</p>
+            <% if (termId != 0) { %><p class="pagehead__meta">Planning for <strong><%= esc(termLabel) %></strong>. + Plan adds the course's listed session in this term.</p><% } %>
 		</div>
 		<div class="filterbar">
 <% if (!terms.isEmpty()) { %>
-			<nav class="filterbar__terms" aria-label="Term">
+			<nav class="filterbar__terms" aria-label="Planning term">
 <% for (Term term : terms) { %>
 				<a class="chip<% if (term.getTermId() == termId) { %> is-on<% } %>"
 				   href="<%= esc(catalogHref(context, term.getTermId(), openOnly, query)) %>"<% if (term.getTermId() == termId) { %> aria-current="true"<% } %>><%= esc(term.getLabel()) %></a>
@@ -376,8 +377,8 @@
     if (completedLoaded && !hasCompletedCourses) {
 %>
             <cc:railEmpty title="Add your completed courses"
-                text="No completed courses yet. Upload a transcript or add courses on My progress to check your prerequisites."
-                href='<%= context + "/progress" %>' action="Open my progress"/>
+                text="No completed courses yet. Upload a transcript or add courses on My transcript to check your prerequisites."
+                href='<%= context + "/transcript" %>' action="Open my transcript"/>
 <% } else if (completedLoaded) { %>
             <form id="transcript-form" method="post" action="<%= context %>/transcript">
                 <input type="hidden" name="returnTo" value="catalog">
@@ -391,14 +392,14 @@
                 <p class="tx-group__note" id="progress-edit-help">Clear a tick to remove a completion.</p>
                 <button class="btn" type="submit" form="transcript-form" id="progress-save">Save changes</button>
             </div>
-            <a class="btn btn--block" href="<%= context %>/progress#completed-courses">Open my progress</a>
-            <a class="course-link completed-upload" href="<%= context %>/progress">Upload transcript or add courses</a>
+            <a class="btn btn--block" href="<%= context %>/transcript#completed-courses">Open my transcript</a>
+            <a class="course-link completed-upload" href="<%= context %>/transcript">Upload transcript or add courses</a>
 <% } else { %>
             <p class="card__body">Could not load completed courses. Try reloading the page.</p>
 <% } %>
 <% } else { %>
             <cc:railEmpty title="Add your completed courses"
-                text="Sign in to upload a transcript or add completed courses on My progress."
+                text="Sign in to upload a transcript or add completed courses on My transcript."
                 href='<%= context + "/login?next=" + URLEncoder.encode(catalogHref("", termId, openOnly, query) + "&rail=completed#catalog-rail", StandardCharsets.UTF_8) %>' action="Sign in"/>
 <% } %>
             </div>
