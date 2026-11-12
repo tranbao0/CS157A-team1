@@ -12,7 +12,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-// POST removes one entry from the student's plan, then returns to My progress.
+// POST removes one entry from the student's plan, then returns to My plan.
 // no doGet here, so GET /plan/remove gets 405 Method Not Allowed from HttpServlet
 @WebServlet("/plan/remove")
 public class PlanRemoveServlet extends HttpServlet {
@@ -40,7 +40,7 @@ public class PlanRemoveServlet extends HttpServlet {
 		}
 
 		if (result.getStatus() != HttpServletResponse.SC_OK) {
-			// 404 or 409 keeps the progress page visible with the refusal message.
+			// 404 or 409 keeps the plan page visible with the refusal message.
 			response.setStatus(result.getStatus());
 			PlanPage.show(request, response, result.getMessage());
 			return;
@@ -48,7 +48,7 @@ public class PlanRemoveServlet extends HttpServlet {
 
 		// redirect after POST, so Refresh does not try to remove again
 		request.getSession().setAttribute(PlanPage.FLASH, result.getMessage());
-		response.sendRedirect(request.getContextPath() + "/progress");
+		response.sendRedirect(request.getContextPath() + "/plan");
 	}
 
 	// turns text into whole number, null when missing or not one

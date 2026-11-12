@@ -19,7 +19,7 @@
 						<c:when test="${area.fulfilled}">
 						</c:when>
 						<c:when test="${area.hasCourses}">
-							<c:url var="findUrl" value="/progress"><c:param name="area" value="ge-${area.code}"/></c:url>
+							<c:url var="findUrl" value="/transcript"><c:param name="area" value="ge-${area.code}"/></c:url>
 							<a class="course-link tx-view" href="${findUrl}#tx-search-title">Find courses</a>
 						</c:when>
 						<c:otherwise>

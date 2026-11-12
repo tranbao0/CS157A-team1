@@ -1972,8 +1972,6 @@ details.rm-term:not(.is-done) > summary .tx-group__count { color: var(--ink-3); 
 .is-editing .completed-course-mark { display: none; }
 .completed-panel:not(.has-progress-script) .completed-course-mark { display: none; }
 .progress-page:not(.has-progress-script) .completed-course-mark { display: none; }
-.progress-completion-edit { font-size: .875rem; }
-.has-progress-script:not(.is-editing) .progress-completion-edit { display: none; }
 
 .catalog-completed-link { display: none; }
 @media (max-width: 75rem) { .catalog-completed-link { display: inline-flex; } }
@@ -2003,3 +2001,13 @@ details.rm-term:not(.is-done) > summary .tx-group__count { color: var(--ink-3); 
 .rail-empty { display: grid; gap: .75rem; padding: .5rem 0 .25rem; }
 .rail-empty > .card__subtitle, .rail-empty > .card__body { margin: 0; }
 .rail-empty > .btn { margin-top: .5rem; }
+
+/* Saved planning terms and completion records keep separate actions and routes. */
+.plan-intro { margin-top: 1rem; }
+.plan-term-links { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1.5rem 0 2rem; }
+.saved-term { margin: 2rem 0; scroll-margin-top: calc(var(--site-header-h) + 1rem); }
+.saved-term .tx-section__head { margin-bottom: .75rem; }
+.saved-course { padding: .875rem .25rem; }
+.saved-course .btn { min-height: 2.75rem; }
+
+.plan-page .tx-list { margin-top: .5rem; }

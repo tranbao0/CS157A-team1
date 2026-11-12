@@ -6,7 +6,7 @@
 <c:forEach var="course" items="${courses}"><c:if test="${course.passed}"><c:set var="completedCount" value="${completedCount + 1}"/></c:if></c:forEach>
 <p class="completed-count">${completedCount} ${completedCount == 1 ? 'course' : 'courses'} completed</p>
 <c:choose>
-    <c:when test="${completedCount == 0}"><p class="tx-empty">No completed courses yet. Upload your transcript or add completed courses on My progress.</p></c:when>
+    <c:when test="${completedCount == 0}"><p class="tx-empty">No completed courses yet. Upload your transcript or add completed courses on My transcript.</p></c:when>
     <c:otherwise>
         <ul class="completed-list" aria-label="Completed courses">
             <c:forEach var="course" items="${courses}">

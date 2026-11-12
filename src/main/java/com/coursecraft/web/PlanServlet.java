@@ -8,7 +8,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-// Saved plan links lead to My progress after sign-in.
+// Shows saved courses by their actual planned terms.
 @WebServlet("/plan")
 public class PlanServlet extends HttpServlet {
 
@@ -17,6 +17,6 @@ public class PlanServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		response.sendRedirect(request.getContextPath() + "/progress");
+		PlanPage.show(request, response, null);
 	}
 }
