@@ -10,6 +10,17 @@ import com.coursecraft.model.SessionInfo;
 // SQL for sessions table lives here, servlets just call these methods
 public class SessionDao {
 
+	// A session remains available for planning through its last day.
+	public boolean isOpenForPlanning(Connection connection, int sessionId) throws SQLException {
+		String sql = "SELECT 1 FROM sessions WHERE session_id = ? AND end_date >= CURDATE()";
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+			statement.setInt(1, sessionId);
+			try (ResultSet rs = statement.executeQuery()) {
+				return rs.next();
+			}
+		}
+	}
+
 	/*
 	 * Finds session with its term, null when no session has that ID.
 	 * Regular session gets label "Fall 2026",

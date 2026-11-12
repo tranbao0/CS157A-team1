@@ -4,6 +4,7 @@
   Road art (road.jspf) walks its dot once when student arrives from page without it, page to page with road it holds still.
   Matching rules live in css/motion.css.
 --%>
+	<style>@view-transition { navigation: auto; }</style>
 	<script>
 	(function () {
 		'use strict';

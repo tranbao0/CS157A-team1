@@ -13,10 +13,7 @@
   --page-chrome: 160ms;
 }
 
-/* opt in for same-site page loads, both old and new page need this rule */
-@view-transition {
-  navigation: auto;
-}
+/* head.jspf opts in to page transitions before external stylesheets load. */
 
 /*
   each page has one site header, named so it holds still while content swaps.
