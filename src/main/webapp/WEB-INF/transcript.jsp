@@ -102,75 +102,34 @@
 		<p class="tx-empty">Set your major on <a class="course-link" href="${context}/profile">Profile</a> to see your remaining degree requirements.</p>
 	</c:when>
 	<c:otherwise>
-		<p class="tx-group__note"><c:out value="${audit.roadmap.label}"/> - <a class="course-link" href="${context}/roadmap">View full roadmap</a></p>
+		<p class="tx-group__note">
+			<c:out value="${audit.roadmap.label}"/>
+			<c:if test="${audit.totalCourses > 0}">
+				&mdash; ${audit.doneCourses} of ${audit.totalCourses} required courses completed
+			</c:if>
+			<c:if test="${audit.totalElectives > 0}">
+				&middot; ${audit.doneElectives} of ${audit.totalElectives} elective options taken
+			</c:if>
+		</p>
 
-		<%-- each list shows five rows, rest opens under Show all --%>
-		<div class="tx-group">
-			<h3 class="tx-group__title">Required courses
-				<c:if test="${audit.totalCourses > 0}">
-					<span class="tx-group__count">${audit.doneCourses} of ${audit.totalCourses}</span>
-				</c:if>
-			</h3>
 		<c:choose>
-			<c:when test="${audit.totalCourses == 0}">
-			<p class="tx-list tx-list--empty">No required courses listed for this roadmap.</p>
-			</c:when>
-			<c:when test="${empty audit.remainingCourses}">
-			<p class="tx-list tx-list--empty">All required roadmap courses completed.</p>
+			<c:when test="${empty audit.terms}">
+				<p class="tx-list tx-list--empty">No required courses listed for this roadmap.</p>
 			</c:when>
 			<c:otherwise>
-			<div class="tx-list tx-fold">
-			<ul class="tx-list">
-				<c:forEach var="req" items="${audit.remainingCourses}" begin="0" end="4">
-				<cc:auditCourseRow course="${req}" meta="Term ${req.suggestedTerm} · ${req.requirementType}"/>
+				<c:forEach var="term" items="${audit.terms}">
+					<div class="tx-group">
+						<h3 class="tx-group__title"><c:out value="${term.label}"/>
+							<span class="tx-group__count"><c:out value="${term.unitsText}"/> units</span></h3>
+						<ul class="tx-list">
+							<c:forEach var="req" items="${term.courses}">
+								<cc:auditCourseRow course="${req}" meta="${req.requirementType}"/>
+							</c:forEach>
+						</ul>
+					</div>
 				</c:forEach>
-			</ul>
-			<c:if test="${fn:length(audit.remainingCourses) > 5}">
-			<details class="tx-more">
-				<summary><span class="tx-more__closed">Show all ${fn:length(audit.remainingCourses)}</span><span class="tx-more__open">Show fewer</span></summary>
-				<ul class="tx-list">
-				<c:forEach var="req" items="${audit.remainingCourses}" begin="5">
-				<cc:auditCourseRow course="${req}" meta="Term ${req.suggestedTerm} · ${req.requirementType}"/>
-				</c:forEach>
-				</ul>
-			</details>
-			</c:if>
-			</div>
 			</c:otherwise>
 		</c:choose>
-		</div>
-
-		<c:if test="${audit.totalElectives > 0}">
-		<div class="tx-group">
-			<h3 class="tx-group__title">Approved major electives
-				<span class="tx-group__count">${audit.doneElectives} of ${audit.totalElectives} taken</span></h3>
-			<p class="tx-group__note">Roadmap elective options (check catalog for the number of electives your major requires).</p>
-		<c:choose>
-			<c:when test="${empty audit.remainingElectives}">
-			<p class="tx-list tx-list--empty">All listed elective options completed.</p>
-			</c:when>
-			<c:otherwise>
-			<div class="tx-list tx-fold">
-			<ul class="tx-list">
-				<c:forEach var="el" items="${audit.remainingElectives}" begin="0" end="4">
-				<cc:auditCourseRow course="${el}" meta="Term ${el.suggestedTerm}"/>
-				</c:forEach>
-			</ul>
-			<c:if test="${fn:length(audit.remainingElectives) > 5}">
-			<details class="tx-more">
-				<summary><span class="tx-more__closed">Show all ${fn:length(audit.remainingElectives)}</span><span class="tx-more__open">Show fewer</span></summary>
-				<ul class="tx-list">
-				<c:forEach var="el" items="${audit.remainingElectives}" begin="5">
-				<cc:auditCourseRow course="${el}" meta="Term ${el.suggestedTerm}"/>
-				</c:forEach>
-				</ul>
-			</details>
-			</c:if>
-			</div>
-			</c:otherwise>
-		</c:choose>
-		</div>
-		</c:if>
 
 		<div class="tx-group">
 			<h3 class="tx-group__title">General education areas

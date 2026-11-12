@@ -18,9 +18,11 @@ public class RoadmapTerm {
 
 	public void addCourse(RoadmapCourse course) {
 		courses.add(course);
-		try {
-			units += Double.parseDouble(course.getUnits());
-		} catch (NumberFormatException ignored) {
+		if (!"Elective".equalsIgnoreCase(course.getRequirementType())) {
+			try {
+				units += Double.parseDouble(course.getUnits());
+			} catch (NumberFormatException ignored) {
+			}
 		}
 	}
 
