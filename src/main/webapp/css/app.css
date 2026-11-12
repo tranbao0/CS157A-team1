@@ -1798,3 +1798,20 @@ body:has(> .site-footer) {
 .tx-title { font-size: .875rem; color: var(--ink-2); overflow-wrap: anywhere; }
 .tx-units { font-size: .8125rem; color: var(--ink-3); white-space: nowrap; }
 .tx-view { font-size: .875rem; white-space: nowrap; }
+
+.tx-fold .tx-list { border: 0; border-radius: 0; background: none; }
+.tx-more { border-top: 1px solid var(--line-2); }
+.tx-more > summary { padding: .625rem 1rem; color: var(--sjsu); font-size: .875rem; cursor: pointer; }
+.tx-more > summary:hover { color: var(--sjsu-dark); }
+.tx-more > summary:focus-visible { outline-offset: -2px; }
+.tx-more[open] .tx-more__closed, .tx-more:not([open]) .tx-more__open { display: none; }
+.tx-more[open] > .tx-list { border-top: 1px solid var(--line-2); }
+#tx-search-title { scroll-margin-top: calc(var(--site-header-h) + var(--stick-gap)); }
+/* phones keep only compact top bar after jump, so full header height would land heading too low */
+@media (max-width: 40rem) {
+  #tx-search-title { scroll-margin-top: calc(var(--topbar-total-h) + var(--stick-gap)); }
+}
+@media (width > 56rem) {
+  .tx-audit > .tx-section__title:first-child { display: flex; align-items: center; min-height: 2.75rem; }
+}
+.tx-note { font-size: .875rem; color: var(--ink-3); white-space: nowrap; }
