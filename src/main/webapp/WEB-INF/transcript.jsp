@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <%@ taglib prefix="cc" tagdir="/WEB-INF/tags" %>
 <%-- My Transcript page, TranscriptServlet forwards here. Lists completed courses, remaining requirements audit, and searches courses not passed yet. --%>
@@ -95,80 +96,6 @@
 
 	<%-- group audit and course search in right column --%>
 	<div class="tx-side">
-	<section class="tx-audit" aria-labelledby="tx-audit-title">
-		<h2 class="tx-section__title" id="tx-audit-title">Remaining requirements</h2>
-<c:choose>
-	<c:when test="${empty audit}">
-		<p class="tx-empty">Set your major on <a class="course-link" href="${context}/profile">Profile</a> to see your remaining degree requirements.</p>
-	</c:when>
-	<c:otherwise>
-		<p class="tx-group__note">
-			<c:out value="${audit.roadmap.label}"/>
-			<c:if test="${audit.totalCourses > 0}">
-				&mdash; ${audit.doneCourses} of ${audit.totalCourses} required courses completed
-			</c:if>
-			<c:if test="${audit.totalElectives > 0}">
-				&middot; ${audit.doneElectives} of ${audit.totalElectives} elective options taken
-			</c:if>
-		</p>
-
-		<c:choose>
-			<c:when test="${empty audit.terms}">
-				<p class="tx-list tx-list--empty">No required courses listed for this roadmap.</p>
-			</c:when>
-			<c:otherwise>
-				<c:forEach var="term" items="${audit.terms}">
-					<div class="tx-group">
-						<h3 class="tx-group__title"><c:out value="${term.label}"/>
-							<span class="tx-group__count"><c:out value="${term.unitsText}"/> units</span></h3>
-						<ul class="tx-list">
-							<c:forEach var="req" items="${term.courses}">
-								<cc:auditCourseRow course="${req}" meta="${req.requirementType}"/>
-							</c:forEach>
-						</ul>
-					</div>
-				</c:forEach>
-			</c:otherwise>
-		</c:choose>
-
-		<div class="tx-group">
-			<h3 class="tx-group__title">General education areas
-				<c:if test="${audit.totalGe > 0}">
-					<span class="tx-group__count">${audit.doneGe} of ${audit.totalGe}</span>
-				</c:if>
-			</h3>
-		<c:choose>
-			<c:when test="${audit.totalGe == 0}">
-			<p class="tx-list tx-list--empty">No general education requirements listed for this roadmap.</p>
-			</c:when>
-			<c:when test="${empty audit.remainingGeAreas}">
-			<p class="tx-list tx-list--empty">All required GE areas fulfilled.</p>
-			</c:when>
-			<c:otherwise>
-			<div class="tx-list tx-fold">
-			<ul class="tx-list">
-				<c:forEach var="geArea" items="${audit.remainingGeAreas}" begin="0" end="4">
-				<cc:auditGeRow area="${geArea}"/>
-				</c:forEach>
-			</ul>
-			<c:if test="${fn:length(audit.remainingGeAreas) > 5}">
-			<details class="tx-more">
-				<summary><span class="tx-more__closed">Show all ${fn:length(audit.remainingGeAreas)}</span><span class="tx-more__open">Show fewer</span></summary>
-				<ul class="tx-list">
-				<c:forEach var="geArea" items="${audit.remainingGeAreas}" begin="5">
-				<cc:auditGeRow area="${geArea}"/>
-				</c:forEach>
-				</ul>
-			</details>
-			</c:if>
-			</div>
-			</c:otherwise>
-		</c:choose>
-		</div>
-	</c:otherwise>
-</c:choose>
-
-	</section>
 
 	<section class="tx-search" aria-labelledby="tx-search-title">
 		<h2 class="tx-section__title" id="tx-search-title">Add completed courses</h2>
@@ -226,6 +153,92 @@
 	</c:if>
 	</c:otherwise>
 </c:choose>
+	</section>
+
+	<section class="tx-audit" aria-labelledby="tx-audit-title">
+		<h2 class="tx-section__title" id="tx-audit-title">4-Year Roadmap</h2>
+<c:choose>
+	<c:when test="${empty audit}">
+		<p class="tx-empty">Set your major on <a class="course-link" href="${context}/profile">Profile</a> to see your remaining degree requirements.</p>
+	</c:when>
+	<c:otherwise>
+		<p class="tx-group__note">
+			<c:out value="${audit.roadmap.label}"/>
+			<c:if test="${audit.totalCourses > 0}">
+				&mdash; ${audit.doneCourses} of ${audit.totalCourses} required courses completed
+			</c:if>
+			<c:if test="${audit.totalElectives > 0}">
+				&middot; ${audit.doneElectives} of ${audit.totalElectives} elective options taken
+			</c:if>
+		</p>
+
+		<c:choose>
+			<c:when test="${empty audit.terms}">
+				<p class="tx-list tx-list--empty">No required courses listed for this roadmap.</p>
+			</c:when>
+			<c:otherwise>
+                <h3 class="tx-group__title">Required courses and elective options by term</h3>
+                <c:forEach var="term" items="${audit.terms}">
+                    <c:set var="termDone" value="0"/>
+                    <c:forEach var="req" items="${term.courses}">
+                        <c:if test="${req.passed}"><c:set var="termDone" value="${termDone + 1}"/></c:if>
+                    </c:forEach>
+                    <c:set var="termLabel" value="${term.label}"/>
+                    <c:if test="${term.termNumber > 0}">
+                        <c:set var="termLabel">Year <fmt:formatNumber value="${(term.termNumber + 1 - (term.termNumber + 1) % 2) / 2}" maxFractionDigits="0"/> · ${term.termNumber % 2 == 1 ? 'Fall' : 'Spring'}</c:set>
+                    </c:if>
+                    <details class="tx-group rm-term" ${termDone == fn:length(term.courses) ? '' : 'open'}>
+                        <summary class="tx-group__title">
+                            <span><c:out value="${termLabel}"/></span>
+                            <span class="tx-group__count"><c:if test="${termDone == fn:length(term.courses)}">✓ All </c:if>${termDone}<c:if test="${termDone != fn:length(term.courses)}"> of ${fn:length(term.courses)}</c:if> completed · <c:out value="${term.unitsText}"/> required units</span>
+                        </summary>
+                        <ul class="tx-list">
+                            <c:forEach var="req" items="${term.courses}">
+                                <cc:auditCourseRow course="${req}" meta="${req.requirementType}"/>
+                            </c:forEach>
+                        </ul>
+                    </details>
+                </c:forEach>
+			</c:otherwise>
+		</c:choose>
+
+		<div class="tx-group">
+			<h3 class="tx-group__title">General education areas
+				<c:if test="${audit.totalGe > 0}">
+					<span class="tx-group__count">${audit.doneGe} of ${audit.totalGe}</span>
+				</c:if>
+			</h3>
+		<c:choose>
+			<c:when test="${audit.totalGe == 0}">
+			<p class="tx-list tx-list--empty">No general education requirements listed for this roadmap.</p>
+			</c:when>
+			<c:when test="${empty audit.remainingGeAreas}">
+			<p class="tx-list tx-list--empty">All required GE areas fulfilled.</p>
+			</c:when>
+			<c:otherwise>
+			<div class="tx-list tx-fold">
+			<ul class="tx-list">
+				<c:forEach var="geArea" items="${audit.remainingGeAreas}" begin="0" end="4">
+				<cc:auditGeRow area="${geArea}"/>
+				</c:forEach>
+			</ul>
+			<c:if test="${fn:length(audit.remainingGeAreas) > 5}">
+			<details class="tx-more">
+				<summary><span class="tx-more__closed">Show all ${fn:length(audit.remainingGeAreas)}</span><span class="tx-more__open">Show fewer</span></summary>
+				<ul class="tx-list">
+				<c:forEach var="geArea" items="${audit.remainingGeAreas}" begin="5">
+				<cc:auditGeRow area="${geArea}"/>
+				</c:forEach>
+				</ul>
+			</details>
+			</c:if>
+			</div>
+			</c:otherwise>
+		</c:choose>
+		</div>
+	</c:otherwise>
+</c:choose>
+
 	</section>
 
 	</div>
