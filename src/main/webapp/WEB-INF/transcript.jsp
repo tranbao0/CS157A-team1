@@ -164,13 +164,31 @@
 	<c:otherwise>
 		<p class="tx-group__note">
 			<c:out value="${audit.roadmap.label}"/>
-			<c:if test="${audit.totalCourses > 0}">
-				&mdash; ${audit.doneCourses} of ${audit.totalCourses} required courses completed
-			</c:if>
-			<c:if test="${audit.totalElectives > 0}">
-				&middot; ${audit.doneElectives} of ${audit.totalElectives} elective options taken
-			</c:if>
-		</p>
+        </p>
+        <c:set var="plannedRequired" value="0"/>
+        <c:set var="plannedOptions" value="0"/>
+        <c:forEach var="term" items="${audit.terms}">
+            <c:forEach var="req" items="${term.courses}">
+                <c:if test="${not req.passed and not empty req.plannedTermLabel}">
+                    <c:choose>
+                        <c:when test="${req.requirementType == 'Elective'}"><c:set var="plannedOptions" value="${plannedOptions + 1}"/></c:when>
+                        <c:otherwise><c:set var="plannedRequired" value="${plannedRequired + 1}"/></c:otherwise>
+                    </c:choose>
+                </c:if>
+            </c:forEach>
+        </c:forEach>
+        <c:if test="${audit.totalCourses > 0}">
+            <div class="rm-progress">
+                <p class="rm-progress__text"><strong>${audit.doneCourses} of ${audit.totalCourses}</strong> required courses completed, <strong>${plannedRequired}</strong> planned</p>
+                <div class="rm-bar" role="img" aria-label="${audit.doneCourses} of ${audit.totalCourses} required courses completed, ${plannedRequired} planned">
+                    <span style="width: ${100 * audit.doneCourses / audit.totalCourses}%"></span>
+                    <span class="rm-bar__plan" style="width: ${100 * plannedRequired / audit.totalCourses}%"></span>
+                </div>
+            </div>
+        </c:if>
+        <c:if test="${audit.totalElectives > 0}">
+            <p class="tx-group__note">${audit.doneElectives} of ${audit.totalElectives} elective options taken · ${plannedOptions} planned. Elective options are choices, not extra required courses.</p>
+        </c:if>
 
 		<c:choose>
 			<c:when test="${empty audit.terms}">
@@ -187,7 +205,7 @@
                     <c:if test="${term.termNumber > 0}">
                         <c:set var="termLabel">Year <fmt:formatNumber value="${(term.termNumber + 1 - (term.termNumber + 1) % 2) / 2}" maxFractionDigits="0"/> · ${term.termNumber % 2 == 1 ? 'Fall' : 'Spring'}</c:set>
                     </c:if>
-                    <details class="tx-group rm-term" ${termDone == fn:length(term.courses) ? '' : 'open'}>
+                    <details class="tx-group rm-term ${termDone == fn:length(term.courses) ? 'is-done' : ''}" ${termDone == fn:length(term.courses) ? '' : 'open'}>
                         <summary class="tx-group__title">
                             <span><c:out value="${termLabel}"/></span>
                             <span class="tx-group__count"><c:if test="${termDone == fn:length(term.courses)}">✓ All </c:if>${termDone}<c:if test="${termDone != fn:length(term.courses)}"> of ${fn:length(term.courses)}</c:if> completed · <c:out value="${term.unitsText}"/> required units</span>
