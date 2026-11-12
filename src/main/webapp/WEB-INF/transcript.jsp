@@ -1,5 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<%@ taglib prefix="cc" tagdir="/WEB-INF/tags" %>
 <%-- My Transcript page, TranscriptServlet forwards here. Lists completed courses, remaining requirements audit, and searches unfinished categories for more. --%>
 <!DOCTYPE html>
 <html lang="en">
@@ -38,7 +40,7 @@
 	</div>
 </header>
 
-<%-- two halves: transcript on the left, audit and search on the right, stacked on narrow screens --%>
+<%-- keep transcript left, stack audit and search right, stack both columns on narrow screens --%>
 <main class="layout layout--split" id="main">
 	<form class="tx-form" id="transcript-form" method="post" action="${context}/transcript">
 		<%-- carried through the save so the redirect lands back on the same search --%>
@@ -87,16 +89,18 @@
 		</div>
 	</form>
 
-	<%-- right column: remaining requirements audit + course search --%>
-	<section class="tx-search" aria-labelledby="tx-search-title">
-		<h2 class="tx-section__title">Remaining requirements</h2>
+	<%-- group audit and course search in right column --%>
+	<div class="tx-side">
+	<section class="tx-audit" aria-labelledby="tx-audit-title">
+		<h2 class="tx-section__title" id="tx-audit-title">Remaining requirements</h2>
 <c:choose>
 	<c:when test="${empty audit}">
 		<p class="tx-empty">Set your major on <a class="course-link" href="${context}/profile">Profile</a> to see your remaining degree requirements.</p>
 	</c:when>
 	<c:otherwise>
-		<p class="tx-group__note"><c:out value="${audit.roadmap.label}"/> &mdash; <a class="course-link" href="${context}/roadmap">View full roadmap</a></p>
+		<p class="tx-group__note"><c:out value="${audit.roadmap.label}"/> - <a class="course-link" href="${context}/roadmap">View full roadmap</a></p>
 
+		<%-- each list shows five rows, rest opens under Show all --%>
 		<div class="tx-group">
 			<h3 class="tx-group__title">Required courses
 				<c:if test="${audit.totalCourses > 0}">
@@ -111,16 +115,23 @@
 			<p class="tx-list tx-list--empty">All required roadmap courses completed.</p>
 			</c:when>
 			<c:otherwise>
+			<div class="tx-list tx-fold">
 			<ul class="tx-list">
-				<c:forEach var="req" items="${audit.remainingCourses}">
-				<li class="tx-row">
-					<span class="tx-code"><c:out value="${req.code}"/></span>
-					<span class="tx-title"><c:out value="${req.title}"/> (Term ${req.suggestedTerm} &middot; <c:out value="${req.requirementType}"/>)</span>
-					<span class="tx-units"><c:out value="${req.units}"/> units</span>
-					<a class="course-link tx-view" href="${context}/course.jsp?id=${req.courseId}">Details</a>
-				</li>
+				<c:forEach var="req" items="${audit.remainingCourses}" begin="0" end="4">
+				<cc:auditCourseRow course="${req}" meta="Term ${req.suggestedTerm} · ${req.requirementType}"/>
 				</c:forEach>
 			</ul>
+			<c:if test="${fn:length(audit.remainingCourses) > 5}">
+			<details class="tx-more">
+				<summary><span class="tx-more__closed">Show all ${fn:length(audit.remainingCourses)}</span><span class="tx-more__open">Show fewer</span></summary>
+				<ul class="tx-list">
+				<c:forEach var="req" items="${audit.remainingCourses}" begin="5">
+				<cc:auditCourseRow course="${req}" meta="Term ${req.suggestedTerm} · ${req.requirementType}"/>
+				</c:forEach>
+				</ul>
+			</details>
+			</c:if>
+			</div>
 			</c:otherwise>
 		</c:choose>
 		</div>
@@ -135,16 +146,23 @@
 			<p class="tx-list tx-list--empty">All listed elective options completed.</p>
 			</c:when>
 			<c:otherwise>
+			<div class="tx-list tx-fold">
 			<ul class="tx-list">
-				<c:forEach var="el" items="${audit.remainingElectives}">
-				<li class="tx-row">
-					<span class="tx-code"><c:out value="${el.code}"/></span>
-					<span class="tx-title"><c:out value="${el.title}"/> (Term ${el.suggestedTerm})</span>
-					<span class="tx-units"><c:out value="${el.units}"/> units</span>
-					<a class="course-link tx-view" href="${context}/course.jsp?id=${el.courseId}">Details</a>
-				</li>
+				<c:forEach var="el" items="${audit.remainingElectives}" begin="0" end="4">
+				<cc:auditCourseRow course="${el}" meta="Term ${el.suggestedTerm}"/>
 				</c:forEach>
 			</ul>
+			<c:if test="${fn:length(audit.remainingElectives) > 5}">
+			<details class="tx-more">
+				<summary><span class="tx-more__closed">Show all ${fn:length(audit.remainingElectives)}</span><span class="tx-more__open">Show fewer</span></summary>
+				<ul class="tx-list">
+				<c:forEach var="el" items="${audit.remainingElectives}" begin="5">
+				<cc:auditCourseRow course="${el}" meta="Term ${el.suggestedTerm}"/>
+				</c:forEach>
+				</ul>
+			</details>
+			</c:if>
+			</div>
 			</c:otherwise>
 		</c:choose>
 		</div>
@@ -164,28 +182,32 @@
 			<p class="tx-list tx-list--empty">All required GE areas fulfilled.</p>
 			</c:when>
 			<c:otherwise>
+			<div class="tx-list tx-fold">
 			<ul class="tx-list">
-				<c:forEach var="geArea" items="${audit.remainingGeAreas}">
-				<li class="tx-row">
-					<span class="tx-code">Area <c:out value="${geArea.code}"/></span>
-					<span class="tx-title"><c:out value="${geArea.name}"/></span>
-					<c:choose>
-						<c:when test="${geArea.hasCourses}">
-							<a class="course-link tx-view" href="${context}/transcript?area=ge-${geArea.code}">Find courses</a>
-						</c:when>
-						<c:otherwise>
-							<span class="cell-muted">Met with science lab</span>
-						</c:otherwise>
-					</c:choose>
-				</li>
+				<c:forEach var="geArea" items="${audit.remainingGeAreas}" begin="0" end="4">
+				<cc:auditGeRow area="${geArea}"/>
 				</c:forEach>
 			</ul>
+			<c:if test="${fn:length(audit.remainingGeAreas) > 5}">
+			<details class="tx-more">
+				<summary><span class="tx-more__closed">Show all ${fn:length(audit.remainingGeAreas)}</span><span class="tx-more__open">Show fewer</span></summary>
+				<ul class="tx-list">
+				<c:forEach var="geArea" items="${audit.remainingGeAreas}" begin="5">
+				<cc:auditGeRow area="${geArea}"/>
+				</c:forEach>
+				</ul>
+			</details>
+			</c:if>
+			</div>
 			</c:otherwise>
 		</c:choose>
 		</div>
 	</c:otherwise>
 </c:choose>
 
+	</section>
+
+	<section class="tx-search" aria-labelledby="tx-search-title">
 		<h2 class="tx-section__title" id="tx-search-title">Add completed courses</h2>
 		<p class="tx-group__note">Search courses in categories you have not finished, tick the ones you passed, then save.</p>
 <c:choose>
@@ -242,6 +264,8 @@
 	</c:otherwise>
 </c:choose>
 	</section>
+
+	</div>
 
 	<%-- import posts here: transcript.js adds a shown + completed pair for each passed course it finds --%>
 	<form id="import-form" method="post" action="${context}/transcript" hidden>
