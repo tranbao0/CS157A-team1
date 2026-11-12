@@ -5,7 +5,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.coursecraft.model.PlacementCategory;
 
@@ -52,5 +54,27 @@ public class PlacementDao {
 				insert.executeUpdate();
 			}
 		}
+	}
+
+	/*
+	 * GE areas student's placements already meet, area code -> placement code, like "1A" -> "W-I".
+	 * Same rule as RoadmapDao GE audit: W-I means Area 1A is met, M-I means Area 2 is met.
+	 */
+	public Map<String, String> findGeAreasMet(Connection connection, int studentId) throws SQLException {
+		String sql = "SELECT CASE category_code WHEN 'W-I' THEN '1A' WHEN 'M-I' THEN '2' END AS ge_area_code, "
+				+ "       category_code "
+				+ "FROM student_placements WHERE student_id = ? AND category_code IN ('W-I', 'M-I')";
+
+		Map<String, String> areas = new HashMap<>();
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+			statement.setInt(1, studentId);
+
+			try (ResultSet rs = statement.executeQuery()) {
+				while (rs.next()) {
+					areas.put(rs.getString("ge_area_code"), rs.getString("category_code"));
+				}
+			}
+		}
+		return areas;
 	}
 }

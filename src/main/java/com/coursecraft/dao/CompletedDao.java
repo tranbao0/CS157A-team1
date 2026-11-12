@@ -11,8 +11,10 @@ import java.util.Set;
 public class CompletedDao {
 
 	/*
-	 * Saves transcript checkboxes: ticked course becomes passed row, unticked course loses its row.
+	 * Saves transcript checkboxes: ticked course becomes passed row, unticked course loses its passed row.
 	 * Only courses in shown are touched, so courses student never saw on page keep what they had.
+	 * Delete keeps not-passed rows (taken_and_passed = 0), since search shows those courses unticked
+	 * and saving with the search open would otherwise wipe a failed attempt student never touched.
 	 * INSERT ... SELECT FROM courses writes nothing for an ID with no course, so made-up IDs are skipped.
 	 * Caller passes connection and owns transaction, so every row saves or none does.
 	 */
@@ -21,7 +23,7 @@ public class CompletedDao {
 		String keepSql = "INSERT INTO completed (student_id, course_id, taken_and_passed) "
 				+ "SELECT ?, course_id, 1 FROM courses WHERE course_id = ? "
 				+ "ON DUPLICATE KEY UPDATE taken_and_passed = 1";
-		String dropSql = "DELETE FROM completed WHERE student_id = ? AND course_id = ?";
+		String dropSql = "DELETE FROM completed WHERE student_id = ? AND course_id = ? AND taken_and_passed = 1";
 
 		try (PreparedStatement keep = connection.prepareStatement(keepSql);
 				PreparedStatement drop = connection.prepareStatement(dropSql)) {
@@ -31,7 +33,7 @@ public class CompletedDao {
 				statement.setInt(2, courseId);
 				statement.addBatch();
 			}
-			// batch sends all rows of one kind in one trip instead of one trip per course
+			// runs queued rows, driver still sends one statement per row since Db URL has no rewriteBatchedStatements
 			keep.executeBatch();
 			drop.executeBatch();
 		}
