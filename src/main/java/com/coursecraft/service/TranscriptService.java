@@ -45,7 +45,8 @@ public class TranscriptService {
 	/*
 	 * Sorts courses into categories, in order: each GE area that has courses, then courses with no GE area
 	 * split into prerequisites, courses with prerequisites, and the rest. Empty categories are left out.
-	 * GE area student's placement already meets (W-I for 1A, M-I for 2) counts as finished.
+	 * GE area student's placement already meets (W-I for 1A, M-I for 2) gets that placement for its heading,
+	 * its courses not passed yet stay searchable.
 	 */
 	public List<TranscriptGroup> group(int studentId, List<TranscriptCourse> courses) throws SQLException {
 		List<GeArea> areas;
@@ -64,7 +65,7 @@ public class TranscriptService {
 				}
 			}
 			if (!inArea.isEmpty()) {
-				TranscriptGroup group = new TranscriptGroup("ge-" + area.getCode(),
+				TranscriptGroup group = TranscriptGroup.geArea("ge-" + area.getCode(),
 						"Area " + area.getCode() + " - " + area.getName(), "General education", inArea);
 				String placement = metByPlacement.get(area.getCode());
 				groups.add(placement == null ? group : group.withPlacement(placement));
@@ -152,7 +153,9 @@ public class TranscriptService {
 				String newMajor = null;
 				if (majorId != null) {
 					Major current = students.findMajor(connection, studentId);
-					Integer roadmapId = new RoadmapDao().findNewestForMajor(connection, majorId);
+					// keeps student's own catalog year when new major has it, instead of jumping to newest year
+					Integer roadmapId = new RoadmapDao().findForMajor(connection, majorId,
+							students.findCatalogYear(connection, studentId));
 					if (roadmapId != null && (current == null || current.getMajorId() != majorId)) {
 						students.updateRoadmap(connection, studentId, roadmapId);
 						newMajor = students.findMajor(connection, studentId).getName();

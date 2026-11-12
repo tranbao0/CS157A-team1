@@ -96,12 +96,14 @@
 		try (Connection connection = Db.getConnection()) {
 
 			// The Completed checkbox posts here. Ticked sends "completed", unticked sends nothing.
+			// Unticked deletes only a passed row: a not-passed course shows unticked, so Save without
+			// JavaScript would otherwise wipe that failed attempt. Same rule as CompletedDao.saveChecked.
 			if ("POST".equals(request.getMethod())) {
 				if (canEdit) {
 					String sql = request.getParameter("completed") != null
 						? "INSERT INTO completed (student_id, course_id, taken_and_passed) VALUES (?, ?, 1) "
 							+ "ON DUPLICATE KEY UPDATE taken_and_passed = 1"
-						: "DELETE FROM completed WHERE student_id = ? AND course_id = ?";
+						: "DELETE FROM completed WHERE student_id = ? AND course_id = ? AND taken_and_passed = 1";
 					try (PreparedStatement statement = connection.prepareStatement(sql)) {
 						statement.setInt(1, studentId);
 						statement.setInt(2, courseId);

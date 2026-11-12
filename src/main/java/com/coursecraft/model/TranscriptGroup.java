@@ -1,10 +1,12 @@
 package com.coursecraft.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /*
  * One category on transcript page: a GE area, or one of the no-GE groups.
- * done and total count whole category, so search result that lists only some courses still shows "2 of 9".
+ * done, total and metByCourses describe whole category, so search result that lists only some courses
+ * still shows "2 of 9" or "Met by MATH 30".
  */
 public class TranscriptGroup {
 
@@ -14,31 +16,48 @@ public class TranscriptGroup {
 	private final List<TranscriptCourse> courses;
 	private final int done;
 	private final int total;
+	private final boolean geArea;
+	private final String metByCourses;
 	private final String metByPlacement;
 
+	// non-GE category, heading counts passed courses like "2 of 9"
 	public TranscriptGroup(String key, String title, String note, List<TranscriptCourse> courses) {
-		this(key, title, note, courses, countPassed(courses), courses.size(), null);
+		this(key, title, note, courses, countPassed(courses), courses.size(), false, null, null);
+	}
+
+	// GE area, one passed course meets it, so heading names passed courses like "Met by MATH 30, MATH 31"
+	public static TranscriptGroup geArea(String key, String title, String note, List<TranscriptCourse> courses) {
+		List<String> passed = new ArrayList<>();
+		for (TranscriptCourse course : courses) {
+			if (course.isPassed()) {
+				passed.add(course.getCode());
+			}
+		}
+		return new TranscriptGroup(key, title, note, courses, passed.size(), courses.size(), true,
+				passed.isEmpty() ? null : String.join(", ", passed), null);
 	}
 
 	private TranscriptGroup(String key, String title, String note, List<TranscriptCourse> courses, int done,
-			int total, String metByPlacement) {
+			int total, boolean geArea, String metByCourses, String metByPlacement) {
 		this.key = key;
 		this.title = title;
 		this.note = note;
 		this.courses = courses;
 		this.done = done;
 		this.total = total;
+		this.geArea = geArea;
+		this.metByCourses = metByCourses;
 		this.metByPlacement = metByPlacement;
 	}
 
-	// same category with only some of its courses, counts stay those of whole category
+	// same category with only some of its courses, counts and met text stay those of whole category
 	public TranscriptGroup withCourses(List<TranscriptCourse> some) {
-		return new TranscriptGroup(key, title, note, some, done, total, metByPlacement);
+		return new TranscriptGroup(key, title, note, some, done, total, geArea, metByCourses, metByPlacement);
 	}
 
-	// same category already met by placement like "W-I", so it counts as finished with no course passed
+	// same GE area already met by placement like "W-I", with or without a passed course
 	public TranscriptGroup withPlacement(String placement) {
-		return new TranscriptGroup(key, title, note, courses, done, total, placement);
+		return new TranscriptGroup(key, title, note, courses, done, total, geArea, metByCourses, placement);
 	}
 
 	private static int countPassed(List<TranscriptCourse> courses) {
@@ -81,18 +100,26 @@ public class TranscriptGroup {
 		return metByPlacement;
 	}
 
-	public boolean isFinished() {
-		return metByPlacement != null || done == total;
-	}
-
-	// tells if some course in category is not passed yet, so search still offers it
-	// even when placement meets the area, since a major can require MATH 30 from a placement-met Area 2
+	// tells if some course in category is not passed yet, so search still offers it.
+	// Met GE area still counts here: a major can require MATH 31 from an Area 2 that MATH 30 already met.
 	public boolean isHasCoursesLeft() {
 		return done < total;
 	}
 
-	// count shown next to category name, like "2 of 4" or "Met by M-I placement"
+	/*
+	 * Shown next to category name. GE area: "Met by M-I placement", "Met by MATH 30" or "Not met yet",
+	 * since one course meets it and "0 of 4" would read like all four are needed. Other category: "2 of 4".
+	 */
 	public String getStatusText() {
-		return metByPlacement != null ? "Met by " + metByPlacement + " placement" : done + " of " + total;
+		if (metByPlacement != null) {
+			return "Met by " + metByPlacement + " placement";
+		}
+		if (metByCourses != null) {
+			return "Met by " + metByCourses;
+		}
+		if (geArea) {
+			return "Not met yet";
+		}
+		return done + " of " + total;
 	}
 }
