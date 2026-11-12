@@ -230,27 +230,12 @@
 			<c:when test="${audit.totalGe == 0}">
 			<p class="tx-list tx-list--empty">No general education requirements listed for this roadmap.</p>
 			</c:when>
-			<c:when test="${empty audit.remainingGeAreas}">
-			<p class="tx-list tx-list--empty">All required GE areas fulfilled.</p>
-			</c:when>
 			<c:otherwise>
-			<div class="tx-list tx-fold">
-			<ul class="tx-list">
-				<c:forEach var="geArea" items="${audit.remainingGeAreas}" begin="0" end="4">
-				<cc:auditGeRow area="${geArea}"/>
-				</c:forEach>
-			</ul>
-			<c:if test="${fn:length(audit.remainingGeAreas) > 5}">
-			<details class="tx-more">
-				<summary><span class="tx-more__closed">Show all ${fn:length(audit.remainingGeAreas)}</span><span class="tx-more__open">Show fewer</span></summary>
-				<ul class="tx-list">
-				<c:forEach var="geArea" items="${audit.remainingGeAreas}" begin="5">
-				<cc:auditGeRow area="${geArea}"/>
-				</c:forEach>
-				</ul>
-			</details>
-			</c:if>
-			</div>
+            <ul class="tx-list">
+                <c:forEach var="geArea" items="${audit.geAreas}">
+                    <cc:auditGeRow area="${geArea}"/>
+                </c:forEach>
+            </ul>
 			</c:otherwise>
 		</c:choose>
 		</div>

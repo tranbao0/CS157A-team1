@@ -218,7 +218,7 @@
               <g class="pov__paper">
                 <rect x="240" y="150" width="320" height="300" rx="4" fill="url(#pov-paper)" filter="url(#pov-paper-shadow)"/>
                 <rect class="pov__paper-border" x="258" y="172" width="284" height="256" rx="3"/>
-                <text class="pov__degree" x="400" y="262" text-anchor="middle">BACHELOR’S</text>
+                <text class="pov__degree" x="400" y="262" text-anchor="middle">BACHELOR'S</text>
                 <text class="pov__degree-sub" x="404" y="292" text-anchor="middle">DEGREE</text>
                 <rect class="pov__line-text" x="300" y="322" width="200" height="6" rx="3"/>
                 <rect class="pov__line-text" x="284" y="342" width="232" height="6" rx="3"/>

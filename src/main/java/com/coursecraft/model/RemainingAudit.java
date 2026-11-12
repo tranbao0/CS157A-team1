@@ -2,12 +2,12 @@ package com.coursecraft.model;
 
 import java.util.List;
 
-// holds student's roadmap progress, term-by-term grid, and remaining GE areas for transcript page
+// holds student's roadmap progress, term-by-term grid, and GE area statuses for transcript page
 public class RemainingAudit {
 
 	private final Roadmap roadmap;
 	private final List<RoadmapTerm> terms;
-	private final List<RoadmapGeStatus> remainingGeAreas;
+	private final List<RoadmapGeStatus> geAreas;
 	private final int doneCourses;
 	private final int totalCourses;
 	private final int doneElectives;
@@ -17,13 +17,13 @@ public class RemainingAudit {
 
 	public RemainingAudit(Roadmap roadmap,
 			List<RoadmapTerm> terms,
-			List<RoadmapGeStatus> remainingGeAreas,
+			List<RoadmapGeStatus> geAreas,
 			int doneCourses, int totalCourses,
 			int doneElectives, int totalElectives,
 			int doneGe, int totalGe) {
 		this.roadmap = roadmap;
 		this.terms = terms;
-		this.remainingGeAreas = remainingGeAreas;
+		this.geAreas = geAreas;
 		this.doneCourses = doneCourses;
 		this.totalCourses = totalCourses;
 		this.doneElectives = doneElectives;
@@ -40,8 +40,8 @@ public class RemainingAudit {
 		return terms;
 	}
 
-	public List<RoadmapGeStatus> getRemainingGeAreas() {
-		return remainingGeAreas;
+	public List<RoadmapGeStatus> getGeAreas() {
+		return geAreas;
 	}
 
 	public int getDoneCourses() {
