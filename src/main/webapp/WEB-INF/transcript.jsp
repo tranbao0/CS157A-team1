@@ -1,6 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <%@ taglib prefix="cc" tagdir="/WEB-INF/tags" %>
 <%-- My Transcript page, TranscriptServlet forwards here. Lists completed courses, remaining requirements audit, and searches courses not passed yet. --%>
@@ -203,7 +202,8 @@
                     </c:forEach>
                     <c:set var="termLabel" value="${term.label}"/>
                     <c:if test="${term.termNumber > 0}">
-                        <c:set var="termLabel">Year <fmt:formatNumber value="${(term.termNumber + 1 - (term.termNumber + 1) % 2) / 2}" pattern="0"/> · ${term.termNumber % 2 == 1 ? 'Fall' : 'Spring'}</c:set>
+                        <c:set var="yearNumber" value="${(term.termNumber + 1 - (term.termNumber + 1) % 2) / 2}"/>
+                        <c:set var="termLabel">Year ${fn:substringBefore(yearNumber, '.')} · ${term.termNumber % 2 == 1 ? 'Fall' : 'Spring'}</c:set>
                     </c:if>
                     <details class="tx-group rm-term ${termDone == fn:length(term.courses) ? 'is-done' : ''}" ${termDone == fn:length(term.courses) ? '' : 'open'}>
                         <summary class="tx-group__title">

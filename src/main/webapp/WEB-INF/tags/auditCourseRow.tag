@@ -9,7 +9,7 @@
  <c:when test="${not empty course.plannedTermLabel}"><c:set var="rowState" value="is-planned"/></c:when>
 </c:choose>
 <li class="tx-row rm-row ${rowState}">
- <span class="rm-mark" aria-hidden="true"><c:choose><c:when test="${course.passed}">✓</c:when><c:when test="${not empty course.plannedTermLabel}">▦</c:when></c:choose></span>
+ <span class="rm-mark" aria-hidden="true"><c:choose><c:when test="${course.passed}">✓</c:when><c:when test="${not empty course.plannedTermLabel}"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="4" width="10" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 7h10M6 2.5v3M10 2.5v3" stroke="currentColor" stroke-width="1.6"/></svg></c:when></c:choose></span>
  <span class="tx-label tx-label--static">
   <span class="tx-code"><c:out value="${course.code}"/></span>
   <span class="tx-title"><c:out value="${course.title}"/></span>
