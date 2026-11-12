@@ -31,7 +31,7 @@ public class CompletedDao {
 				statement.setInt(2, courseId);
 				statement.addBatch();
 			}
-			// batch sends all rows of one kind in one trip instead of one trip per course
+			// runs queued rows, driver still sends one statement per row since Db URL has no rewriteBatchedStatements
 			keep.executeBatch();
 			drop.executeBatch();
 		}

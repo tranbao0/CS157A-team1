@@ -57,9 +57,20 @@
 <c:forEach var="group" items="${groups}">
 		<section class="tx-group">
 			<h3 class="tx-group__title"><c:out value="${group.title}"/>
+	<%-- W-I placement meets Area 1A and M-I meets Area 2, so those show as met instead of 0 of N --%>
+	<c:choose>
+		<c:when test="${not empty group.metByPlacement}">
+				<span class="tx-group__count">Met by <c:out value="${group.metByPlacement}"/> placement</span></h3>
+		</c:when>
+		<c:otherwise>
 				<span class="tx-group__count">${group.done} of ${group.total}</span></h3>
+		</c:otherwise>
+	</c:choose>
 			<p class="tx-group__note"><c:out value="${group.note}"/></p>
 	<c:choose>
+		<c:when test="${group.done == 0 and not empty group.metByPlacement}">
+			<p class="tx-list tx-list--empty">No course needed, your <c:out value="${group.metByPlacement}"/> placement meets this area.</p>
+		</c:when>
 		<c:when test="${group.done == 0}">
 			<p class="tx-list tx-list--empty">Nothing completed yet.</p>
 		</c:when>

@@ -55,7 +55,7 @@ public class TranscriptServlet extends HttpServlet {
 		RemainingAudit audit;
 		try {
 			courses = service.listCourses(studentId);
-			groups = service.group(courses);
+			groups = service.group(studentId, courses);
 			majors = service.listMajors();
 			major = service.findMajor(studentId);
 			audit = new RoadmapService().loadAudit(studentId);

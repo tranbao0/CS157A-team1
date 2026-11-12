@@ -1,5 +1,6 @@
 /* Transcript import. Reads a saved MySJSU unofficial transcript page in the browser,
-   finds each course with a C- or better, and posts those courses as completed. */
+   finds each course with a C- or better, and posts those courses as completed.
+   Also reads the student's major from the transcript's "Plan:" line and posts it when it is new. */
 (function () {
   'use strict';
 
@@ -22,6 +23,9 @@
   if (!fileInput || !form || !dataEl) { return; }
 
   var courses = JSON.parse(dataEl.textContent);
+  var majorsEl = document.getElementById('tx-majors');
+  var majors = majorsEl ? JSON.parse(majorsEl.textContent) : [];
+  var currentMajor = majorsEl ? majorsEl.getAttribute('data-current') : '';
   var byCode = {};
   courses.forEach(function (c) { byCode[normalize(c.code)] = c; });
 
@@ -75,11 +79,49 @@
     return null;
   }
 
+  // Major, from the "Plan:" (or "Major:") line under each term. The last one is the most recent,
+  // so a student who changed majors gets the new one. Minors and "Sub-Plan:" lines are skipped.
+  var PLAN = /(?:^|\s)(?:Plan|Major)\s*:\s*(.+)$/i;
+  var DEGREE = /^(BS|BA|BFA|BM|BSN|MS|MA|MBA|PHD)$/;
+  var FILLER = /^(MAJOR|DEGREE|UNDERGRADUATE|UNDERGRAD)$/;
+
+  function planOf(lines) {
+    var plan = null;
+    lines.forEach(function (line) {
+      var m = PLAN.exec(line.replace(/\s+/g, ' ').trim());
+      if (m && !/\bminor\b/i.test(m[1])) { plan = m[1].trim(); }
+    });
+    return plan;
+  }
+
+  // "Computer Science, BS" -> {core: "COMPUTER SCIENCE", degree: "BS"}
+  function splitMajor(text) {
+    var words = String(text).toUpperCase().replace(/[^A-Z0-9 ]+/g, ' ').trim().split(/\s+/);
+    var core = [], degree = null;
+    words.forEach(function (w) {
+      if (DEGREE.test(w)) { degree = w; } else if (!FILLER.test(w)) { core.push(w); }
+    });
+    return { core: core.join(' '), degree: degree };
+  }
+
+  // Catalog major whose name matches the plan. Same name is required; when the transcript
+  // names a degree too it must agree, so "Mathematics BA" never picks a BS major.
+  function matchMajor(plan) {
+    if (!plan) { return null; }
+    var want = splitMajor(plan);
+    if (!want.core) { return null; }
+    var hits = majors.filter(function (m) {
+      var have = splitMajor(m.name);
+      return have.core === want.core && (!want.degree || !have.degree || have.degree === want.degree);
+    });
+    return hits.length === 1 ? hits[0] : null;
+  }
+
   // Course code -> passed, from every line that names a course and shows a grade.
   // A repeated course counts as passed if any attempt passed.
-  function parse(html) {
+  function parse(lines) {
     var found = {};
-    textLines(html).forEach(function (line) {
+    lines.forEach(function (line) {
       var tokens = line.trim().split(/\s+/);
       for (var i = 0; i + 1 < tokens.length; i++) {
         if (!SUBJECT.test(tokens[i]) || !NUMBER.test(tokens[i + 1])) { continue; }
@@ -118,12 +160,25 @@
 
     Promise.all(files.map(readFile)).then(function (pages) {
       var found = {};
+      var plan = null;
       pages.forEach(function (html) {
-        var one = parse(html);
+        var lines = textLines(html);
+        var one = parse(lines);
         Object.keys(one).forEach(function (code) { found[code] = found[code] || one[code]; });
+        plan = planOf(lines) || plan;
       });
 
+      // only send the major when it is new, so re-importing never resets a chosen catalog year
+      var major = matchMajor(plan);
+      var newMajor = major && String(major.id) !== currentMajor ? major : null;
+      if (newMajor) { addField('major', newMajor.id); }
+
       var graded = Object.keys(found);
+      if (!graded.length && newMajor) {
+        say('Saving your major...');
+        form.submit();
+        return;
+      }
       if (!graded.length) {
         // the page saved from MySJSU is only a frame, the grades sit in a second file next to it
         say('No graded courses found in that file. If you used "Save as", also pick '
@@ -137,6 +192,11 @@
         var course = byCode[code];
         if (found[code] && course) { matched.push(course); }
       });
+      if (!matched.length && newMajor) {
+        say('Saving your major...');
+        form.submit();
+        return;
+      }
       if (!matched.length) {
         say('Found ' + graded.length + ' graded courses, but none with a C- or better are in the CourseCraft catalog.');
         fileInput.value = '';

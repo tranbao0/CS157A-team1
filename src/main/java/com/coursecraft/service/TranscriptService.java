@@ -5,10 +5,12 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import com.coursecraft.dao.CompletedDao;
 import com.coursecraft.dao.CourseDao;
+import com.coursecraft.dao.PlacementDao;
 import com.coursecraft.dao.RoadmapDao;
 import com.coursecraft.dao.StudentDao;
 import com.coursecraft.model.GeArea;
@@ -43,11 +45,14 @@ public class TranscriptService {
 	/*
 	 * Sorts courses into categories, in order: each GE area that has courses, then courses with no GE area
 	 * split into prerequisites, courses with prerequisites, and the rest. Empty categories are left out.
+	 * GE area student's placement already meets (W-I for 1A, M-I for 2) counts as finished.
 	 */
-	public List<TranscriptGroup> group(List<TranscriptCourse> courses) throws SQLException {
+	public List<TranscriptGroup> group(int studentId, List<TranscriptCourse> courses) throws SQLException {
 		List<GeArea> areas;
+		Map<String, String> metByPlacement;
 		try (Connection connection = Db.getConnection()) {
 			areas = new CourseDao().findGeAreas(connection);
+			metByPlacement = new PlacementDao().findGeAreasMet(connection, studentId);
 		}
 
 		List<TranscriptGroup> groups = new ArrayList<>();
@@ -59,8 +64,10 @@ public class TranscriptService {
 				}
 			}
 			if (!inArea.isEmpty()) {
-				groups.add(new TranscriptGroup("ge-" + area.getCode(),
-						"Area " + area.getCode() + " - " + area.getName(), "General education", inArea));
+				TranscriptGroup group = new TranscriptGroup("ge-" + area.getCode(),
+						"Area " + area.getCode() + " - " + area.getName(), "General education", inArea);
+				String placement = metByPlacement.get(area.getCode());
+				groups.add(placement == null ? group : group.withPlacement(placement));
 			}
 		}
 

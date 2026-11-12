@@ -14,24 +14,31 @@ public class TranscriptGroup {
 	private final List<TranscriptCourse> courses;
 	private final int done;
 	private final int total;
+	private final String metByPlacement;
 
 	public TranscriptGroup(String key, String title, String note, List<TranscriptCourse> courses) {
-		this(key, title, note, courses, countPassed(courses), courses.size());
+		this(key, title, note, courses, countPassed(courses), courses.size(), null);
 	}
 
 	private TranscriptGroup(String key, String title, String note, List<TranscriptCourse> courses, int done,
-			int total) {
+			int total, String metByPlacement) {
 		this.key = key;
 		this.title = title;
 		this.note = note;
 		this.courses = courses;
 		this.done = done;
 		this.total = total;
+		this.metByPlacement = metByPlacement;
 	}
 
 	// same category with only some of its courses, counts stay those of whole category
 	public TranscriptGroup withCourses(List<TranscriptCourse> some) {
-		return new TranscriptGroup(key, title, note, some, done, total);
+		return new TranscriptGroup(key, title, note, some, done, total, metByPlacement);
+	}
+
+	// same category already met by placement like "W-I", so it counts as finished with no course passed
+	public TranscriptGroup withPlacement(String placement) {
+		return new TranscriptGroup(key, title, note, courses, done, total, placement);
 	}
 
 	private static int countPassed(List<TranscriptCourse> courses) {
@@ -69,7 +76,12 @@ public class TranscriptGroup {
 		return total;
 	}
 
+	// placement code that meets this GE area, like "M-I", null when no placement does
+	public String getMetByPlacement() {
+		return metByPlacement;
+	}
+
 	public boolean isFinished() {
-		return done == total;
+		return metByPlacement != null || done == total;
 	}
 }
