@@ -1864,3 +1864,14 @@ details.rm-term.is-done > summary { background: var(--low-bg); border-color: var
 details.rm-term > summary { grid-template-columns: 1fr auto; }
 details.rm-term > summary::after { grid-column: 2; grid-row: 1; }
 details.rm-term > summary .tx-group__count { grid-column: 1; }
+/* phone rows keep title space and one planned label */
+.rm-row .tx-label { flex-basis: 0; }
+.rm-mark { line-height: 1; font-size: .875rem; font-weight: 700; }
+details.rm-term:not(.is-done) > summary { padding: .25rem 0; border: 0; background: none; }
+details.rm-term:not(.is-done) > summary .tx-group__count { color: var(--ink-3); }
+@media (max-width: 40rem) {
+  .rm-row { gap: .875rem; }
+  details.rm-term > summary { grid-template-columns: 1fr auto; }
+  details.rm-term > summary .tx-group__count { grid-column: 1; }
+  details.rm-term > summary::after { grid-column: 2; }
+}
