@@ -9,6 +9,7 @@ import com.coursecraft.dao.BottleneckScoreDao;
 import com.coursecraft.dao.CompletedDao;
 import com.coursecraft.dao.CourseDao;
 import com.coursecraft.dao.PlanEntryDao;
+import com.coursecraft.dao.PrerequisiteDao;
 import com.coursecraft.dao.SectionDao;
 import com.coursecraft.dao.SessionDao;
 import com.coursecraft.dao.StudentDao;
@@ -56,7 +57,7 @@ public class PlanService {
 	private PlanAddResult checkAndAdd(Connection connection, int studentId, int courseId, int sessionId)
 			throws SQLException {
 		// lock comes first, so every read below sees rows other requests committed before us
-		int catalogYear = yearOrNewest(new StudentDao().findCatalogYearForUpdate(connection, studentId));
+		int catalogYear = PrerequisiteDao.yearOrNewest(new StudentDao().findCatalogYearForUpdate(connection, studentId));
 
 		Course course = new CourseDao().find(connection, courseId);
 		if (course == null) {
@@ -158,7 +159,7 @@ public class PlanService {
 	private PlanRemoveResult checkAndRemove(Connection connection, int studentId, int planEntryId)
 			throws SQLException {
 		// lock comes first, so add and remove from same student never run at same time
-		int catalogYear = yearOrNewest(new StudentDao().findCatalogYearForUpdate(connection, studentId));
+		int catalogYear = PrerequisiteDao.yearOrNewest(new StudentDao().findCatalogYearForUpdate(connection, studentId));
 
 		// findEntry only returns row when it belongs to this student
 		PlanEntryDao planEntryDao = new PlanEntryDao();
@@ -191,7 +192,7 @@ public class PlanService {
 	 */
 	public List<PlanTerm> summarize(int studentId) throws SQLException {
 		try (Connection connection = Db.getConnection()) {
-			int catalogYear = yearOrNewest(new StudentDao().findCatalogYear(connection, studentId));
+			int catalogYear = PrerequisiteDao.yearOrNewest(new StudentDao().findCatalogYear(connection, studentId));
 			List<PlannedCourse> courses = new PlanEntryDao().findForStudent(connection, studentId);
 			new PrerequisiteCheck().markPetitionDependents(connection, studentId, catalogYear, courses);
 
@@ -257,13 +258,5 @@ public class PlanService {
 			term.addWarning(new PlanWarning(studentId + "-" + term.getTermId() + "-depends", "depends",
 					"Depends on petition", text));
 		}
-	}
-
-	// student with no roadmap yet gets newest catalog year, since MAX in prerequisite SQL then picks newest
-	private int yearOrNewest(Integer catalogYear) {
-		if (catalogYear == null) {
-			return Integer.MAX_VALUE;
-		}
-		return catalogYear;
 	}
 }

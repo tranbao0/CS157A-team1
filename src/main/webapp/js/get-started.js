@@ -6,5 +6,7 @@
   // showModal is missing only in very old browsers, there dialog just stays closed and Profile page still works
   if (dialog !== null && typeof dialog.showModal === 'function') {
     dialog.showModal();
+    var field = dialog.querySelector('form:not([method="dialog"]) select:not(:disabled), form:not([method="dialog"]) input:not([type="hidden"]):not(:disabled)');
+    if (field) { field.focus(); }
   }
 })();

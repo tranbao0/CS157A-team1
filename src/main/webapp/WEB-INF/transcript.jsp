@@ -40,11 +40,6 @@
 
 <%-- two halves: transcript on the left, search on the right, stacked on narrow screens --%>
 <main class="layout layout--split" id="main">
-<c:if test="${not empty savedMessage}">
-	<%-- popup, shows for 2 seconds then fades out (app.css), script below removes it after --%>
-	<div class="toast" id="saved-toast" role="status"><c:out value="${savedMessage}"/></div>
-</c:if>
-
 	<form class="tx-form" id="transcript-form" method="post" action="${context}/transcript">
 		<%-- carried through the save so the redirect lands back on the same search --%>
 		<input type="hidden" name="q" value="<c:out value='${query}'/>">
@@ -165,15 +160,8 @@
 	<script type="application/json" id="tx-majors" data-current="<c:out value='${currentMajorId}'/>">${majorsJson}</script>
 </main>
 <%@ include file="/WEB-INF/jspf/footer.jspf" %>
-
-<c:if test="${not empty savedMessage}">
-<script>
-	// popup fades out by itself (app.css), then leaves the page
-	(function () {
-		var toast = document.getElementById("saved-toast");
-		toast.addEventListener("animationend", function () { toast.remove(); });
-	})();
-</script>
-</c:if>
+<c:set var="toastText" value="${savedMessage}" scope="request"/>
+<%@ include file="/WEB-INF/jspf/toast.jspf" %>
+<script src="${context}/js/toast.js" defer></script>
 </body>
 </html>

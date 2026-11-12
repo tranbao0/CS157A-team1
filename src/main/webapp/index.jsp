@@ -356,7 +356,7 @@
       <li class="feature">
         <img class="feature__img" src="images/map.png" alt="" width="84" height="84">
         <div class="feature__text">
-          <h2 class="feature__title">Major Roadmaps</h2>
+          <h2 class="feature__title">4-Year Roadmaps</h2>
           <p class="feature__body">See your full major course sequence and plan your semesters with confidence.</p>
         </div>
       </li>

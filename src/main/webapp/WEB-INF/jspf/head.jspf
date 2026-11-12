@@ -61,5 +61,6 @@
 	</script>
 <%-- preload starts font download before app.css asks for it, crossorigin is required for font preload even on same site --%>
 	<link rel="preload" href="${pageContext.request.contextPath}/fonts/figtree-latin.woff2" as="font" type="font/woff2" crossorigin>
+	<link rel="icon" type="image/svg+xml" href="${pageContext.request.contextPath}/images/favicon.svg">
 	<link rel="stylesheet" href="${pageContext.request.contextPath}/css/app.css">
 	<link rel="stylesheet" href="${pageContext.request.contextPath}/css/motion.css">

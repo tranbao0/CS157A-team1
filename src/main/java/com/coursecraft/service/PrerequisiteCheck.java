@@ -58,7 +58,7 @@ public class PrerequisiteCheck {
 	}
 
 	/*
-	 * Lists later planned courses that would lose prerequisite if removed course left plan, A to Z.
+	 * Lists later planned courses that would lose prerequisite if removed course left plan, in course number order.
 	 * Later course counts only when removed course sits in earlier term (so it really meets group)
 	 * and no other option of that group is planned before later course's term.
 	 */
@@ -67,8 +67,8 @@ public class PrerequisiteCheck {
 		List<PrerequisiteGroup> groups = new PrerequisiteDao().findOpenGroups(connection, studentId, catalogYear);
 		List<PlannedCourse> planned = new PlanEntryDao().findForStudent(connection, studentId);
 
-		// TreeSet keeps each code once and sorts them A to Z
-		Set<String> codes = new TreeSet<>();
+		// TreeSet keeps each code once in course number order
+		Set<String> codes = new TreeSet<>(new CourseCodeOrder());
 		for (PrerequisiteGroup group : groups) {
 			if (group.hasOption(removedCourseId)) {
 				for (PlannedCourse later : planned) {
@@ -97,7 +97,7 @@ public class PrerequisiteCheck {
 
 		// course ID -> petition terms it depends on, LinkedHashSet keeps them in term order
 		Map<Integer, Set<String>> petitionLabels = new HashMap<>();
-		// course ID -> earlier courses that link it to petition term, TreeSet sorts them A to Z
+		// course ID -> earlier courses that link it to petition term, TreeSet sorts them in course number order
 		Map<Integer, Set<String>> throughCodes = new HashMap<>();
 
 		for (int petitionTermId : findPetitionTermIds(planned)) {
@@ -121,7 +121,7 @@ public class PrerequisiteCheck {
 						int laterId = later.getCourseId();
 						if (!petitionLabels.containsKey(laterId)) {
 							petitionLabels.put(laterId, new LinkedHashSet<>());
-							throughCodes.put(laterId, new TreeSet<>());
+							throughCodes.put(laterId, new TreeSet<>(new CourseCodeOrder()));
 						}
 						petitionLabels.get(laterId).add(petitionLabel);
 						throughCodes.get(laterId).add(earlier.getCode());

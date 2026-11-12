@@ -67,7 +67,7 @@ public class PlanEntryDao {
 				+ "JOIN sessions s ON s.session_id = pe.session_id "
 				+ "JOIN terms t ON t.term_id = s.term_id "
 				+ "WHERE pe.student_id = ? "
-				+ "ORDER BY term_order, c.subject, c.course_number";
+				+ "ORDER BY term_order, c.subject, CAST(c.course_number AS UNSIGNED), c.course_number";
 
 		List<PlannedCourse> courses = new ArrayList<>();
 		try (PreparedStatement statement = connection.prepareStatement(sql)) {

@@ -4,6 +4,7 @@
 <%@ page import="java.util.ArrayList, java.util.LinkedHashMap, java.util.List, java.util.Map" %>
 <%@ page import="com.coursecraft.util.Db" %>
 <%@ page import="com.coursecraft.dao.PlanEntryDao" %>
+<%@ page import="com.coursecraft.dao.PrerequisiteDao, com.coursecraft.dao.StudentDao" %>
 <%-- Course detail. TODO: move the queries to a servlet. --%>
 <%!
 	// Escapes HTML.
@@ -24,9 +25,12 @@
 		return out.toString();
 	}
 
-	// "-" for a value that has no snapshot yet.
+	// en dash for value that has no snapshot yet
 	private static String orDash(String value) {
-		return value == null ? "-" : esc(value);
+		if (value == null) {
+			return "–";
+		}
+		return esc(value);
 	}
 
 	// Runs a SELECT, returns each row as column label -> text. Values are bound, never concatenated.
@@ -71,6 +75,7 @@
 	int status = 200;
 	Map<String, String> course = null;
 	List<List<Map<String, String>>> groups = new ArrayList<>();
+	List<List<String>> groupPlacements = new ArrayList<>();
 	List<Map<String, String>> dependents = new ArrayList<>();
 	Map<String, String> section = null;
 	Map<String, String> bottleneck = null;
@@ -126,43 +131,63 @@
 			} else {
 				course = found.get(0);
 
-				// Prerequisites. Groups are ANDed, courses inside a group are ORed.
+				int catalogYear = PrerequisiteDao.yearOrNewest(null);
+				if (canEdit) {
+					catalogYear = PrerequisiteDao.yearOrNewest(new StudentDao().findCatalogYear(connection, studentId));
+				}
+
+				/*
+				 * groups use newest year at or before student's catalog year, or newest for visitor
+				 * left joins keep groups that have only placement options
+				 * groups use and, course and placement options inside each group use or
+				 */
 				List<Map<String, String>> prereqRows = select(connection,
 					"SELECT pg.group_id, c.course_id, c.subject, c.course_number "
 					+ "FROM prerequisite_groups pg "
-					+ "JOIN counts_towards ct ON ct.group_id = pg.group_id "
-					+ "JOIN courses c ON c.course_id = ct.course_id "
-					+ "WHERE pg.course_id = ? ORDER BY pg.group_id, c.subject, c.course_number", courseId);
+					+ "LEFT JOIN counts_towards ct ON ct.group_id = pg.group_id "
+					+ "LEFT JOIN courses c ON c.course_id = ct.course_id "
+					+ "WHERE pg.course_id = ? "
+					+ "AND pg.catalog_year = (SELECT MAX(pg2.catalog_year) FROM prerequisite_groups pg2 "
+					+ "                       WHERE pg2.course_id = pg.course_id AND pg2.catalog_year <= ?) "
+					+ "ORDER BY pg.group_id, c.subject, CAST(c.course_number AS UNSIGNED), c.course_number", courseId, catalogYear);
 				Map<String, List<Map<String, String>>> byGroup = new LinkedHashMap<>();
 				for (Map<String, String> row : prereqRows) {
 					List<Map<String, String>> g = byGroup.get(row.get("group_id"));
 					if (g == null) {
 						g = new ArrayList<>();
 						byGroup.put(row.get("group_id"), g);
+						groupPlacements.add(new PrerequisiteDao().findPlacementOptions(connection,
+								Integer.parseInt(row.get("group_id"))));
 					}
-					g.add(row);
+					if (row.get("course_id") != null) {
+						g.add(row);
+					}
 				}
 				groups.addAll(byGroup.values());
 
-				// Courses that need this one as a prerequisite.
+				// Dependents use the newest year at or before the student's catalog year, or the newest for a visitor.
 				dependents = select(connection,
 					"SELECT DISTINCT c.course_id, c.subject, c.course_number "
 					+ "FROM counts_towards ct "
 					+ "JOIN prerequisite_groups pg ON pg.group_id = ct.group_id "
 					+ "JOIN courses c ON c.course_id = pg.course_id "
-					+ "WHERE ct.course_id = ? ORDER BY c.subject, c.course_number", courseId);
+					+ "WHERE ct.course_id = ? "
+					+ "AND pg.catalog_year = (SELECT MAX(pg2.catalog_year) FROM prerequisite_groups pg2 "
+					+ "                       WHERE pg2.course_id = pg.course_id AND pg2.catalog_year <= ?) "
+					+ "ORDER BY c.subject, CAST(c.course_number AS UNSIGNED), c.course_number", courseId, catalogYear);
 
-				// Sections with their latest enrollment snapshot. Active first, newest term first.
+				// active sections with latest enrollment snapshot, newest term first
 				List<Map<String, String>> sections = select(connection,
-					"SELECT s.section_id, s.session_id, s.section_code, s.class_number, s.status, "
-					+ "       es.seat_capacity, es.open_seats, es.waitlist_count "
+					"SELECT s.section_id, s.session_id, s.section_code, s.class_number, "
+					+ "       es.seat_capacity, es.open_seats, es.waitlist_count, "
+					+ "       CONCAT(t.season, ' ', t.year) AS term_label "
 					+ "FROM sections s "
 					+ "JOIN sessions se ON se.session_id = s.session_id "
 					+ "JOIN terms t ON t.term_id = se.term_id "
 					+ "LEFT JOIN enrollment_snapshots es ON es.section_id = s.section_id "
 					+ "  AND es.captured_at = (SELECT MAX(captured_at) FROM enrollment_snapshots "
 					+ "                        WHERE section_id = s.section_id) "
-					+ "WHERE s.course_id = ? ORDER BY s.status, t.term_id DESC, s.section_code", courseId);
+					+ "WHERE s.course_id = ? AND s.status = 'Active' ORDER BY t.term_id DESC, s.section_code", courseId);
 
 				// The section the catalog linked to. With none (a prerequisite link), use the first.
 				String wanted = request.getParameter("section");
@@ -223,12 +248,16 @@
 </head>
 <body>
 
+<a class="skip-link" href="#main">Skip to main content</a>
+
 <%-- page uses shared top bar like catalog, so nav and sign-in links match every other page --%>
 <% request.setAttribute("navPage", "catalog"); %>
 <header class="site-header">
 <%@ include file="/WEB-INF/jspf/topbar.jspf" %>
 </header>
 
+<%-- page head and detail columns share one main element, so skip link lands on course title --%>
+<main id="main">
 <div class="pagehead">
 	<div class="pagehead__text">
 		<p class="pagehead__back"><a class="btn btn--sm" href="<%= context %>/catalog.jsp">&larr; Back</a></p>
@@ -249,7 +278,7 @@
 	</div>
 </div>
 
-<main class="layout layout--detail">
+<div class="layout layout--detail">
 <% if (loadError != null) { %>
 	<div class="detail">
 		<div class="banner banner--error" role="alert"><%= esc(loadError) %></div>
@@ -269,11 +298,22 @@
 <% if (groups.isEmpty()) { %>
 				None
 <% } else { %>
-<% for (int g = 0; g < groups.size(); g++) {
-	List<Map<String, String>> group = groups.get(g); %>
-				<%= g > 0 ? " <em>and</em> " : "" %><%
+<%
+// group with no option at all prints nothing, shownGroups keeps "and" only between groups that print
+int shownGroups = 0;
+for (int g = 0; g < groups.size(); g++) {
+	List<Map<String, String>> group = groups.get(g);
+	if (group.isEmpty() && groupPlacements.get(g).isEmpty()) {
+		continue;
+	}
+	shownGroups++; %>
+				<% if (shownGroups > 1) { %> <em>and</em> <% } %><%
 	for (int i = 0; i < group.size(); i++) {
-		Map<String, String> pre = group.get(i); %><%= i > 0 ? " <em>or</em> " : "" %><a class="course-link" href="<%= context %>/course.jsp?id=<%= esc(pre.get("course_id")) %>"><%= esc(pre.get("subject")) %> <%= esc(pre.get("course_number")) %></a><%
+		Map<String, String> pre = group.get(i); %><% if (i > 0) { %> <em>or</em> <% } %><a class="course-link" href="<%= context %>/course.jsp?id=<%= esc(pre.get("course_id")) %>"><%= esc(pre.get("subject")) %> <%= esc(pre.get("course_number")) %></a><%
+	}
+	if (!groupPlacements.get(g).isEmpty()) {
+		if (!group.isEmpty()) { %> <em>or</em> <% }
+		%>placement <%= esc(String.join(", ", groupPlacements.get(g))) %><%
 	} %>
 <% } %>
 <% } %>
@@ -294,9 +334,9 @@
 
 	<aside class="rail">
 		<div class="card">
-			<h2 class="card__title">Enrollment</h2>
+			<h2 class="card__title">Enrollment<% if (section != null) { %> <span class="card__term"><%= esc(section.get("term_label")) %></span><% } %></h2>
 <% if (section == null) { %>
-			<p class="card__body">No section on record for this course.</p>
+			<p class="card__body">No active section for this course.</p>
 <% } else { %>
 			<div class="card__row"><span>Class capacity</span><span><%= orDash(section.get("seat_capacity")) %></span></div>
 			<div class="card__row"><span>Available seats</span><span><%= orDash(section.get("open_seats")) %></span></div>
@@ -320,9 +360,12 @@
 				</label>
 				<noscript><button class="btn" type="submit">Save</button></noscript>
 <% } %>
-<% if (inPlan) { %>
+<%-- passed course needs no plan button, checked box above already tells its state --%>
+<% if (completed) { %>
+<% } else if (inPlan) { %>
 				<button class="btn btn--primary is-added" type="button" disabled>In plan</button>
-<% } else if (canEdit && section != null) { %>
+<% } else { %>
+<% if (canEdit && section != null) { %>
 				<%-- plan-add.js sends course and session of shown section to POST /plan/add, same as catalog --%>
 				<button class="btn btn--primary js-plan-add" type="button"
 				        data-course-id="<%= esc(course.get("course_id")) %>" data-session-id="<%= esc(section.get("session_id")) %>">+ Plan</button>
@@ -330,20 +373,22 @@
 				<%-- visitor gets working sign-in link instead of disabled button, hidden text says where it goes --%>
 				<a class="btn btn--primary" href="<%= esc(signInHref) %>">+ Plan<span class="visually-hidden">, sign in to add <%= esc(course.get("subject")) %> <%= esc(course.get("course_number")) %></span></a>
 <% } else { %>
-				<%-- course has no section or email has no student row, so there is no term to plan it in --%>
+				<%-- course has no active section or email has no student row, so there is no term to plan it in --%>
 				<button class="btn btn--primary" type="button" disabled>+ Plan</button>
+<% } %>
 <% } %>
 			</form>
 		</div>
 	</aside>
 <% } %>
+</div>
 </main>
 <%@ include file="/WEB-INF/jspf/footer.jspf" %>
+<%@ include file="/WEB-INF/jspf/toast.jspf" %>
 
 
-<%-- plan-add.js puts result text here, empty until student clicks + Plan --%>
-<p class="plan-toast" id="plan-message" role="status"></p>
 
+<script src="<%= context %>/js/toast.js" defer></script>
 <script src="<%= context %>/js/header.js" defer></script>
 <script src="<%= context %>/js/plan-add.js" defer></script>
 

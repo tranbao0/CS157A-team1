@@ -34,13 +34,20 @@ public class CourseDao {
 
 	/*
 	 * Every course for transcript page, with whether it is a prerequisite, has prerequisites, and is passed.
+	 * Prerequisite flags use rules for student's catalog year, newest rules when student has no roadmap yet.
 	 * passed subquery gives NULL when student has no completed row, getBoolean reads that as false.
 	 * Numeric part first, so 46A comes before 100W.
 	 */
 	public List<TranscriptCourse> findForTranscript(Connection connection, int studentId) throws SQLException {
+		int catalogYear = PrerequisiteDao.yearOrNewest(new StudentDao().findCatalogYear(connection, studentId));
+
 		String sql = "SELECT c.course_id, c.subject, c.course_number, c.title, c.units, c.ge_area_code, "
-				+ "       EXISTS (SELECT 1 FROM counts_towards ct WHERE ct.course_id = c.course_id) AS is_prereq, "
-				+ "       EXISTS (SELECT 1 FROM prerequisite_groups pg WHERE pg.course_id = c.course_id) AS has_prereq, "
+				+ "       EXISTS (SELECT 1 FROM counts_towards ct "
+				+ "               JOIN prerequisite_groups pg ON pg.group_id = ct.group_id "
+				+ "               WHERE ct.course_id = c.course_id "
+				+ "               AND pg.catalog_year = (SELECT MAX(pg2.catalog_year) FROM prerequisite_groups pg2 "
+				+ "                                      WHERE pg2.course_id = pg.course_id AND pg2.catalog_year <= ?)) AS is_prereq, "
+				+ "       EXISTS (SELECT 1 FROM prerequisite_groups pg WHERE pg.course_id = c.course_id AND pg.catalog_year <= ?) AS has_prereq, "
 				+ "       (SELECT cp.taken_and_passed FROM completed cp "
 				+ "        WHERE cp.student_id = ? AND cp.course_id = c.course_id) AS passed "
 				+ "FROM courses c "
@@ -48,7 +55,9 @@ public class CourseDao {
 
 		List<TranscriptCourse> courses = new ArrayList<>();
 		try (PreparedStatement statement = connection.prepareStatement(sql)) {
-			statement.setInt(1, studentId);
+			statement.setInt(1, catalogYear);
+			statement.setInt(2, catalogYear);
+			statement.setInt(3, studentId);
 
 			try (ResultSet rs = statement.executeQuery()) {
 				while (rs.next()) {

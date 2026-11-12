@@ -3,7 +3,7 @@
 
 /* 13. Landing page (index.jsp) */
 /* hero text and feature grid share one left edge on wide screens */
-.page-landing { --landing-indent: 7.5rem; }
+.page-landing { --landing-indent: max(7.5rem, var(--gutter)); }
 
 .hero {
   display: grid;
@@ -165,7 +165,7 @@
 
 /*
   landing only: header floats above page so it can slide away going down and come back going up
-  (landing-loop.js toggles .is-hidden), body padding keeps hero where header used to push it.
+  (landing-loop.js toggles .is-hidden), body padding leaves room for the fixed header above the hero.
   glass look itself is .topbar default (section 4)
 */
 .page-landing { padding-top: var(--topbar-total-h); }

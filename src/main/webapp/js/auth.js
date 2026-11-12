@@ -20,6 +20,13 @@
     currentMode = 'register';
   }
 
+  var shownPane = panes[currentMode];
+  if (shownPane.querySelector('[data-auth-error]')) {
+    var field = shownPane.querySelector(currentMode === 'login'
+      ? 'input[type="password"]' : 'input:not([type="hidden"]):not(:disabled)');
+    if (field) { field.focus(); }
+  }
+
   // Back and Forward only bring back URL, so mode comes from path
   function modeFromUrl() {
     if (window.location.pathname.endsWith('/register')) {
