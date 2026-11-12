@@ -1972,7 +1972,6 @@ details.rm-term:not(.is-done) > summary .tx-group__count { color: var(--ink-3); 
 .progress-completion-edit { font-size: .875rem; }
 .has-progress-script:not(.is-editing) .progress-completion-edit { display: none; }
 
-#completed-title { scroll-margin-top: calc(var(--site-header-h) + 1rem); }
 .catalog-completed-link { display: none; }
 @media (max-width: 75rem) { .catalog-completed-link { display: inline-flex; } }
 
@@ -1980,3 +1979,11 @@ details.rm-term:not(.is-done) > summary .tx-group__count { color: var(--ink-3); 
   html:not(.is-measured) .rail, .has-tall-rail .rail { position: static; height: auto; margin-top: 0; }
   html:not(.is-measured) .rail__stack, .has-tall-rail .rail__stack { transform: none; transition: none; }
 }
+
+/* Only the selected catalog tool contributes to the rail height and focus order. */
+.catalog-rail [hidden] { display: none !important; }
+.catalog-rail-tabs { display: flex; gap: 1rem; border-bottom: 1px solid var(--line); margin-bottom: 1rem; }
+.catalog-rail-tabs a { display: flex; align-items: center; min-height: 2.75rem; padding: .5rem 0; font-size: .9375rem; text-decoration: none; color: var(--ink-3); border-bottom: 2px solid transparent; }
+.catalog-rail-tabs a[aria-selected="true"], .catalog-rail-tabs a[aria-current="page"] { color: var(--sjsu); border-bottom-color: var(--sjsu); font-weight: 600; }
+.catalog-rail-tabs a:focus-visible { outline-offset: 3px; }
+#catalog-rail { scroll-margin-top: calc(var(--site-header-h) + 1rem); }

@@ -156,7 +156,7 @@ public class TranscriptServlet extends HttpServlet {
 			if ("1".equals(request.getParameter("open"))) {
 				back += "&open=1";
 			}
-			response.sendRedirect(back);
+			response.sendRedirect(back + "&rail=completed#catalog-rail");
 			return;
 		}
 		String back = request.getContextPath() + "/progress";

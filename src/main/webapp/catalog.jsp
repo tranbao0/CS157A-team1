@@ -6,6 +6,7 @@
 <%@ page import="com.coursecraft.dao.TermDao" %>
 <%@ page import="com.coursecraft.model.Term" %>
 <%@ page import="com.coursecraft.service.TranscriptService" %>
+<%@ page import="com.coursecraft.service.PlanService" %>
 <%@ taglib prefix="cc" tagdir="/WEB-INF/tags" %>
 <%@ page import="com.coursecraft.service.ProfileService" %>
 <%@ page import="com.coursecraft.model.StudentProfile" %>
@@ -65,6 +66,7 @@
 	query = query == null ? "" : query.trim();
 
 	boolean openOnly = "1".equals(request.getParameter("open"));
+    boolean completedTab = "completed".equals(request.getParameter("rail"));
 
 	String loadError = null;
 	// terms not over yet that have active section, in time order, first one is default
@@ -215,7 +217,7 @@
 			<a class="chip<% if (openOnly) { %> is-on<% } %>"
 			   href="<%= esc(catalogHref(context, termId, !openOnly, query)) %>"<% if (openOnly) { %> aria-current="true"<% } %>>Open seats only</a>
 <% } %>
-            <a class="chip catalog-completed-link" href="#completed-title">Completed courses</a>
+            <a class="chip catalog-completed-link" data-open-completed href="<%= esc(catalogHref(context, termId, openOnly, query)) %>&amp;rail=completed#catalog-rail">Completed courses</a>
 		</div>
 	</div>
 
@@ -319,11 +321,41 @@
 <% if (openOnly) { %>
 			<input type="hidden" name="open" value="1">
 <% } %>
+            <input type="hidden" name="rail" value="<%= completedTab ? "completed" : "plan" %>">
 			<button class="btn" type="submit">Search</button>
 		</form>
 		<div class="rail__cards">
-        <section class="card completed-panel" aria-labelledby="completed-title">
-            <h2 class="card__title" id="completed-title">Completed courses</h2>
+        <section class="card catalog-rail" id="catalog-rail" aria-label="Catalog tools">
+            <nav class="catalog-rail-tabs" aria-label="Catalog tools">
+                <a id="rail-tab-plan" href="<%= esc(catalogHref(context, termId, openOnly, query)) %>#catalog-rail" data-rail-tab="plan" aria-controls="rail-plan"<% if (!completedTab) { %> aria-current="page"<% } %>>Plan</a>
+                <a id="rail-tab-completed" href="<%= esc(catalogHref(context, termId, openOnly, query)) %>&amp;rail=completed#catalog-rail" data-rail-tab="completed" aria-controls="rail-completed"<% if (completedTab) { %> aria-current="page"<% } %>>Completed courses</a>
+            </nav>
+            <div id="rail-plan" aria-labelledby="rail-tab-plan"<% if (completedTab) { %> hidden<% } %>>
+<% if (signedIn) {
+    boolean planLoaded = false;
+    if (loadError == null) {
+        try {
+            request.setAttribute("planTerms", new PlanService().summarize(studentId));
+            planLoaded = true;
+        } catch (SQLException e) {
+            getServletContext().log("Could not load plan.", e);
+        }
+    }
+%>
+                <div class="plan-summary" id="plan-summary">
+<% if (planLoaded) { %>
+                    <jsp:include page="/WEB-INF/plan-summary.jsp"/>
+<% } else { %>
+                    <p class="card__body">Could not load your plan. Try reloading the page.</p>
+<% } %>
+                </div>
+<% } else { %>
+                <h2 class="card__subtitle">Nothing saved yet</h2>
+                <p class="card__body">Sign in to save courses to a term-by-term plan. CourseCraft checks prerequisites and SJSU unit limits each time you add a course.</p>
+                <a class="btn btn--block" href="<%= esc(signInHref) %>">Sign in</a>
+<% } %>
+            </div>
+            <div class="completed-panel" id="rail-completed" aria-labelledby="rail-tab-completed"<% if (!completedTab) { %> hidden<% } %>>
 <% if (signedIn) {
     boolean completedLoaded = false;
     if (loadError == null) {
@@ -355,9 +387,10 @@
             <a class="course-link completed-upload" href="<%= context %>/progress">Upload transcript or add courses</a>
 <% } else { %>
             <p class="card__body">Sign in to view and edit your completed courses.</p>
-            <a class="btn btn--block" href="<%= esc(signInHref) %>">Sign in</a>
+            <a class="btn btn--block" href="<%= context %>/login?next=<%= URLEncoder.encode(catalogHref("", termId, openOnly, query) + "&rail=completed#catalog-rail", StandardCharsets.UTF_8) %>">Sign in</a>
             <a class="course-link completed-upload" href="<%= context %>/login?next=/progress">Upload transcript</a>
 <% } %>
+            </div>
         </section>
 		</div>
 		</div>
@@ -414,5 +447,7 @@
 <script src="<%= context %>/js/header.js" defer></script>
 <script src="<%= context %>/js/plan-add.js" defer></script>
 <script src="<%= context %>/js/progress.js" defer></script>
+<script src="<%= context %>/js/catalog-rail.js" defer></script>
+<script src="<%= context %>/js/plan-summary.js" defer></script>
 </body>
 </html>
