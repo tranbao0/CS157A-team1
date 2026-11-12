@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 
 // SQL for completed table lives here, servlets just call these methods
@@ -37,6 +38,21 @@ public class CompletedDao {
 			keep.executeBatch();
 			drop.executeBatch();
 		}
+	}
+
+	// Reads all passed course IDs once for the plan actions on a page.
+	public Set<Integer> findPassedIds(Connection connection, int studentId) throws SQLException {
+		Set<Integer> ids = new HashSet<>();
+		String sql = "SELECT course_id FROM completed WHERE student_id = ? AND taken_and_passed = 1";
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+			statement.setInt(1, studentId);
+			try (ResultSet rs = statement.executeQuery()) {
+				while (rs.next()) {
+					ids.add(rs.getInt("course_id"));
+				}
+			}
+		}
+		return ids;
 	}
 
 	// tells if student passed course or is taking it now (taken_and_passed = 1)

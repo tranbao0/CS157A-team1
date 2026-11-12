@@ -35,6 +35,15 @@ public class StudentDao {
 		}
 	}
 
+	public boolean exists(Connection connection, int studentId) throws SQLException {
+		try (PreparedStatement statement = connection.prepareStatement("SELECT 1 FROM students WHERE student_id = ?")) {
+			statement.setInt(1, studentId);
+			try (ResultSet rs = statement.executeQuery()) {
+				return rs.next();
+			}
+		}
+	}
+
 	// gives catalog year of student's roadmap, null when student has no roadmap yet
 	public Integer findCatalogYear(Connection connection, int studentId) throws SQLException {
 		return readCatalogYear(connection, studentId, false);

@@ -33,15 +33,21 @@ public class PrerequisiteCheck {
 	public List<String> findMissing(Connection connection, int studentId, int courseId, int targetTermOrder,
 			int catalogYear) throws SQLException {
 		PrerequisiteDao prerequisiteDao = new PrerequisiteDao();
-		List<PrerequisiteGroup> groups = prerequisiteDao.findOpenGroupsForCourse(connection, studentId, courseId,
-				catalogYear);
-		List<PlannedCourse> planned = new PlanEntryDao().findForStudent(connection, studentId);
+		return findMissing(courseId, targetTermOrder,
+				prerequisiteDao.findOpenGroupsForCourse(connection, studentId, courseId, catalogYear),
+				new PlanEntryDao().findForStudent(connection, studentId),
+				prerequisiteDao.findPlacementOptions(connection));
+	}
+
+	// The read model and write validation use the same group and term evaluation.
+	public List<String> findMissing(int courseId, int targetTermOrder, List<PrerequisiteGroup> groups,
+			List<PlannedCourse> planned, Map<Integer, List<String>> placementOptions) {
 
 		List<String> missing = new ArrayList<>();
 		for (PrerequisiteGroup group : groups) {
-			if (!isMetByPlan(group, planned, targetTermOrder, 0)) {
+			if (group.getCourseId() == courseId && !isMetByPlan(group, planned, targetTermOrder, 0)) {
 				String choices = String.join(" or ", group.getOptionCodes());
-				List<String> placements = prerequisiteDao.findPlacementOptions(connection, group.getGroupId());
+				List<String> placements = placementOptions.getOrDefault(group.getGroupId(), List.of());
 				if (!placements.isEmpty()) {
 					String placementText = "placement " + String.join(", ", placements);
 					// placement-only group has no course options, so "or" goes in only when both exist
@@ -50,6 +56,9 @@ public class PrerequisiteCheck {
 					} else {
 						choices = choices + " or " + placementText;
 					}
+				}
+				if (choices.isEmpty()) {
+					choices = "a prerequisite with no listed options";
 				}
 				missing.add(choices);
 			}

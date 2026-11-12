@@ -39,6 +39,17 @@ public class PlanAddServlet extends HttpServlet {
 		} catch (SQLException e) {
 			throw new ServletException("Could not add course to plan.", e);
 		}
+        String accept = request.getHeader("Accept");
+        if (accept != null && accept.contains("text/html")) {
+            String back = request.getParameter("returnTo");
+            if (back == null || !(back.startsWith("/catalog.jsp?") || back.equals("/catalog.jsp")
+                    || back.startsWith("/course.jsp?")) || back.contains("\r") || back.contains("\n")) {
+                back = "/catalog.jsp";
+            }
+            request.getSession().setAttribute("planMessage", result.getMessage());
+            response.sendRedirect(request.getContextPath() + back);
+            return;
+        }
 		sendJson(response, result);
 	}
 

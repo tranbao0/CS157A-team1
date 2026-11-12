@@ -1,3 +1,4 @@
+<%@ page import="com.coursecraft.service.PlanAvailability" %>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.sql.Connection, java.sql.PreparedStatement, java.sql.ResultSet, java.sql.SQLException" %>
 <%@ page import="java.net.URLEncoder, java.nio.charset.StandardCharsets" %>
@@ -49,10 +50,13 @@
 	String email = (String) session.getAttribute("email");
 	boolean signedIn = email != null;
 
-	// signed out has no studentId, 0 matches no plan row since AUTO_INCREMENT IDs start at 1
+	// Guests have no student ID.
 	int studentId = 0;
 	if (signedIn) {
-		studentId = (Integer) session.getAttribute("studentId");
+		Integer sessionStudent = (Integer) session.getAttribute("studentId");
+		if (sessionStudent != null) {
+			studentId = sessionStudent;
+		}
 	}
 
 	// visitor + Plan links go to sign-in, next brings student back to this exact page and filters
@@ -109,20 +113,14 @@
 		+ "       (SELECT b.risk_level FROM bottleneck_scores b "
 		+ "        JOIN terms t ON t.term_id = b.term_id "
 		+ "        WHERE b.course_id = c.course_id "
-		+ "        ORDER BY t.term_id DESC, b.computed_at DESC LIMIT 1) AS risk_level, "
-		+ "       EXISTS (SELECT 1 FROM plan_entries pe "
-		+ "               WHERE pe.student_id = ? AND pe.course_id = c.course_id) AS in_plan, "
-		+ "       EXISTS (SELECT 1 FROM completed cp "
-		+ "               WHERE cp.student_id = ? AND cp.course_id = c.course_id AND cp.taken_and_passed = 1) AS completed "
+		+ "        ORDER BY t.term_id DESC, b.computed_at DESC LIMIT 1) AS risk_level "
 		+ "FROM courses c "
 		+ "JOIN sections s ON c.course_id = s.course_id "
 		+ "JOIN sessions se ON se.session_id = s.session_id "
 		+ "WHERE se.term_id = ? AND se.end_date >= CURDATE() AND s.status = 'Active'");
 
-	// list holds Objects, since studentId is number and search text is string
+	// Parameters include the numeric term ID and the search text.
 	List<Object> params = new ArrayList<>();
-	params.add(studentId);
-	params.add(studentId);
 	params.add(termId);
 
 	if (!query.isEmpty()) {
@@ -166,9 +164,7 @@
 						String.valueOf(result.getInt("course_id")),
 						String.valueOf(result.getInt("section_id")),
 						result.getString("risk_level"), // null if course is not scored
-						String.valueOf(result.getInt("session_id")), // + Plan button sends this with course_id
-						String.valueOf(result.getInt("in_plan")), // 1 when course is already in student's plan
-						String.valueOf(result.getInt("completed")) // 1 when student passed course
+						String.valueOf(result.getInt("session_id")) // + Plan button sends this with course_id
 					});
 				}
 			}
@@ -180,6 +176,16 @@
 			}
 		}
 	}
+%>
+<%
+    PlanAvailability planAvailability = null;
+    if (signedIn) {
+        try {
+            planAvailability = PlanAvailability.read(studentId);
+        } catch (SQLException e) {
+            getServletContext().log("Could not check plan prerequisites.", e);
+        }
+    }
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -198,6 +204,12 @@
 <header class="site-header">
 <%@ include file="/WEB-INF/jspf/topbar.jspf" %>
 </header>
+<% String planMessage = (String) session.getAttribute("planMessage");
+   session.removeAttribute("planMessage");
+   if (planMessage != null) { %>
+<p class="banner" role="status"><%= esc(planMessage) %></p>
+<% } %>
+
 	<div class="pagehead">
 		<div class="pagehead__text">
 			<h1 class="pagehead__title"><% if (termId != 0) { %><span class="pagehead__term"><%= esc(termLabel) %></span> course catalog<% } else { %>Course catalog<% } %></h1>
@@ -281,20 +293,9 @@
 						</div>
 					</td>
 					<td role="cell" class="col-action">
-<% if (signedIn && "1".equals(row[13])) { %>
-						<%-- passed course shows completed for every section --%>
-						<button class="btn btn--sm is-added" type="button" disabled>Completed</button>
-<% } else if (signedIn && "1".equals(row[12])) { %>
-						<%-- course is already planned in some term, so every section of it shows In plan --%>
-						<button class="btn btn--sm is-added" type="button" disabled>In plan</button>
-<% } else if (signedIn) { %>
-						<%-- plan-add.js sends course and session of this row to POST /plan/add --%>
-						<button class="btn btn--sm js-plan-add" type="button"
-						        data-course-id="<%= esc(row[8]) %>" data-session-id="<%= esc(row[11]) %>">+ Plan</button>
-<% } else { %>
-						<%-- visitor gets working sign-in link instead of disabled button, hidden text says where it goes --%>
-						<a class="btn btn--sm" href="<%= esc(signInHref) %>">+ Plan<span class="visually-hidden">, sign in to add <%= esc(row[0]) %></span></a>
-<% } %>
+<cc:planAction buttonClass="btn btn--sm" courseId="<%= row[8] %>" sessionId="<%= row[11] %>"
+                            actionId='<%= "plan-section-" + row[9] %>' signedIn="<%= signedIn %>"
+                            signInHref="<%= signInHref %>" returnTo="<%= nextPath %>" availability="<%= planAvailability %>"/>
 					</td>
 				</tr>
 <%
@@ -333,7 +334,7 @@
             <div id="rail-plan" aria-labelledby="rail-tab-plan"<% if (completedTab) { %> hidden<% } %>>
 <% if (signedIn) {
     boolean planLoaded = false;
-    if (loadError == null) {
+    if (loadError == null && planAvailability != null && planAvailability.hasStudent()) {
         try {
             request.setAttribute("planTerms", new PlanService().summarize(studentId));
             planLoaded = true;
