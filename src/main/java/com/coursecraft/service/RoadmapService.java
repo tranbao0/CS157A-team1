@@ -18,7 +18,7 @@ import com.coursecraft.util.Db;
 // roadmap comparison rules live here, used by TranscriptServlet
 public class RoadmapService {
 
-	// loads student's term-by-term roadmap grid and remaining GE areas for transcript page, null when no major is set
+	// loads student's term-by-term roadmap grid and all GE areas for transcript page, null when no major is set
 	public RemainingAudit loadAudit(int studentId) throws SQLException {
 		try (Connection connection = Db.getConnection()) {
 			RoadmapDao dao = new RoadmapDao();
@@ -51,20 +51,17 @@ public class RoadmapService {
 			}
 
 			List<RoadmapGeStatus> allGe = dao.findGeAreasForStudent(connection, studentId);
-			List<RoadmapGeStatus> remainingGe = new ArrayList<>();
 			int doneGe = 0;
 			for (RoadmapGeStatus area : allGe) {
 				if (area.isFulfilled()) {
 					doneGe++;
-				} else {
-					remainingGe.add(area);
 				}
 			}
 
 			return new RemainingAudit(
 					roadmap,
 					new ArrayList<>(byTerm.values()),
-					remainingGe,
+					allGe,
 					doneCourses,
 					totalCourses,
 					doneElectives,
