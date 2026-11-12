@@ -192,7 +192,7 @@
 
 		<c:choose>
 			<c:when test="${empty audit.terms}">
-				<p class="tx-list tx-list--empty">No required courses listed for this roadmap.</p>
+				<p class="tx-list tx-list--empty">No 4-Year Roadmap courses are on file for this major yet.</p>
 			</c:when>
 			<c:otherwise>
                 <h3 class="tx-group__title">Required courses and elective options by term</h3>
