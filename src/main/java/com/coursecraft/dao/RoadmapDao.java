@@ -46,12 +46,24 @@ public class RoadmapDao {
 		return majors;
 	}
 
-	// roadmap with newest catalog year for one major, null when major has none
-	public Integer findNewestForMajor(Connection connection, int majorId) throws SQLException {
-		String sql = "SELECT roadmap_id FROM roadmaps WHERE major_id = ? ORDER BY catalog_year DESC LIMIT 1";
+	/*
+	 * Roadmap of one major for a catalog year, null when major has none.
+	 * Picks that year when major has it, else newest year before it, else closest year after it.
+	 * catalogYear null (student had no major yet) picks newest year.
+	 * First ORDER BY part puts years at or before catalogYear first, second sorts them newest first
+	 * and later years oldest first.
+	 */
+	public Integer findForMajor(Connection connection, int majorId, Integer catalogYear) throws SQLException {
+		String sql = "SELECT roadmap_id FROM roadmaps WHERE major_id = ? "
+				+ "ORDER BY catalog_year <= ? DESC, "
+				+ "         CASE WHEN catalog_year <= ? THEN -catalog_year ELSE catalog_year END "
+				+ "LIMIT 1";
 
+		int year = catalogYear == null ? Integer.MAX_VALUE : catalogYear;
 		try (PreparedStatement statement = connection.prepareStatement(sql)) {
 			statement.setInt(1, majorId);
+			statement.setInt(2, year);
+			statement.setInt(3, year);
 
 			try (ResultSet rs = statement.executeQuery()) {
 				if (!rs.next()) {

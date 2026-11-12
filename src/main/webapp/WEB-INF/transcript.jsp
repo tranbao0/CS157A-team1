@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <%@ taglib prefix="cc" tagdir="/WEB-INF/tags" %>
-<%-- My Transcript page, TranscriptServlet forwards here. Lists completed courses, remaining requirements audit, and searches unfinished categories for more. --%>
+<%-- My Transcript page, TranscriptServlet forwards here. Lists completed courses, remaining requirements audit, and searches courses not passed yet. --%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -56,7 +56,7 @@
 <%-- every category shows, even with nothing completed, so the student sees what is left --%>
 <c:forEach var="group" items="${groups}">
 		<section class="tx-group">
-			<%-- W-I placement meets Area 1A and M-I meets Area 2, so those show as met instead of 0 of N --%>
+			<%-- statusText: GE area says "Met by MATH 30", "Met by W-I placement" or "Not met yet", other categories "2 of 4" --%>
 			<h3 class="tx-group__title"><c:out value="${group.title}"/>
 				<span class="tx-group__count"><c:out value="${group.statusText}"/></span></h3>
 			<p class="tx-group__note"><c:out value="${group.note}"/></p>
@@ -213,7 +213,7 @@
 
 	<section class="tx-search" aria-labelledby="tx-search-title">
 		<h2 class="tx-section__title" id="tx-search-title">Add completed courses</h2>
-		<p class="tx-group__note">Search courses in categories you have not finished, tick the ones you passed, then save.</p>
+		<p class="tx-group__note">Search courses you have not marked as passed, tick the ones you passed, then save.</p>
 <c:choose>
 	<c:when test="${empty openGroups}">
 		<p class="tx-empty">Every category is complete.</p>
@@ -225,7 +225,7 @@
 			       placeholder="Search course or title" value="<c:out value='${query}'/>">
 			<label class="visually-hidden" for="area">Category</label>
 			<select class="search-input tx-search__area" id="area" name="area">
-				<option value="">All unfinished categories</option>
+				<option value="">All categories</option>
 			<c:forEach var="group" items="${openGroups}">
 				<option value="<c:out value='${group.key}'/>"${group.key == areaKey ? ' selected' : ''}><c:out value="${group.title}"/> (<c:out value="${group.statusText}"/>)</option>
 			</c:forEach>
@@ -238,7 +238,7 @@
 	<c:if test="${searching}">
 		<c:choose>
 			<c:when test="${empty results}">
-		<p class="tx-empty">No unfinished courses match your search.</p>
+		<p class="tx-empty">No courses left to add match your search.</p>
 			</c:when>
 			<c:otherwise>
 		<p class="tx-group__note">${resultCount} ${resultCount == 1 ? 'course' : 'courses'} found</p>

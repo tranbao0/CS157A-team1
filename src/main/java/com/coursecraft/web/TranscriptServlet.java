@@ -24,7 +24,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 /*
- * My Transcript page. GET lists completed courses by category and searches unfinished categories,
+ * My Transcript page. GET lists completed courses by category and searches courses not passed yet,
  * POST saves checkboxes, both from the page and from transcript import (js/transcript.js).
  * AuthFilter makes sure only signed-in students get here.
  */
