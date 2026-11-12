@@ -44,16 +44,15 @@ public class TermDao {
 	}
 
 	/*
-	 * Lists terms catalog can show: last session ends today or later, and term has at least one active section.
-	 * Section reaches its term through its session, so second subquery joins sessions to sections.
+	 * Lists terms with at least one active section in a session that ends today or later.
+	 * Each section reaches its term through its session.
 	 * Same time order as findUpcoming.
 	 */
 	public List<Term> findWithSections(Connection connection) throws SQLException {
 		String sql = "SELECT t.term_id, CONCAT(t.season, ' ', t.year) AS label FROM terms t "
-				+ "WHERE t.term_id IN (SELECT s.term_id FROM sessions s "
-				+ "                    GROUP BY s.term_id HAVING MAX(s.end_date) >= CURDATE()) "
-				+ "  AND t.term_id IN (SELECT se.term_id FROM sessions se "
-				+ "                    JOIN sections sc ON sc.session_id = se.session_id WHERE sc.status = 'Active') "
+				+ "WHERE t.term_id IN (SELECT se.term_id FROM sessions se "
+				+ "                    JOIN sections sc ON sc.session_id = se.session_id "
+				+ "                    WHERE se.end_date >= CURDATE() AND sc.status = 'Active') "
 				+ "ORDER BY t.year, FIELD(t.season, 'Winter', 'Spring', 'Summer', 'Fall')";
 
 		List<Term> terms = new ArrayList<>();

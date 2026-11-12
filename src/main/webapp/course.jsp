@@ -189,7 +189,8 @@
 					+ "LEFT JOIN enrollment_snapshots es ON es.section_id = s.section_id "
 					+ "  AND es.captured_at = (SELECT MAX(captured_at) FROM enrollment_snapshots "
 					+ "                        WHERE section_id = s.section_id) "
-					+ "WHERE s.course_id = ? AND s.status = 'Active' ORDER BY t.term_id DESC, s.section_code", courseId);
+					+ "WHERE s.course_id = ? AND se.end_date >= CURDATE() AND s.status = 'Active' "
+					+ "ORDER BY t.term_id DESC, s.section_code", courseId);
 
 				// The section the catalog linked to. With none (a prerequisite link), use the first.
 				String wanted = request.getParameter("section");

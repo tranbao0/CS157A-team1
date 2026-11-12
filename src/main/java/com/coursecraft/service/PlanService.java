@@ -28,7 +28,7 @@ public class PlanService {
 
 	/*
 	 * Runs write path from requirements doc in one transaction.
-	 * Checks run in this order: course and term exist, not completed, not planned yet,
+	 * Checks run in this order: course exists, session is available, not completed, not planned yet,
 	 * prerequisites met (422), unit cap (409). Only then INSERT happens.
 	 * Commit only when row was added, every other answer rolls back so nothing half-done stays.
 	 */
@@ -68,6 +68,10 @@ public class PlanService {
 		SessionInfo session = sessionDao.find(connection, sessionId);
 		if (session == null) {
 			return new PlanAddResult(400, "That term does not exist.");
+		}
+		if (!sessionDao.isOpenForPlanning(connection, sessionId)) {
+			return new PlanAddResult(409,
+					session.getLabel() + " is not available for planning. Pick a current or future session.");
 		}
 
 		if (new CompletedDao().hasPassed(connection, studentId, courseId)) {

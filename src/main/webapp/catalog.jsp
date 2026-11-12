@@ -114,7 +114,7 @@
 		+ "FROM courses c "
 		+ "JOIN sections s ON c.course_id = s.course_id "
 		+ "JOIN sessions se ON se.session_id = s.session_id "
-		+ "WHERE se.term_id = ? AND s.status = 'Active'");
+		+ "WHERE se.term_id = ? AND se.end_date >= CURDATE() AND s.status = 'Active'");
 
 	// list holds Objects, since studentId is number and search text is string
 	List<Object> params = new ArrayList<>();
