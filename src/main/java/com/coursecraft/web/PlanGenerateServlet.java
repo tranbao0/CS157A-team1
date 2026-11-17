@@ -1,6 +1,7 @@
 package com.coursecraft.web;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.List;
 
 import com.coursecraft.model.GeneratedPlan;
@@ -9,6 +10,7 @@ import com.coursecraft.model.ProposedTerm;
 import com.coursecraft.model.UnplacedCourse;
 import com.coursecraft.service.PlanGenerator;
 
+import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,14 +23,19 @@ public class PlanGenerateServlet extends HttpServlet {
 
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
-			throws IOException {
+			throws ServletException, IOException {
 		String accept = request.getHeader("Accept");
 		if (accept != null && accept.contains("text/html")) {
 			response.sendRedirect(request.getContextPath() + "/plan");
 			return;
 		}
 		int studentId = (Integer) request.getSession().getAttribute("studentId");
-		GeneratedPlan plan = new PlanGenerator().preview(studentId);
+		GeneratedPlan plan;
+		try {
+			plan = new PlanGenerator().preview(studentId);
+		} catch (SQLException e) {
+			throw new ServletException("Could not generate plan.", e);
+		}
 		response.setStatus(HttpServletResponse.SC_OK);
 		response.setContentType("application/json");
 		response.setCharacterEncoding("UTF-8");
@@ -48,6 +55,14 @@ public class PlanGenerateServlet extends HttpServlet {
 			json.append(jsonText(term.getLabel()));
 			json.append(", \"units\": ");
 			json.append(term.getUnits());
+			json.append(", \"unitsText\": ");
+			json.append(jsonText(term.getUnitsText()));
+			json.append(", \"unitWarningTitle\": ");
+			json.append(jsonText(term.getUnitWarningTitle()));
+			json.append(", \"unitWarningText\": ");
+			json.append(jsonText(term.getUnitWarningText()));
+			json.append(", \"unitWarningKind\": ");
+			json.append(jsonText(term.getUnitWarningKind()));
 			json.append(", \"unitStatus\": ");
 			json.append(jsonText(term.getUnitStatus()));
 			json.append(", \"unitCap\": ");
@@ -75,6 +90,8 @@ public class PlanGenerateServlet extends HttpServlet {
 			json.append(jsonText(course.getCode()));
 			json.append(", \"units\": ");
 			json.append(course.getUnits());
+			json.append(", \"unitsText\": ");
+			json.append(jsonText(String.valueOf(course.getUnits())));
 			json.append(", \"reason\": ");
 			json.append(jsonText(course.getReason()));
 			json.append("}");
@@ -92,10 +109,12 @@ public class PlanGenerateServlet extends HttpServlet {
 		json.append(jsonText(entry.getCode()));
 		json.append(", \"units\": ");
 		json.append(entry.getUnits());
+		json.append(", \"unitsText\": ");
+		json.append(jsonText(String.valueOf(entry.getUnits())));
 		json.append(", \"sessionId\": ");
 		json.append(entry.getSessionId());
-		json.append(", \"termLabel\": ");
-		json.append(jsonText(entry.getTermLabel()));
+		json.append(", \"title\": ");
+		json.append(jsonText(entry.getTitle()));
 		json.append(", \"suggested\": ");
 		json.append(entry.isSuggested());
 		json.append("}");

@@ -2013,3 +2013,8 @@ details.rm-term:not(.is-done) > summary .tx-group__count { color: var(--ink-3); 
 .plan-page .tx-list { margin-top: .5rem; }
 
 #plan-preview { margin-top: 1rem; }
+
+#plan-preview .plan-preview-term { margin: 1.5rem 0 2rem; }
+#plan-preview .tx-section__head { margin-bottom: .75rem; }
+#plan-preview .tx-label { overflow-wrap: anywhere; }
+#plan-preview .plan-preview-new { flex-shrink: 0; padding: .25rem .625rem; border-radius: var(--r-md); background: var(--sjsu-tint); color: var(--ink); font-size: .8125rem; font-weight: 600; }

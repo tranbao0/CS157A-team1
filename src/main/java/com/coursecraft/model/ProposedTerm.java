@@ -2,23 +2,32 @@ package com.coursecraft.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collections;
+
+import com.coursecraft.service.UnitRules;
 
 public class ProposedTerm {
 
 	private final int termId;
 	private final String label;
-	private final double units;
-	private final String unitStatus;
-	private final double unitCap;
+	private double units;
+	private final String season;
 	private final List<ProposedEntry> entries = new ArrayList<>();
 	private final List<String> warnings = new ArrayList<>();
 
-	public ProposedTerm(int termId, String label, double units, String unitStatus, double unitCap) {
+	public ProposedTerm(int termId, String label, String season) {
 		this.termId = termId;
 		this.label = label;
-		this.units = units;
-		this.unitStatus = unitStatus;
-		this.unitCap = unitCap;
+		this.season = season;
+	}
+
+	public void addEntry(ProposedEntry entry) {
+		entries.add(entry);
+		units = units + entry.getUnits();
+	}
+
+	public void addPlannedUnits(double plannedUnits) {
+		units = units + plannedUnits;
 	}
 
 	public int getTermId() {
@@ -33,16 +42,44 @@ public class ProposedTerm {
 		return units;
 	}
 
+	public String getUnitsText() {
+		return UnitRules.format(units);
+	}
+
+	public String getUnitWarningTitle() {
+		return UnitRules.warningTitle(getUnitStatus());
+	}
+
+	public String getUnitWarningText() {
+		if (getUnitWarningTitle() == null) {
+			return null;
+		}
+		return UnitRules.warningText(getUnitStatus(), units, 0);
+	}
+
+	public String getUnitWarningKind() {
+		if (getUnitWarningTitle() == null) {
+			return null;
+		}
+		if ("petition".equals(getUnitStatus())) {
+			return "petition";
+		}
+		return "part-time";
+	}
+
 	public String getUnitStatus() {
-		return unitStatus;
+		return UnitRules.statusFor(season, units);
 	}
 
 	public double getUnitCap() {
-		return unitCap;
+		if ("Fall".equals(season) || "Spring".equals(season)) {
+			return UnitRules.NORMAL_LIMIT;
+		}
+		return UnitRules.capFor(season);
 	}
 
 	public List<ProposedEntry> getEntries() {
-		return entries;
+		return Collections.unmodifiableList(entries);
 	}
 
 	public List<String> getWarnings() {

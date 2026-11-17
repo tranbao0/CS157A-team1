@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -35,6 +37,26 @@ public class SessionDao {
 			}
 		}
 		return terms;
+	}
+
+	// Fall and Spring Regular sessions that have not started yet, oldest first
+	public List<SessionInfo> findUnstartedRegularTerms(Connection connection) throws SQLException {
+		String sql = "SELECT se.session_id, t.term_id, t.season, "
+				+ "CONCAT(t.season, ' ', t.year) AS label, "
+				+ "t.year * 10 + FIELD(t.season, 'Winter', 'Spring', 'Summer', 'Fall') AS term_order "
+				+ "FROM sessions se JOIN terms t ON t.term_id = se.term_id "
+				+ "WHERE se.name = 'Regular' AND se.start_date > CURDATE() "
+				+ "AND t.season IN ('Fall', 'Spring') ORDER BY term_order";
+		List<SessionInfo> sessions = new ArrayList<>();
+		try (PreparedStatement statement = connection.prepareStatement(sql);
+				ResultSet rs = statement.executeQuery()) {
+			while (rs.next()) {
+				String label = rs.getString("label");
+				sessions.add(new SessionInfo(rs.getInt("session_id"), rs.getInt("term_id"),
+						rs.getString("season"), label, label, rs.getInt("term_order")));
+			}
+		}
+		return sessions;
 	}
 
 	/*

@@ -25,6 +25,7 @@
         <button class="btn btn--primary" type="submit">Generate plan</button>
     </form>
     <div id="plan-preview">
+        <div id="plan-preview-results" aria-live="polite"></div>
         <p id="plan-preview-status" class="tx-group__note" role="status" aria-live="polite"></p>
     </div>
     <c:if test="${not empty planMessage}"><div class="banner banner--ok" role="status"><c:out value="${planMessage}"/></div></c:if>
