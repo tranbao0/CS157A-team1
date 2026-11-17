@@ -2011,3 +2011,5 @@ details.rm-term:not(.is-done) > summary .tx-group__count { color: var(--ink-3); 
 .saved-course .btn { min-height: 2.75rem; }
 
 .plan-page .tx-list { margin-top: .5rem; }
+
+#plan-preview { margin-top: 1rem; }

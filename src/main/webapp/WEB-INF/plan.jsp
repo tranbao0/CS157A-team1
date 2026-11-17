@@ -10,6 +10,7 @@
     <%@ include file="/WEB-INF/jspf/head.jspf" %>
     <script src="${pageContext.request.contextPath}/js/header.js" defer></script>
     <script src="${pageContext.request.contextPath}/js/plan-summary.js" defer></script>
+    <script src="${pageContext.request.contextPath}/js/plan-generate.js" defer></script>
 </head>
 <body>
 <c:set var="context" value="${pageContext.request.contextPath}"/>
@@ -20,6 +21,12 @@
     <div class="progress-head"><h1>My plan</h1><a class="btn btn--primary" href="${context}/catalog.jsp">Plan a course</a></div>
     <p class="tx-group__note plan-intro">Your saved courses, grouped by the term you plan to take them.</p>
     <p class="tx-group__note">See the courses you still need on <a href="${context}/transcript#tx-audit-title">My transcript</a>.</p>
+    <form id="plan-generate" method="post" action="${context}/plan/generate">
+        <button class="btn btn--primary" type="submit">Generate plan</button>
+    </form>
+    <div id="plan-preview">
+        <p id="plan-preview-status" class="tx-group__note" role="status" aria-live="polite"></p>
+    </div>
     <c:if test="${not empty planMessage}"><div class="banner banner--ok" role="status"><c:out value="${planMessage}"/></div></c:if>
     <c:if test="${not empty planError}"><div class="banner banner--error" role="alert"><c:out value="${planError}"/></div></c:if>
     <c:choose>
