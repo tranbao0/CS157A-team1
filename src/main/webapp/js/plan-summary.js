@@ -26,15 +26,14 @@
     }
   }
 
-  // closes every warning student minimized before, server always sends them open
-  function restore() {
+  function sync() {
     var warnings = document.querySelectorAll('.plan-warn[data-warn-key]');
     for (var i = 0; i < warnings.length; i++) {
-      if (isMinimized(warnings[i].getAttribute('data-warn-key'))) {
-        warnings[i].open = false;
-      }
+      warnings[i].open = !isMinimized(warnings[i].getAttribute('data-warn-key'));
     }
   }
+
+  window.CourseCraftWarnings = { sync: sync };
 
   // toggle fires on <details> when it opens or closes, it does not bubble so listen in capture phase
   document.addEventListener('toggle', function (e) {
@@ -42,7 +41,10 @@
     if (!details.classList || !details.classList.contains('plan-warn')) {
       return;
     }
-    saveMinimized(details.getAttribute('data-warn-key'), !details.open);
+    var key = details.getAttribute('data-warn-key');
+    if (key) {
+      saveMinimized(key, !details.open);
+    }
   }, true);
 
   // plan-add.js sends plan-changed after each add, so fetch fresh card HTML from server
@@ -60,11 +62,11 @@
       }
       // HTML comes from plan-summary.jsp, which escapes every database value with c:out
       box.innerHTML = html;
-      restore();
+      sync();
     }).catch(function () {
       // keeps old card when network fails, next page load fixes it
     });
   });
 
-  restore();
+  sync();
 })();

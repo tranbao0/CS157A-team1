@@ -11,6 +11,7 @@ import java.util.TreeMap;
 import com.coursecraft.dao.PlanEntryDao;
 import com.coursecraft.dao.RoadmapDao;
 import com.coursecraft.dao.SessionDao;
+import com.coursecraft.dao.StudentDao;
 import com.coursecraft.model.GeneratedPlan;
 import com.coursecraft.model.PlannedCourse;
 import com.coursecraft.model.ProposedEntry;
@@ -31,7 +32,14 @@ public class PlanGenerator {
 				double units = plannedUnits.getOrDefault(course.getTermId(), 0.0);
 				plannedUnits.put(course.getTermId(), units + course.getUnits());
 			}
-			return mapCourses(courses, sessions, plannedUnits);
+			GeneratedPlan plan = mapCourses(courses, sessions, plannedUnits);
+			Integer gradTermId = new StudentDao().findProfile(connection, studentId).getGradTermId();
+			for (ProposedTerm term : plan.getTerms()) {
+				if (gradTermId != null && gradTermId == term.getTermId()) {
+					term.markGradTerm();
+				}
+			}
+			return plan;
 		}
 	}
 
@@ -67,7 +75,8 @@ public class PlanGenerator {
 			SessionInfo session = sessions.get(index);
 			ProposedTerm term = terms.get(index);
 			if (term == null) {
-				term = new ProposedTerm(session.getTermId(), session.getTermLabel(), session.getSeason());
+				term = new ProposedTerm(session.getTermId(), session.getTermLabel(), session.getSeason(),
+						session.getTermOrder());
 				term.addPlannedUnits(plannedUnits.getOrDefault(session.getTermId(), 0.0));
 				terms.put(index, term);
 			}

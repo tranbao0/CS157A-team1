@@ -9,14 +9,17 @@ import com.coursecraft.service.UnitRules;
 public class ProposedTerm {
 
 	private final int termId;
+	private final int termOrder;
 	private final String label;
 	private double units;
+	private boolean gradTerm;
 	private final String season;
 	private final List<ProposedEntry> entries = new ArrayList<>();
 	private final List<String> warnings = new ArrayList<>();
 
-	public ProposedTerm(int termId, String label, String season) {
+	public ProposedTerm(int termId, String label, String season, int termOrder) {
 		this.termId = termId;
+		this.termOrder = termOrder;
 		this.label = label;
 		this.season = season;
 	}
@@ -32,6 +35,18 @@ public class ProposedTerm {
 
 	public int getTermId() {
 		return termId;
+	}
+
+	public boolean isGradTerm() {
+		return gradTerm;
+	}
+
+	public void markGradTerm() {
+		gradTerm = true;
+	}
+
+	public int getTermOrder() {
+		return termOrder;
 	}
 
 	public String getLabel() {

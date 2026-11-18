@@ -9,6 +9,7 @@ import com.coursecraft.model.ProposedEntry;
 import com.coursecraft.model.ProposedTerm;
 import com.coursecraft.model.UnplacedCourse;
 import com.coursecraft.service.PlanGenerator;
+import com.coursecraft.service.PlanService;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -39,10 +40,10 @@ public class PlanGenerateServlet extends HttpServlet {
 		response.setStatus(HttpServletResponse.SC_OK);
 		response.setContentType("application/json");
 		response.setCharacterEncoding("UTF-8");
-		response.getWriter().write(toJson(plan));
+		response.getWriter().write(toJson(plan, studentId));
 	}
 
-	static String toJson(GeneratedPlan plan) {
+	static String toJson(GeneratedPlan plan, int studentId) {
 		StringBuilder json = new StringBuilder("{\"terms\": [");
 		for (int i = 0; i < plan.getTerms().size(); i++) {
 			if (i > 0) {
@@ -51,6 +52,10 @@ public class PlanGenerateServlet extends HttpServlet {
 			ProposedTerm term = plan.getTerms().get(i);
 			json.append("{\"termId\": ");
 			json.append(term.getTermId());
+			json.append(", \"termOrder\": ");
+			json.append(term.getTermOrder());
+			json.append(", \"gradTerm\": ");
+			json.append(term.isGradTerm());
 			json.append(", \"label\": ");
 			json.append(jsonText(term.getLabel()));
 			json.append(", \"units\": ");
@@ -63,6 +68,12 @@ public class PlanGenerateServlet extends HttpServlet {
 			json.append(jsonText(term.getUnitWarningText()));
 			json.append(", \"unitWarningKind\": ");
 			json.append(jsonText(term.getUnitWarningKind()));
+			String warningKey = null;
+			if (term.getUnitWarningKind() != null) {
+				warningKey = PlanService.unitWarningKey(studentId, term.getTermId(), term.getUnitStatus());
+			}
+			json.append(", \"unitWarningKey\": ");
+			json.append(jsonText(warningKey));
 			json.append(", \"unitStatus\": ");
 			json.append(jsonText(term.getUnitStatus()));
 			json.append(", \"unitCap\": ");

@@ -205,7 +205,8 @@ public class PlanService {
 			for (PlannedCourse course : courses) {
 				// rows come sorted by term, so new term starts when term_id changes
 				if (current == null || current.getTermId() != course.getTermId()) {
-					current = new PlanTerm(course.getTermId(), course.getTermLabel(), course.getSeason());
+					current = new PlanTerm(course.getTermId(), course.getTermLabel(), course.getSeason(),
+							course.getTermOrder());
 					terms.add(current);
 				}
 				current.addCourse(course);
@@ -221,6 +222,10 @@ public class PlanService {
 			}
 			return terms;
 		}
+	}
+
+	public static String unitWarningKey(int studentId, int termId, String status) {
+		return studentId + "-" + termId + "-" + status;
 	}
 
 	/*
@@ -243,7 +248,7 @@ public class PlanService {
 			if ("petition".equals(status)) {
 				kind = "petition";
 			}
-			term.addWarning(new PlanWarning(studentId + "-" + term.getTermId() + "-" + status, kind, title,
+			term.addWarning(new PlanWarning(unitWarningKey(studentId, term.getTermId(), status), kind, title,
 					UnitRules.warningText(status, term.getUnits(), dependentCount)));
 		}
 
