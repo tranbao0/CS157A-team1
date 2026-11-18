@@ -49,4 +49,12 @@ class PrerequisiteCheckTest {
         other.addOption(10, "CS 10");
         assertEquals(List.of(), check.findMissing(100, 20264, List.of(other), List.of(), Map.of()));
     }
+    @Test
+    void joinsMissingGroupsWithClearChoices() {
+        assertEquals("A", PrerequisiteCheck.joinMissing(List.of("A")));
+        assertEquals("A and B", PrerequisiteCheck.joinMissing(List.of("A", "B")));
+        assertEquals("A, and B or C", PrerequisiteCheck.joinMissing(List.of("A", "B or C")));
+        assertEquals("A, B, and C", PrerequisiteCheck.joinMissing(List.of("A", "B", "C")));
+    }
+
 }

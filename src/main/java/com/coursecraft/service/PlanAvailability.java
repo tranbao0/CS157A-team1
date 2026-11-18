@@ -88,7 +88,7 @@ public class PlanAvailability {
                     groups, planned, placements);
             String reason = "";
             if (!missing.isEmpty()) {
-                reason = "Needs " + String.join(", and ", missing) + " first.";
+                reason = "Needs " + PrerequisiteCheck.joinMissing(missing) + " first.";
             }
             reasons.put(key, reason);
         }

@@ -59,7 +59,7 @@
     if (isNew) {
       row.classList.add('saved-course');
       markPreview(row);
-      row.appendChild(element('span', 'plan-preview-new', 'New'));
+      row.appendChild(element('span', 'plan-preview-new', course.suggested ? 'Suggested' : 'New'));
     }
     return row;
   }

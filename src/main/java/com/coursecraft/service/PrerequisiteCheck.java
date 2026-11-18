@@ -66,6 +66,20 @@ public class PrerequisiteCheck {
 		return missing;
 	}
 
+	// A comma separates groups when either of two groups lists alternatives.
+	public static String joinMissing(List<String> missing) {
+		int count = missing.size();
+		if (count < 2) {
+			return String.join("", missing);
+		}
+		String last = missing.get(count - 1);
+		String first = missing.get(0);
+		if (count == 2 && !first.contains(" or ") && !last.contains(" or ")) {
+			return first + " and " + last;
+		}
+		return String.join(", ", missing.subList(0, count - 1)) + ", and " + last;
+	}
+
 	/*
 	 * Lists later planned courses that would lose prerequisite if removed course left plan, in course number order.
 	 * Later course counts only when removed course sits in earlier term (so it really meets group)
