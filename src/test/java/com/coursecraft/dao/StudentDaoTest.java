@@ -1,6 +1,7 @@
 package com.coursecraft.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -44,5 +45,26 @@ class StudentDaoTest {
 	@Test
 	void findByEmailTreatsInputAsDataNotSql() throws SQLException {
 		assertNull(studentDao.findByEmail("' OR '1'='1"));
+	}
+
+	@Test
+	void isAdminTrueForSeededAdmin() throws SQLException {
+		assertTrue(studentDao.isAdmin(15, "admin@example.com"));
+	}
+
+	@Test
+	void isAdminFalseForStudent() throws SQLException {
+		assertFalse(studentDao.isAdmin(1, "jordan.lee@example.com"));
+	}
+
+	// admin id with another account's email must not pass
+	@Test
+	void isAdminFalseWhenEmailDoesNotMatchId() throws SQLException {
+		assertFalse(studentDao.isAdmin(15, "jordan.lee@example.com"));
+	}
+
+	@Test
+	void isAdminFalseForMissingStudent() throws SQLException {
+		assertFalse(studentDao.isAdmin(999, "admin@example.com"));
 	}
 }
