@@ -79,30 +79,24 @@ public class PlanGenerator {
 		Map<Integer, List<ProposedEntry>> entriesByTerm = new TreeMap<>();
 		PrerequisiteCheck check = new PrerequisiteCheck();
 		while (!pending.isEmpty()) {
+			placeRoadmap(pending, earliest, sessions, planned, groups, placements, entriesByTerm);
+			if (pending.isEmpty()) {
+				break;
+			}
 			RoadmapCourse next = null;
 			int index = sessions.size();
-			for (RoadmapCourse course : pending) {
-				int target = findTerm(course, earliest, sessions, planned, groups, placements);
-				if (target == sessions.size()) {
-					continue;
-				}
-				if (!hasPendingOption(course, pending, groups)) {
-					next = course;
-					index = target;
-					break;
-				}
-				if (next == null) {
-					next = course;
-					index = target;
-				}
-			}
 			// Try dependents without pending roadmap options before allowing a cycle escape.
 			for (int pass = 0; pass < 2 && next == null; pass++) {
 				for (RoadmapCourse course : pending) {
 					int position = course.getSuggestedTerm();
 					boolean waitsForRoadmap = hasPendingOption(course, pending, groups);
-					if (position <= 0 || position - earliest >= sessions.size()
-							|| waitsForRoadmap != (pass == 1)) {
+					if (position <= 0 || position - earliest >= sessions.size()) {
+						continue;
+					}
+					if (pass == 0 && waitsForRoadmap) {
+						continue;
+					}
+					if (pass == 1 && !waitsForRoadmap) {
 						continue;
 					}
 					index = suggestFor(course, earliest, sessions, planned, groups, placements,
@@ -120,11 +114,7 @@ public class PlanGenerator {
 				}
 				break;
 			}
-			pending.remove(next);
-			PlannedCourse course = atSession(next.getCourseId(), next.getCode(), next.getTitle(),
-					next.getUnits(), sessions.get(index));
-			addProposal(entriesByTerm, index, sessions, course, false);
-			planned.add(course);
+			placeRoadmapCourse(next, index, pending, sessions, planned, entriesByTerm);
 		}
 		Comparator<ProposedEntry> displayOrder = new ProposedEntryOrder();
 		for (Map.Entry<Integer, List<ProposedEntry>> group : entriesByTerm.entrySet()) {
@@ -140,6 +130,43 @@ public class PlanGenerator {
 			plan.getTerms().add(term);
 		}
 		return plan;
+	}
+
+	private static void placeRoadmap(List<RoadmapCourse> pending, int earliest, List<SessionInfo> sessions,
+			List<PlannedCourse> planned, List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements,
+			Map<Integer, List<ProposedEntry>> entriesByTerm) {
+		while (!pending.isEmpty()) {
+			RoadmapCourse next = null;
+			int index = sessions.size();
+			for (RoadmapCourse course : pending) {
+				int target = findTerm(course, earliest, sessions, planned, groups, placements);
+				if (target == sessions.size()) {
+					continue;
+				}
+				if (!hasPendingOption(course, pending, groups)) {
+					next = course;
+					index = target;
+					break;
+				}
+				if (next == null) {
+					next = course;
+					index = target;
+				}
+			}
+			if (next == null) {
+				return;
+			}
+			placeRoadmapCourse(next, index, pending, sessions, planned, entriesByTerm);
+		}
+	}
+
+	private static void placeRoadmapCourse(RoadmapCourse next, int index, List<RoadmapCourse> pending,
+			List<SessionInfo> sessions, List<PlannedCourse> planned, Map<Integer, List<ProposedEntry>> entriesByTerm) {
+		pending.remove(next);
+		PlannedCourse course = atSession(next.getCourseId(), next.getCode(), next.getTitle(),
+				next.getUnits(), sessions.get(index));
+		addProposal(entriesByTerm, index, sessions, course, false);
+		planned.add(course);
 	}
 
 	private static int suggestFor(RoadmapCourse dependent, int earliest, List<SessionInfo> sessions,
