@@ -3,11 +3,13 @@ package com.coursecraft.service;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import com.coursecraft.dao.BottleneckScoreDao;
@@ -29,6 +31,8 @@ import com.coursecraft.model.UnplacedCourse;
 import com.coursecraft.util.Db;
 
 public class PlanGenerator {
+
+	private static final int SUGGESTION_LIMIT = 12;
 
 	public GeneratedPlan preview(int studentId) throws SQLException {
 		try (Connection connection = Db.getConnection()) {
@@ -59,65 +63,46 @@ public class PlanGenerator {
 		GeneratedPlan plan = new GeneratedPlan();
 		List<RoadmapCourse> pending = findMissing(courses);
 		pending.sort(new RoadmapOrder());
-		Map<Integer, TranscriptCourse> candidates = new HashMap<>(catalog);
-		for (RoadmapCourse course : pending) {
-			candidates.remove(course.getCourseId());
-		}
-		int earliest = Integer.MAX_VALUE;
+		int earliest = earliestPosition(pending);
 		Map<Integer, Double> savedUnits = new HashMap<>();
 		for (PlannedCourse course : saved) {
 			double units = savedUnits.getOrDefault(course.getTermId(), 0.0);
 			savedUnits.put(course.getTermId(), units + course.getUnits());
 		}
+		Placement result = new Placement(pending, earliest, sessions, saved, groups, placements, List.of());
+		List<RoadmapCourse> roots = new ArrayList<>();
 		for (RoadmapCourse course : pending) {
-			if (course.getSuggestedTerm() > 0) {
-				earliest = course.getSuggestedTerm();
-				break;
+			int position = course.getSuggestedTerm();
+			if (position > 0 && position - earliest < sessions.size()) {
+				roots.add(course);
 			}
 		}
-		List<PlannedCourse> planned = new ArrayList<>(saved);
-		Map<Integer, List<ProposedEntry>> entriesByTerm = new TreeMap<>();
+		List<RoadmapCourse> candidates = reachableCourses(courses, roots, saved, groups, placements, catalog);
+		List<RoadmapCourse> kept = List.of();
+		if (candidates.size() <= SUGGESTION_LIMIT && !candidates.isEmpty()) {
+			for (List<RoadmapCourse> chosen : courseSets(candidates)) {
+				if (chosen.isEmpty()) {
+					continue;
+				}
+				Placement run = new Placement(pending, earliest, sessions, saved, groups, placements, chosen);
+				if (isLegal(run, chosen, saved.size(), groups, placements)
+						&& isBetter(run, chosen, result, kept, risks)) {
+					result = run;
+					kept = chosen;
+				}
+			}
+		}
+		int lastOrder = 0;
+		if (!sessions.isEmpty()) {
+			lastOrder = sessions.get(sessions.size() - 1).getTermOrder();
+		}
 		PrerequisiteCheck check = new PrerequisiteCheck();
-		while (!pending.isEmpty()) {
-			placeRoadmap(pending, earliest, sessions, planned, groups, placements, entriesByTerm);
-			if (pending.isEmpty()) {
-				break;
-			}
-			RoadmapCourse next = null;
-			int index = sessions.size();
-			// Try dependents without pending roadmap options before allowing a cycle escape.
-			for (int pass = 0; pass < 2 && next == null; pass++) {
-				for (RoadmapCourse course : pending) {
-					int position = course.getSuggestedTerm();
-					boolean waitsForRoadmap = hasPendingOption(course, pending, groups);
-					if (position <= 0 || position - earliest >= sessions.size()) {
-						continue;
-					}
-					if (pass == 0 && waitsForRoadmap) {
-						continue;
-					}
-					if (pass == 1 && !waitsForRoadmap) {
-						continue;
-					}
-					index = suggestFor(course, earliest, sessions, planned, groups, placements,
-							candidates, risks, entriesByTerm);
-					if (index < sessions.size()) {
-						next = course;
-						break;
-					}
-				}
-			}
-			if (next == null) {
-				for (RoadmapCourse course : pending) {
-					addUnplaced(plan, course, earliest, sessions.size(),
-							check.findMissing(course.getCourseId(), Integer.MAX_VALUE, groups, planned, placements));
-				}
-				break;
-			}
-			placeRoadmapCourse(next, index, pending, sessions, planned, entriesByTerm);
+		for (RoadmapCourse course : result.pending) {
+			addUnplaced(plan, course, earliest, sessions.size(),
+					check.findMissing(course.getCourseId(), lastOrder, groups, result.planned, placements));
 		}
 		Comparator<ProposedEntry> displayOrder = new ProposedEntryOrder();
-		for (Map.Entry<Integer, List<ProposedEntry>> group : entriesByTerm.entrySet()) {
+		for (Map.Entry<Integer, List<ProposedEntry>> group : result.entries.entrySet()) {
 			SessionInfo session = sessions.get(group.getKey());
 			ProposedTerm term = new ProposedTerm(session.getTermId(), session.getTermLabel(), session.getSeason(),
 					session.getTermOrder());
@@ -134,7 +119,7 @@ public class PlanGenerator {
 
 	private static void placeRoadmap(List<RoadmapCourse> pending, int earliest, List<SessionInfo> sessions,
 			List<PlannedCourse> planned, List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements,
-			Map<Integer, List<ProposedEntry>> entriesByTerm) {
+			Map<Integer, List<ProposedEntry>> entriesByTerm, List<RoadmapCourse> chosen) {
 		while (!pending.isEmpty()) {
 			RoadmapCourse next = null;
 			int index = sessions.size();
@@ -156,82 +141,196 @@ public class PlanGenerator {
 			if (next == null) {
 				return;
 			}
-			placeRoadmapCourse(next, index, pending, sessions, planned, entriesByTerm);
+			placeRoadmapCourse(next, index, pending, sessions, planned, entriesByTerm, chosen.contains(next));
 		}
 	}
 
 	private static void placeRoadmapCourse(RoadmapCourse next, int index, List<RoadmapCourse> pending,
-			List<SessionInfo> sessions, List<PlannedCourse> planned, Map<Integer, List<ProposedEntry>> entriesByTerm) {
+			List<SessionInfo> sessions, List<PlannedCourse> planned, Map<Integer, List<ProposedEntry>> entriesByTerm,
+			boolean suggested) {
 		pending.remove(next);
 		PlannedCourse course = atSession(next.getCourseId(), next.getCode(), next.getTitle(),
 				next.getUnits(), sessions.get(index));
-		addProposal(entriesByTerm, index, sessions, course, false);
+		addProposal(entriesByTerm, index, sessions, course, suggested);
 		planned.add(course);
 	}
 
-	private static int suggestFor(RoadmapCourse dependent, int earliest, List<SessionInfo> sessions,
-			List<PlannedCourse> planned, List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements,
-			Map<Integer, TranscriptCourse> candidates, Map<List<Integer>, String> risks,
-			Map<Integer, List<ProposedEntry>> entries) {
-		PrerequisiteCheck check = new PrerequisiteCheck();
-		List<PlannedCourse> trial = new ArrayList<>(planned);
-		Map<PlannedCourse, Integer> picked = new LinkedHashMap<>();
-		for (PrerequisiteGroup group : groups) {
-			if (group.getCourseId() != dependent.getCourseId()
-					|| check.findMissing(dependent.getCourseId(), Integer.MAX_VALUE,
-							List.of(group), trial, placements).isEmpty()) {
-				continue;
-			}
-			List<String> acceptedPlacements = placements.getOrDefault(group.getGroupId(), List.of());
-			if (!acceptedPlacements.isEmpty()) {
-				return sessions.size();
-			}
-			TranscriptCourse best = null;
-			int bestTerm = -1;
-			int bestRisk = 0;
-			CourseCodeOrder codeOrder = new CourseCodeOrder();
-			for (int option : group.getOptionCourseIds()) {
-				TranscriptCourse course = candidates.get(option);
-				if (course == null || course.isPassed()) {
+	private static List<RoadmapCourse> reachableCourses(List<RoadmapCourse> roadmap, List<RoadmapCourse> roots,
+			List<PlannedCourse> saved, List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements,
+			Map<Integer, TranscriptCourse> catalog) {
+		Set<Integer> seen = new LinkedHashSet<>();
+		List<RoadmapCourse> owners = new ArrayList<>(roots);
+		for (RoadmapCourse course : roadmap) {
+			seen.add(course.getCourseId());
+		}
+		for (PlannedCourse course : saved) {
+			seen.add(course.getCourseId());
+		}
+		List<RoadmapCourse> candidates = new ArrayList<>();
+		for (int i = 0; i < owners.size(); i++) {
+			int owner = owners.get(i).getCourseId();
+			for (PrerequisiteGroup group : groups) {
+				if (group.getCourseId() != owner || !placements.getOrDefault(group.getGroupId(), List.of()).isEmpty()) {
 					continue;
 				}
-				// Leave at least one term for dependent and check options against courses already placed.
-				for (int i = 0; i < sessions.size() - 1; i++) {
-					SessionInfo session = sessions.get(i);
-					if (!check.findMissing(option, session.getTermOrder(), groups, planned, placements).isEmpty()) {
+				for (int id : group.getOptionCourseIds()) {
+					TranscriptCourse option = catalog.get(id);
+					if (option == null || option.isPassed() || seen.contains(id)) {
 						continue;
 					}
-					int risk = riskOrder(risks.get(List.of(session.getTermId(), option)));
-					boolean better = false;
-					if (best == null || risk < bestRisk) {
-						better = true;
-					} else if (risk == bestRisk && codeOrder.compare(course.getCode(), best.getCode()) < 0) {
-						better = true;
-					}
-					if (better) {
-						best = course;
-						bestTerm = i;
-						bestRisk = risk;
-					}
-					break;
+					seen.add(id);
+					String[] code = option.getCode().split(" ", 2);
+					RoadmapCourse candidate = new RoadmapCourse(id, code[0], code[1], option.getTitle(),
+							option.getUnits(), 1, "Suggested", false, null);
+					candidates.add(candidate);
+					owners.add(candidate);
 				}
 			}
-			if (best == null) {
-				return sessions.size();
-			}
-			PlannedCourse choice = atSession(best.getCourseId(), best.getCode(), best.getTitle(),
-					best.getUnits(), sessions.get(bestTerm));
-			trial.add(choice);
-			picked.put(choice, bestTerm);
 		}
-		int index = findTerm(dependent, earliest, sessions, trial, groups, placements);
-		if (index < sessions.size()) {
-			for (Map.Entry<PlannedCourse, Integer> choice : picked.entrySet()) {
-				addProposal(entries, choice.getValue(), sessions, choice.getKey(), true);
-				planned.add(choice.getKey());
+		candidates.sort(new RoadmapOrder());
+		return candidates;
+	}
+
+	private static List<List<RoadmapCourse>> courseSets(List<RoadmapCourse> candidates) {
+		List<List<RoadmapCourse>> sets = new ArrayList<>();
+		sets.add(List.of());
+		for (RoadmapCourse course : candidates) {
+			int size = sets.size();
+			for (int i = 0; i < size; i++) {
+				List<RoadmapCourse> included = new ArrayList<>(sets.get(i));
+				included.add(course);
+				sets.add(included);
 			}
 		}
-		return index;
+		return sets;
+	}
+
+	static boolean isLegal(Placement run, List<RoadmapCourse> chosen, int savedCount,
+			List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements) {
+		if (!run.valid) {
+			return false;
+		}
+		List<PlannedCourse> proposed = run.planned.subList(savedCount, run.planned.size());
+		for (PlannedCourse course : proposed) {
+			for (RoadmapCourse option : chosen) {
+				if (course.getCourseId() == option.getCourseId() && !hasUse(course, proposed, run.planned, groups, placements)) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	private static boolean hasUse(PlannedCourse option, List<PlannedCourse> proposed, List<PlannedCourse> all,
+			List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements) {
+		for (PrerequisiteGroup group : groups) {
+			if (!group.hasOption(option.getCourseId()) || !placements.getOrDefault(group.getGroupId(), List.of()).isEmpty()) {
+				continue;
+			}
+			for (PlannedCourse owner : proposed) {
+				if (owner.getCourseId() == group.getCourseId() && option.getTermOrder() < owner.getTermOrder()
+						&& earlierOptions(group, owner.getTermOrder(), all) == 1) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private static int earlierOptions(PrerequisiteGroup group, int order, List<PlannedCourse> all) {
+		int count = 0;
+		for (PlannedCourse course : all) {
+			if (group.hasOption(course.getCourseId()) && course.getTermOrder() < order) {
+				count++;
+			}
+		}
+		return count;
+	}
+
+	private static boolean isBetter(Placement run, List<RoadmapCourse> chosen, Placement best,
+			List<RoadmapCourse> kept, Map<List<Integer>, String> risks) {
+		if (run.remaining() != best.remaining()) {
+			return run.remaining() < best.remaining();
+		}
+		if (chosen.size() != kept.size()) {
+			return chosen.size() < kept.size();
+		}
+		int risk = highestRisk(run, chosen, risks);
+		int bestRisk = highestRisk(best, kept, risks);
+		if (risk != bestRisk) {
+			return risk < bestRisk;
+		}
+		CourseCodeOrder order = new CourseCodeOrder();
+		for (int i = 0; i < chosen.size(); i++) {
+			int comparison = order.compare(chosen.get(i).getCode(), kept.get(i).getCode());
+			if (comparison != 0) {
+				return comparison < 0;
+			}
+		}
+		return false;
+	}
+
+	private static int highestRisk(Placement run, List<RoadmapCourse> chosen, Map<List<Integer>, String> risks) {
+		int highest = 0;
+		for (PlannedCourse course : run.planned) {
+			for (RoadmapCourse option : chosen) {
+				if (course.getCourseId() == option.getCourseId()) {
+					String risk = risks.get(List.of(course.getTermId(), course.getCourseId()));
+					highest = Math.max(highest, riskOrder(risk));
+				}
+			}
+		}
+		return highest;
+	}
+
+	private static int earliestPosition(List<RoadmapCourse> pending) {
+		for (RoadmapCourse course : pending) {
+			int position = course.getSuggestedTerm();
+			if (position > 0) {
+				return position;
+			}
+		}
+		return Integer.MAX_VALUE;
+	}
+
+	static class Placement {
+		private final List<RoadmapCourse> pending;
+		private final List<PlannedCourse> planned;
+		private final Map<Integer, List<ProposedEntry>> entries = new TreeMap<>();
+		final boolean valid;
+
+		Placement(List<RoadmapCourse> courses, int earliest, List<SessionInfo> sessions,
+				List<PlannedCourse> saved, List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements,
+				List<RoadmapCourse> chosen) {
+			pending = new ArrayList<>(courses);
+			pending.addAll(chosen);
+			pending.sort(new RoadmapOrder());
+			planned = new ArrayList<>(saved);
+			placeRoadmap(pending, earliest, sessions, planned, groups, placements, entries, chosen);
+			valid = Collections.disjoint(pending, chosen) && prerequisitesMet(saved.size(), groups, placements);
+			pending.removeAll(chosen);
+		}
+
+		int remaining() {
+			return pending.size();
+		}
+
+		List<PlannedCourse> plannedCourses() {
+			return List.copyOf(planned);
+		}
+
+		private boolean prerequisitesMet(int first, List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements) {
+			PrerequisiteCheck check = new PrerequisiteCheck();
+			for (int i = first; i < planned.size(); i++) {
+				PlannedCourse course = planned.get(i);
+				List<String> missing = check.findMissing(course.getCourseId(), course.getTermOrder(), groups, planned,
+						placements);
+				if (!missing.isEmpty()) {
+					return false;
+				}
+			}
+			return true;
+		}
 	}
 
 	private static int riskOrder(String risk) {
@@ -280,7 +379,7 @@ public class PlanGenerator {
 		int position = course.getSuggestedTerm();
 		if (position > 0) {
 			PrerequisiteCheck check = new PrerequisiteCheck();
-			for (int index = position - earliest; index < sessions.size(); index++) {
+			for (int index = Math.max(0, position - earliest); index < sessions.size(); index++) {
 				if (check.findMissing(course.getCourseId(), sessions.get(index).getTermOrder(),
 						groups, planned, placements).isEmpty()) {
 					return index;
