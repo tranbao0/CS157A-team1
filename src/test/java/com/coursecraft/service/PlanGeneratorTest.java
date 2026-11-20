@@ -4,10 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -557,15 +559,18 @@ class PlanGeneratorTest {
 		GeneratedPlan plan = PlanGenerator.mapCourses(courses, sessions, saved, groups, placements, catalog, risks);
 		assertEquals(List.of(), checkPlan(plan, courses, sessions, saved, groups, placements));
 		BestPlacement best = bestPlacement(courses, sessions, saved, groups, placements, catalog);
-		if (best.candidateCount() <= 12) {
-			int placed = 0;
-			for (ProposedTerm term : plan.getTerms()) {
-				for (ProposedEntry entry : term.getEntries()) {
-					if (!entry.isSuggested()) {
-						placed++;
-					}
+		int placed = 0;
+		for (ProposedTerm term : plan.getTerms()) {
+			for (ProposedEntry entry : term.getEntries()) {
+				if (best.candidateCount() > 12) {
+					assertFalse(entry.isSuggested());
+				}
+				if (!entry.isSuggested()) {
+					placed++;
 				}
 			}
+		}
+		if (best.candidateCount() <= 12) {
 			assertEquals(best.roadmapCount(), placed);
 		}
 		return plan;
@@ -781,6 +786,156 @@ class PlanGeneratorTest {
 				}
 			}
 			roadmapCount = Math.max(roadmapCount, proposed.size() - chosen.size());
+		}
+	}
+
+	@Test
+	void findsBestLegalPlanAcrossRoadmapRowsAndSearchSizes() {
+		Random random = new Random(20261118);
+		for (int index = 0; index < 2000; index++) {
+			checkRoadmapCase(randomRoadmap(random), index);
+		}
+		for (int index = 0; index < 20; index++) {
+			checkRoadmapCase(wideRoadmap(random, 9 + index % 5), 2000 + index);
+		}
+	}
+
+	private SweepRoadmap randomRoadmap(Random random) {
+		int termCount = 3 + random.nextInt(3);
+		int courseCount = 3 + random.nextInt(4);
+		SweepRoadmap input = new SweepRoadmap(consecutiveTerms(termCount), outsideCatalog(5));
+		List<Integer> options = new ArrayList<>();
+		Set<Integer> passed = new HashSet<>();
+		for (int id = 1; id <= courseCount; id++) {
+			int position = 1 + random.nextInt(termCount - 1);
+			int kind = random.nextInt(8);
+			String type = "Major";
+			String savedTerm = null;
+			if (kind == 0) {
+				input.saved.add(savedCourse(id, input.sessions.get(random.nextInt(termCount))));
+				savedTerm = "Fall";
+			} else if (kind == 1) {
+				type = "Elective";
+			} else if (kind == 2) {
+				passed.add(id);
+			} else if (kind == 3) {
+				position = 0;
+			} else if (kind == 4) {
+				position = termCount + 2;
+			}
+			input.courses.add(course(id, position, type, passed.contains(id), savedTerm));
+			options.add(id);
+		}
+		for (int id = 100; id < 105; id++) {
+			options.add(id);
+		}
+		for (int owner : options) {
+			int groupCount = random.nextInt(3);
+			if (owner >= 100) {
+				groupCount = random.nextInt(2);
+			}
+			for (int index = 0; index < groupCount; index++) {
+				int groupId = input.groups.size() + 1;
+				PrerequisiteGroup group = new PrerequisiteGroup(groupId, owner);
+				int optionCount = 1 + random.nextInt(3);
+				Set<Integer> chosen = new HashSet<>();
+				for (int i = 0; i < optionCount; i++) {
+					int option = options.get(random.nextInt(options.size()));
+					if (option != owner && !chosen.contains(option)) {
+						chosen.add(option);
+						group.addOption(option, "CS " + option);
+					}
+				}
+				if (!Collections.disjoint(passed, group.getOptionCourseIds())) {
+					continue;
+				}
+				input.groups.add(group);
+				if (random.nextInt(8) == 0) {
+					input.placements.put(groupId, List.of("M-I"));
+				}
+			}
+		}
+		if (random.nextBoolean()) {
+			input.saved.add(savedCourse(104, input.sessions.get(termCount - 1)));
+			input.risks.put(List.of(7, 101), "High");
+		}
+		return input;
+	}
+
+	private SweepRoadmap wideRoadmap(Random random, int candidates) {
+		int termCount = 3 + random.nextInt(3);
+		SweepRoadmap input = new SweepRoadmap(consecutiveTerms(termCount), outsideCatalog(candidates + 7));
+		input.courses.add(required(1, 1));
+		input.courses.add(course(2, 2, "Major", false, "Fall"));
+		input.courses.add(course(3, 2, "Elective", false, null));
+		input.courses.add(required(4, 0));
+		input.courses.add(required(5, termCount + 1));
+		input.courses.add(course(6, 1, "Major", true, null));
+		SessionInfo last = input.sessions.get(termCount - 1);
+		input.saved.add(savedCourse(2, last));
+		int savedOption = 100 + candidates;
+		input.saved.add(savedCourse(savedOption, last));
+		PrerequisiteGroup options = new PrerequisiteGroup(1, 1);
+		for (int id = 100; id < savedOption - 1; id++) {
+			options.addOption(id, "CS " + id);
+		}
+		options.addOption(savedOption, "CS " + savedOption);
+		input.groups.add(options);
+		input.groups.add(group(100, savedOption - 1));
+		for (int owner = 2; owner <= 6; owner++) {
+			input.groups.add(group(owner, savedOption + owner - 1));
+		}
+		input.groups.add(extraGroup(7, 101, savedOption + 6));
+		input.placements.put(7, List.of("M-I"));
+		input.risks.put(List.of(7, 101), "High");
+		return input;
+	}
+
+	private PlannedCourse savedCourse(int id, SessionInfo term) {
+		return new PlannedCourse(0, id, "CS " + id, "", 3, term.getTermId(), term.getTermLabel(),
+				term.getSeason(), term.getTermOrder(), null);
+	}
+
+	private void checkRoadmapCase(SweepRoadmap input, int index) {
+		try {
+			checkedPlan(input.courses, input.sessions, input.saved, input.groups, input.placements,
+					input.catalog, input.risks);
+		} catch (AssertionError | RuntimeException failure) {
+			throw new AssertionError("Roadmap " + index + ": " + input.describe(), failure);
+		}
+	}
+
+	private static final class SweepRoadmap {
+		private final List<RoadmapCourse> courses = new ArrayList<>();
+		private final List<PlannedCourse> saved = new ArrayList<>();
+		private final List<PrerequisiteGroup> groups = new ArrayList<>();
+		private final Map<Integer, List<String>> placements = new HashMap<>();
+		private final Map<List<Integer>, String> risks = new HashMap<>();
+		private final List<SessionInfo> sessions;
+		private final Map<Integer, TranscriptCourse> catalog;
+
+		SweepRoadmap(List<SessionInfo> sessions, Map<Integer, TranscriptCourse> catalog) {
+			this.sessions = sessions;
+			this.catalog = catalog;
+		}
+
+		String describe() {
+			List<String> rows = new ArrayList<>();
+			for (RoadmapCourse course : courses) {
+				rows.add(course.getCode() + "@" + course.getSuggestedTerm() + " " + course.getRequirementType()
+						+ " passed=" + course.isPassed() + " saved=" + course.getPlannedTermLabel());
+			}
+			List<String> needs = new ArrayList<>();
+			for (PrerequisiteGroup group : groups) {
+				needs.add(group.getCourseId() + " needs " + group.getOptionCodes()
+						+ " placement=" + placements.get(group.getGroupId()));
+			}
+			List<String> savedRows = new ArrayList<>();
+			for (PlannedCourse course : saved) {
+				savedRows.add(course.getCode() + "@" + course.getTermId());
+			}
+			return rows + ", " + sessions.size() + " terms, groups=" + needs + ", outside=" + catalog.keySet()
+					+ ", saved=" + savedRows + ", risks=" + risks;
 		}
 	}
 
