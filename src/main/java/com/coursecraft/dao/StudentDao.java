@@ -35,6 +35,22 @@ public class StudentDao {
 		}
 	}
 
+	public boolean isAdmin(int studentId, String email) throws SQLException {
+		String sql = "SELECT is_admin FROM students WHERE student_id = ? AND email = ?";
+
+		try (Connection connection = Db.getConnection();
+				PreparedStatement statement = connection.prepareStatement(sql)) {
+			statement.setInt(1, studentId);
+			statement.setString(2, email);
+			try (ResultSet rs = statement.executeQuery()) {
+				if (!rs.next()) {
+					return false;
+				}
+				return rs.getInt("is_admin") == 1;
+			}
+		}
+	}
+
 	public boolean exists(Connection connection, int studentId) throws SQLException {
 		try (PreparedStatement statement = connection.prepareStatement("SELECT 1 FROM students WHERE student_id = ?")) {
 			statement.setInt(1, studentId);
