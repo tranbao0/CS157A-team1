@@ -5,11 +5,12 @@ import java.util.List;
 
 import com.coursecraft.service.UnitRules;
 
-// holds one suggested term bucket (e.g. "Term 1") and its roadmap courses
+// holds one suggested term bucket (e.g. "Term 1") and its required courses + elective slots
 public class RoadmapTerm {
 
 	private final int termNumber;
 	private final List<RoadmapCourse> courses = new ArrayList<>();
+	private final List<RoadmapElectiveSlot> electiveSlots = new ArrayList<>();
 	private double units;
 
 	public RoadmapTerm(int termNumber) {
@@ -26,6 +27,11 @@ public class RoadmapTerm {
 		}
 	}
 
+	public void addElectiveSlot(RoadmapElectiveSlot slot) {
+		electiveSlots.add(slot);
+		units += slot.getSlotUnits();
+	}
+
 	public int getTermNumber() {
 		return termNumber;
 	}
@@ -36,6 +42,10 @@ public class RoadmapTerm {
 
 	public List<RoadmapCourse> getCourses() {
 		return courses;
+	}
+
+	public List<RoadmapElectiveSlot> getElectiveSlots() {
+		return electiveSlots;
 	}
 
 	public double getUnits() {

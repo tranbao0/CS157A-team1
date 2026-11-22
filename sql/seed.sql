@@ -254,7 +254,7 @@ INSERT INTO roadmaps (roadmap_id, major_id, catalog_year) VALUES
 
 INSERT INTO requires_course (roadmap_id, course_id, suggested_term_position, requirement_type) VALUES
   -- Computer Science, BS, 2025 (SJSU 2025-2026 roadmap, position 1 = first fall)
-  -- Elective rows come from approved lists, one of MATH 32, 142 or 161A is required
+  -- Required courses only; electives live in elective_groups / elective_slots
   (2, 1,  1, 'Major'),
   (2, 15, 1, 'Support'),
   (2, 19, 1, 'Support'),
@@ -266,24 +266,16 @@ INSERT INTO requires_course (roadmap_id, course_id, suggested_term_position, req
   (2, 33, 4, 'Major'),
   (2, 8,  4, 'Major'),
   (2, 18, 4, 'Support'),
-  (2, 58, 4, 'Elective'),
   (2, 7,  5, 'Major'),
   (2, 35, 5, 'Support'),
-  (2, 56, 5, 'Elective'),
   (2, 9,  6, 'Major'),
   (2, 34, 6, 'Support'),
   (2, 5,  6, 'Major'),
   (2, 36, 6, 'Support'),
-  (2, 17, 6, 'Elective'),
-  (2, 29, 6, 'Elective'),
-  (2, 55, 6, 'Elective'),
   (2, 11, 7, 'Major'),
   (2, 12, 7, 'Major'),
   (2, 13, 7, 'Major'),
-  (2, 30, 7, 'Elective'),
   (2, 10, 8, 'Major'),
-  (2, 57, 8, 'Elective'),
-  (2, 64, 8, 'Elective'),
   -- Computer Science, BS, 2024
   (1, 1,  1, 'Major'),
   (1, 2,  2, 'Major'),
@@ -295,7 +287,7 @@ INSERT INTO requires_course (roadmap_id, course_id, suggested_term_position, req
   (3, 2,  2, 'Major'),
   (3, 6,  4, 'Major'),
   -- Software Engineering, BS, 2025 (SJSU 2025-2026 roadmap)
-  -- Elective rows are technical upper division electives, two are required
+  -- Required courses only; technical electives live in elective_groups / elective_slots
   (4, 1,  1, 'Major'),
   (4, 38, 1, 'Major'),
   (4, 15, 1, 'Support'),
@@ -328,8 +320,6 @@ INSERT INTO requires_course (roadmap_id, course_id, suggested_term_position, req
   (4, 52, 8, 'Major'),
   (4, 53, 8, 'Major'),
   (4, 54, 8, 'Major'),
-  (4, 55, 8, 'Elective'),
-  (4, 57, 8, 'Elective'),
   -- Data Science, BS, 2025
   (6, 1,  1, 'Major'),
   (6, 15, 1, 'Support'),
@@ -356,6 +346,31 @@ INSERT INTO requires_ge_area (roadmap_id, ge_area_code) VALUES
   (4, '5B'), (4, '5C'), (4, '6'), (4, 'UD2/5'), (4, 'UD3'), (4, 'UD4'),
   (8, '1A'), (8, '1B'), (8, '1C'), (8, '5A'), (8, '5B'), (8, '5C'),
   (11, '1A'), (11, '1C'), (11, '2'), (11, '4');
+
+INSERT INTO elective_groups (group_id, roadmap_id, name, min_units, min_courses) VALUES
+  (1, 2, 'Major Electives', 17.0, NULL),
+  (2, 2, 'Math/Stats Elective', NULL, 1),
+  (3, 4, 'Technical Electives', NULL, 2);
+
+INSERT INTO elective_group_courses (group_id, course_id) VALUES
+  -- CS 2025: 17-unit Major Electives pool
+  (1, 17), (1, 29), (1, 30), (1, 55), (1, 56), (1, 57), (1, 58), (1, 64),
+  -- CS 2025: subset rule (at least 1 of MATH 32 or MATH 161A; courses also count toward group 1)
+  (2, 17), (2, 29),
+  -- SE 2025: 2 Technical Electives
+  (3, 55), (3, 57);
+
+INSERT INTO elective_slots (slot_id, group_id, suggested_term_position, units) VALUES
+  -- CS 2025 Major Electives slots (3 + 3 + 3 + 3 + 3 + 2 = 17.0 units)
+  (1, 1, 4, 3.0),
+  (2, 1, 5, 3.0),
+  (3, 1, 6, 3.0),
+  (4, 1, 7, 3.0),
+  (5, 1, 8, 3.0),
+  (6, 1, 8, 2.0),
+  -- SE 2025 Technical Electives slots (two 3-unit slots in Term 8)
+  (7, 3, 8, 3.0),
+  (8, 3, 8, 3.0);
 
 -- SJSU gives each new student one math and one writing category, both use same four levels.
 INSERT INTO placement_categories (code, kind, name) VALUES

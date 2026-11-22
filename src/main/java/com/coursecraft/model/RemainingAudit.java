@@ -2,32 +2,30 @@ package com.coursecraft.model;
 
 import java.util.List;
 
-// holds student's roadmap progress, term-by-term grid, and GE area statuses for transcript page
+// holds student's roadmap progress, term by term grid, elective group rules, and GE area statuses for transcript page
 public class RemainingAudit {
 
 	private final Roadmap roadmap;
 	private final List<RoadmapTerm> terms;
+	private final List<ElectiveGroupStatus> electiveGroups;
 	private final List<RoadmapGeStatus> geAreas;
 	private final int doneCourses;
 	private final int totalCourses;
-	private final int doneElectives;
-	private final int totalElectives;
 	private final int doneGe;
 	private final int totalGe;
 
 	public RemainingAudit(Roadmap roadmap,
 			List<RoadmapTerm> terms,
+			List<ElectiveGroupStatus> electiveGroups,
 			List<RoadmapGeStatus> geAreas,
 			int doneCourses, int totalCourses,
-			int doneElectives, int totalElectives,
 			int doneGe, int totalGe) {
 		this.roadmap = roadmap;
 		this.terms = terms;
+		this.electiveGroups = electiveGroups;
 		this.geAreas = geAreas;
 		this.doneCourses = doneCourses;
 		this.totalCourses = totalCourses;
-		this.doneElectives = doneElectives;
-		this.totalElectives = totalElectives;
 		this.doneGe = doneGe;
 		this.totalGe = totalGe;
 	}
@@ -40,6 +38,10 @@ public class RemainingAudit {
 		return terms;
 	}
 
+	public List<ElectiveGroupStatus> getElectiveGroups() {
+		return electiveGroups;
+	}
+
 	public List<RoadmapGeStatus> getGeAreas() {
 		return geAreas;
 	}
@@ -50,14 +52,6 @@ public class RemainingAudit {
 
 	public int getTotalCourses() {
 		return totalCourses;
-	}
-
-	public int getDoneElectives() {
-		return doneElectives;
-	}
-
-	public int getTotalElectives() {
-		return totalElectives;
 	}
 
 	public int getDoneGe() {

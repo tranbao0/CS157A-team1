@@ -12,8 +12,48 @@ import com.coursecraft.model.Roadmap;
 import com.coursecraft.model.RoadmapCourse;
 import com.coursecraft.model.RoadmapGeStatus;
 
-// SQL for roadmaps, majors, requires_course, and requires_ge_area tables lives here
+// SQL for roadmaps, majors, requires_course, requires_ge_area, and elective tables lives here
 public class RoadmapDao {
+
+	public static class ElectiveGroupRow {
+		public final int groupId;
+		public final String name;
+		public final Double minUnits;
+		public final Integer minCourses;
+
+		public ElectiveGroupRow(int groupId, String name, Double minUnits, Integer minCourses) {
+			this.groupId = groupId;
+			this.name = name;
+			this.minUnits = minUnits;
+			this.minCourses = minCourses;
+		}
+	}
+
+	public static class ElectiveSlotRow {
+		public final int slotId;
+		public final int groupId;
+		public final String groupName;
+		public final int suggestedTerm;
+		public final double units;
+
+		public ElectiveSlotRow(int slotId, int groupId, String groupName, int suggestedTerm, double units) {
+			this.slotId = slotId;
+			this.groupId = groupId;
+			this.groupName = groupName;
+			this.suggestedTerm = suggestedTerm;
+			this.units = units;
+		}
+	}
+
+	public static class GroupTakenCourse {
+		public final int groupId;
+		public final RoadmapCourse course;
+
+		public GroupTakenCourse(int groupId, RoadmapCourse course) {
+			this.groupId = groupId;
+			this.course = course;
+		}
+	}
 
 	// lists every roadmap with its major name, majors A to Z and newest catalog year first
 	public List<Roadmap> findAll(Connection connection) throws SQLException {
@@ -136,6 +176,116 @@ public class RoadmapDao {
 			}
 		}
 		return courses;
+	}
+
+	// elective group rules for student's roadmap
+	public List<ElectiveGroupRow> findElectiveGroupsForStudent(Connection connection, int studentId)
+			throws SQLException {
+		String sql = "SELECT eg.group_id, eg.name, eg.min_units, eg.min_courses "
+				+ "FROM students s "
+				+ "JOIN elective_groups eg ON eg.roadmap_id = s.roadmap_id "
+				+ "WHERE s.student_id = ? "
+				+ "ORDER BY eg.group_id";
+
+		List<ElectiveGroupRow> groups = new ArrayList<>();
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+			statement.setInt(1, studentId);
+			try (ResultSet rs = statement.executeQuery()) {
+				while (rs.next()) {
+					double u = rs.getDouble("min_units");
+					Double minUnits = rs.wasNull() ? null : u;
+					int c = rs.getInt("min_courses");
+					Integer minCourses = rs.wasNull() ? null : c;
+					groups.add(new ElectiveGroupRow(
+							rs.getInt("group_id"), rs.getString("name"), minUnits, minCourses));
+				}
+			}
+		}
+		return groups;
+	}
+
+	// elective placeholder slots in suggested term order
+	public List<ElectiveSlotRow> findElectiveSlotsForStudent(Connection connection, int studentId)
+			throws SQLException {
+		String sql = "SELECT es.slot_id, es.group_id, eg.name AS group_name, "
+				+ "       es.suggested_term_position, es.units "
+				+ "FROM students s "
+				+ "JOIN elective_groups eg ON eg.roadmap_id = s.roadmap_id "
+				+ "JOIN elective_slots es ON es.group_id = eg.group_id "
+				+ "WHERE s.student_id = ? "
+				+ "ORDER BY es.suggested_term_position, es.slot_id";
+
+		List<ElectiveSlotRow> slots = new ArrayList<>();
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+			statement.setInt(1, studentId);
+			try (ResultSet rs = statement.executeQuery()) {
+				while (rs.next()) {
+					slots.add(new ElectiveSlotRow(
+							rs.getInt("slot_id"),
+							rs.getInt("group_id"),
+							rs.getString("group_name"),
+							rs.getInt("suggested_term_position"),
+							rs.getDouble("units")));
+				}
+			}
+		}
+		return slots;
+	}
+
+	// passed or planned courses per elective group: taken courses first, then planned by earliest term
+	public List<GroupTakenCourse> findTakenElectivesForStudent(Connection connection, int studentId)
+			throws SQLException {
+		String sql = "SELECT eg.group_id, c.course_id, c.subject, c.course_number, c.title, c.units, "
+				+ "       EXISTS (SELECT 1 FROM completed cp "
+				+ "               WHERE cp.student_id = s.student_id AND cp.course_id = c.course_id "
+				+ "                 AND cp.taken_and_passed = 1) AS passed, "
+				+ "       (SELECT CONCAT(t.season, ' ', t.year) "
+				+ "        FROM plan_entries pe "
+				+ "        JOIN sessions se ON se.session_id = pe.session_id "
+				+ "        JOIN terms t ON t.term_id = se.term_id "
+				+ "        WHERE pe.student_id = s.student_id AND pe.course_id = c.course_id "
+				+ "        ORDER BY t.year, FIELD(t.season, 'Winter', 'Spring', 'Summer', 'Fall') "
+				+ "        LIMIT 1) AS planned_term, "
+				+ "       COALESCE((SELECT t.year * 10 + FIELD(t.season, 'Winter', 'Spring', 'Summer', 'Fall') "
+				+ "                 FROM plan_entries pe "
+				+ "                 JOIN sessions se ON se.session_id = pe.session_id "
+				+ "                 JOIN terms t ON t.term_id = se.term_id "
+				+ "                 WHERE pe.student_id = s.student_id AND pe.course_id = c.course_id "
+				+ "                 ORDER BY t.year, FIELD(t.season, 'Winter', 'Spring', 'Summer', 'Fall') "
+				+ "                 LIMIT 1), 999999) AS term_order "
+				+ "FROM students s "
+				+ "JOIN elective_groups eg ON eg.roadmap_id = s.roadmap_id "
+				+ "JOIN elective_group_courses egc ON egc.group_id = eg.group_id "
+				+ "JOIN courses c ON c.course_id = egc.course_id "
+				+ "WHERE s.student_id = ? "
+				+ "  AND (EXISTS (SELECT 1 FROM completed cp "
+				+ "               WHERE cp.student_id = s.student_id AND cp.course_id = c.course_id "
+				+ "                 AND cp.taken_and_passed = 1) "
+				+ "    OR EXISTS (SELECT 1 FROM plan_entries pe "
+				+ "               WHERE pe.student_id = s.student_id AND pe.course_id = c.course_id)) "
+				+ "ORDER BY eg.group_id, passed DESC, term_order, "
+				+ "         c.subject, CAST(c.course_number AS UNSIGNED), c.course_number";
+
+		List<GroupTakenCourse> list = new ArrayList<>();
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+			statement.setInt(1, studentId);
+			try (ResultSet rs = statement.executeQuery()) {
+				while (rs.next()) {
+					RoadmapCourse rc = new RoadmapCourse(
+							rs.getInt("course_id"),
+							rs.getString("subject"),
+							rs.getString("course_number"),
+							rs.getString("title"),
+							rs.getString("units"),
+							0,
+							"Elective",
+							rs.getBoolean("passed"),
+							rs.getString("planned_term"));
+					list.add(new GroupTakenCourse(rs.getInt("group_id"), rc));
+				}
+			}
+		}
+		return list;
 	}
 
 	// required GE areas for student's roadmap, checking completed courses, placements (M-I -> 2, W-I -> 1A), and 5C science lab
