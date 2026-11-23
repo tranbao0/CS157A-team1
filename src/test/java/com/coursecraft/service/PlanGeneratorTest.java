@@ -604,6 +604,7 @@ class PlanGeneratorTest {
 				}
 			}
 		}
+		checkTermLoads(plan, saved, problems);
 		if (!validProposals(proposed, prior, groups, placements)) {
 			problems.add("Invalid prerequisite order");
 		}
@@ -632,6 +633,24 @@ class PlanGeneratorTest {
 			} while (changed);
 		}
 		return problems;
+	}
+
+	private static void checkTermLoads(GeneratedPlan plan, List<PlannedCourse> saved, List<String> problems) {
+		Map<Integer, Double> savedUnits = new HashMap<>();
+		for (PlannedCourse course : saved) {
+			int termId = course.getTermId();
+			double units = savedUnits.getOrDefault(termId, 0.0);
+			savedUnits.put(termId, units + course.getUnits());
+		}
+		for (ProposedTerm term : plan.getTerms()) {
+			double units = savedUnits.getOrDefault(term.getTermId(), 0.0);
+			for (ProposedEntry entry : term.getEntries()) {
+				units += entry.getUnits();
+			}
+			if (!term.getEntries().isEmpty() && units > UnitRules.NORMAL_LIMIT) {
+				problems.add(term.getLabel() + " exceeds the unit limit: " + units);
+			}
+		}
 	}
 
 	private static List<PlannedCourse> priorCourses(List<RoadmapCourse> courses, List<PlannedCourse> saved) {
@@ -790,6 +809,85 @@ class PlanGeneratorTest {
 	}
 
 	@Test
+	void movesCourseWhenSavedCoursesLeaveTooFewUnits() {
+		assertEquals(List.of("9:1"), capSchedule(List.of(withUnits(1, 4)), savedLoads(16), List.of()));
+	}
+
+	@Test
+	void leavesTermOverLimitWithOnlyItsSavedCourses() {
+		assertEquals(List.of("9:1"), capSchedule(List.of(withUnits(1, 1)), savedLoads(20), List.of()));
+	}
+
+	@Test
+	void placesFirstCourseAtLimitAndMovesNextCourse() {
+		assertEquals(List.of("7:1", "9:2"), capSchedule(List.of(withUnits(2, 1), withUnits(1, 3)),
+				savedLoads(16), List.of()));
+	}
+
+	@Test
+	void placesDependentAfterPrerequisiteMoves() {
+		assertEquals(List.of("9:1", "11:2"), capSchedule(List.of(withUnits(1, 4), required(2, 1)),
+				savedLoads(16), List.of(group(2, 1))));
+	}
+
+	@Test
+	void movesSuggestionAndCountsItsUnits() {
+		assertEquals(List.of("7:1", "9:10*", "11:4"), suggestions(List.of(required(1, 1), required(4, 1)),
+				List.of(group(4, 10)), savedLoads(16), Map.of(), Map.of()));
+	}
+
+	@Test
+	void reportsNoRoomAndLeavesDependentWithPrerequisiteReason() {
+		assertEquals(List.of("1:No room under 19 units by Fall 2027.", "2:Needs CS 1 first."),
+				capSchedule(List.of(withUnits(1, 4), required(2, 1)), savedLoads(16, 16, 16), List.of(group(2, 1))));
+	}
+
+	@Test
+	void reportsNoRoomForCourseOverLimitOnItsOwn() {
+		assertEquals(List.of("1:No room under 19 units by Fall 2027."),
+				capSchedule(List.of(withUnits(1, 20)), List.of(), List.of()));
+	}
+
+	@Test
+	void choosesSuggestionThatLetsBothRoadmapCoursesFit() {
+		Map<Integer, TranscriptCourse> options = catalog();
+		options.put(11, new TranscriptCourse(11, "CS", "11", "", "2", null, true, false, false));
+		assertEquals(List.of("7:11*", "9:1", "11:2"), schedule(List.of(required(1, 1), required(2, 1)),
+				List.of(group(1, 10, 11), group(2, 1)), savedLoads(17), Map.of(), options, Map.of()));
+	}
+
+	private List<String> capSchedule(List<RoadmapCourse> courses, List<PlannedCourse> saved,
+			List<PrerequisiteGroup> groups) {
+		return schedule(courses, groups, saved, Map.of());
+	}
+
+	private RoadmapCourse withUnits(int id, int units) {
+		return new RoadmapCourse(id, "CS", String.valueOf(id), "Course " + id, String.valueOf(units),
+				1, "Major", false, null);
+	}
+
+	private List<PlannedCourse> savedLoads(int... totals) {
+		return savedLoads(sessions(), totals);
+	}
+
+	private List<PlannedCourse> savedLoads(List<SessionInfo> terms, int... totals) {
+		List<PlannedCourse> saved = new ArrayList<>();
+		int id = 200;
+		for (int i = 0; i < totals.length; i++) {
+			SessionInfo term = terms.get(i);
+			int unitsLeft = totals[i];
+			while (unitsLeft > 0) {
+				int units = Math.min(5, unitsLeft);
+				saved.add(new PlannedCourse(0, id, "CS " + id, "", units, term.getTermId(), term.getTermLabel(),
+						term.getSeason(), term.getTermOrder(), null));
+				unitsLeft -= units;
+				id++;
+			}
+		}
+		return saved;
+	}
+
+	@Test
 	void findsBestLegalPlanAcrossRoadmapRowsAndSearchSizes() {
 		Random random = new Random(20261118);
 		for (int index = 0; index < 2000; index++) {
@@ -797,6 +895,10 @@ class PlanGeneratorTest {
 		}
 		for (int index = 0; index < 20; index++) {
 			checkRoadmapCase(wideRoadmap(random, 9 + index % 5), 2000 + index);
+		}
+		Random capRandom = new Random(20261123);
+		for (int index = 0; index < 300; index++) {
+			checkRoadmapCase(capRoadmap(capRandom), 2020 + index);
 		}
 	}
 
@@ -888,6 +990,21 @@ class PlanGeneratorTest {
 		input.groups.add(extraGroup(7, 101, savedOption + 6));
 		input.placements.put(7, List.of("M-I"));
 		input.risks.put(List.of(7, 101), "High");
+		return input;
+	}
+
+	private SweepRoadmap capRoadmap(Random random) {
+		int terms = 3 + random.nextInt(3);
+		SweepRoadmap input = new SweepRoadmap(consecutiveTerms(terms), Map.of());
+		int courses = 3 + random.nextInt(4);
+		for (int id = 1; id <= courses; id++) {
+			input.courses.add(withUnits(id, 1 + random.nextInt(5)));
+		}
+		int[] loads = new int[terms];
+		for (int i = 0; i < terms; i++) {
+			loads[i] = 13 + random.nextInt(7);
+		}
+		input.saved.addAll(savedLoads(input.sessions, loads));
 		return input;
 	}
 

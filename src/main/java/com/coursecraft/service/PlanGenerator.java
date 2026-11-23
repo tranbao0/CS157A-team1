@@ -98,7 +98,7 @@ public class PlanGenerator {
 		}
 		PrerequisiteCheck check = new PrerequisiteCheck();
 		for (RoadmapCourse course : result.pending) {
-			addUnplaced(plan, course, earliest, sessions.size(),
+			addUnplaced(plan, course, earliest, sessions,
 					check.findMissing(course.getCourseId(), lastOrder, groups, result.planned, placements));
 		}
 		Comparator<ProposedEntry> displayOrder = new ProposedEntryOrder();
@@ -380,8 +380,9 @@ public class PlanGenerator {
 		if (position > 0) {
 			PrerequisiteCheck check = new PrerequisiteCheck();
 			for (int index = Math.max(0, position - earliest); index < sessions.size(); index++) {
-				if (check.findMissing(course.getCourseId(), sessions.get(index).getTermOrder(),
-						groups, planned, placements).isEmpty()) {
+				SessionInfo term = sessions.get(index);
+				if (hasRoom(course, term, planned)
+						&& check.findMissing(course.getCourseId(), term.getTermOrder(), groups, planned, placements).isEmpty()) {
 					return index;
 				}
 			}
@@ -389,14 +390,30 @@ public class PlanGenerator {
 		return sessions.size();
 	}
 
+	private static boolean hasRoom(RoadmapCourse course, SessionInfo term, List<PlannedCourse> planned) {
+		double units = Double.parseDouble(course.getUnits());
+		for (PlannedCourse entry : planned) {
+			if (entry.getTermId() == term.getTermId()) {
+				units += entry.getUnits();
+			}
+		}
+		return units <= UnitRules.NORMAL_LIMIT;
+	}
+
 	private static void addUnplaced(GeneratedPlan plan, RoadmapCourse course, int earliest,
-			int termCount, List<String> missing) {
+			List<SessionInfo> sessions, List<String> missing) {
 		String reason = course.getCode() + " has no term available yet.";
 		// JDBC reads NULL roadmap position as 0.
 		if (course.getSuggestedTerm() <= 0) {
 			reason = "Roadmap gives " + course.getCode() + " no term.";
-		} else if (course.getSuggestedTerm() - earliest < termCount && !missing.isEmpty()) {
-			reason = "Needs " + PrerequisiteCheck.joinMissing(missing) + " first.";
+		} else if (course.getSuggestedTerm() - earliest < sessions.size()) {
+			if (missing.isEmpty()) {
+				SessionInfo lastTerm = sessions.get(sessions.size() - 1);
+				reason = "No room under " + UnitRules.format(UnitRules.NORMAL_LIMIT) + " units by "
+						+ lastTerm.getTermLabel() + ".";
+			} else {
+				reason = "Needs " + PrerequisiteCheck.joinMissing(missing) + " first.";
+			}
 		}
 		plan.getUnplaced().add(new UnplacedCourse(course.getCourseId(), course.getCode(),
 				Double.parseDouble(course.getUnits()), reason));
