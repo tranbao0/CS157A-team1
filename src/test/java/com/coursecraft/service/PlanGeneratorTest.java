@@ -293,7 +293,7 @@ class PlanGeneratorTest {
 		assertEquals(List.of("7:2*", "7:10*", "9:4", "11:11*", "12:1"), schedule(
 				List.of(required(1, 1), required(4, 1)),
 				List.of(group(1, 2), second, group(4, 10), group(11, 4)),
-				List.of(), Map.of(), catalog(), Map.of(List.of(7, 3), "High"), sessions(4)));
+				List.of(), Map.of(), catalog(), Map.of(3, "High"), sessions(4)));
 	}
 
 	@Test
@@ -339,9 +339,9 @@ class PlanGeneratorTest {
 	}
 
 	@Test
-	void picksLowestRiskThenCourseCodeInCandidateTerm() {
-		assertEquals(List.of("7:3*", "9:1"), suggestions(List.of(required(1, 1)), List.of(group(1, 10, 3, 2)),
-				List.of(), Map.of(), Map.of(List.of(7, 2), "Medium", List.of(7, 10), "Low", List.of(9, 3), "High")));
+	void prefersLowerRiskBeforeCourseNumber() {
+		assertEquals(List.of("7:10*", "9:1"), suggestions(List.of(required(1, 1)), List.of(group(1, 10, 3, 2)),
+				List.of(), Map.of(), Map.of(2, "Medium", 10, "Low", 3, "High")));
 	}
 
 	@Test
@@ -362,7 +362,7 @@ class PlanGeneratorTest {
 		assertEquals(List.of("7:100*", "7:103*", "7:104*", "8:2", "8:4", "8:5", "8:6", "9:1", "9:3"), fixture(
 				new int[] {1, 2, 2, 2, 2, 2}, new int[][] {{1, 2}, {1, 4}, {2, 5, 104}, {3, 2, 5}, {4, 102, 1, 103},
 						{6, 100, 1, 101}, {6, 103, 3, 102}, {102, 101}}, Map.of(8, List.of("P8")), 3,
-				Map.of(List.of(7, 100), "Medium", List.of(7, 103), "High")));
+				Map.of(100, "Medium", 103, "High")));
 	}
 
 	@Test
@@ -399,7 +399,7 @@ class PlanGeneratorTest {
 	@Test
 	void prefersOneSharedOptionOverTwoOptionsOrAChain() {
 		assertEquals(List.of("7:12*", "9:1", "9:4"), suggestions(List.of(required(1, 1), required(4, 1)),
-				List.of(group(1, 3, 10, 12), group(4, 2, 12), group(10, 11)), List.of(), Map.of(), Map.of(List.of(7, 12), "High")));
+				List.of(group(1, 3, 10, 12), group(4, 2, 12), group(10, 11)), List.of(), Map.of(), Map.of(12, "High")));
 	}
 
 	@Test
@@ -417,7 +417,7 @@ class PlanGeneratorTest {
 	void prefersLowerRiskThenLowerNumberForEqualSizeSets() {
 		List<RoadmapCourse> courses = List.of(required(1, 1));
 		List<PrerequisiteGroup> groups = List.of(group(1, 11, 10));
-		assertEquals(List.of("7:11*", "9:1"), suggestions(courses, groups, List.of(), Map.of(), Map.of(List.of(7, 10), "High")));
+		assertEquals(List.of("7:11*", "9:1"), suggestions(courses, groups, List.of(), Map.of(), Map.of(10, "High")));
 		assertEquals(List.of("7:10*", "9:1"), suggestions(courses, groups, List.of(), Map.of(), Map.of()));
 	}
 
@@ -472,7 +472,7 @@ class PlanGeneratorTest {
 	}
 
 	private List<String> fixture(int[] positions, int[][] options, Map<Integer, List<String>> placements,
-			int terms, Map<List<Integer>, String> risks) {
+			int terms, Map<Integer, String> risks) {
 		List<RoadmapCourse> courses = new ArrayList<>();
 		for (int i = 0; i < positions.length; i++) {
 			courses.add(required(i + 1, positions[i]));
@@ -510,7 +510,7 @@ class PlanGeneratorTest {
 	}
 
 	private List<String> suggestions(List<RoadmapCourse> courses, List<PrerequisiteGroup> groups,
-			List<PlannedCourse> saved, Map<Integer, List<String>> placements, Map<List<Integer>, String> risks) {
+			List<PlannedCourse> saved, Map<Integer, List<String>> placements, Map<Integer, String> risks) {
 		return schedule(courses, groups, saved, placements, catalog(), risks);
 	}
 
@@ -529,12 +529,12 @@ class PlanGeneratorTest {
 
 	private List<String> schedule(List<RoadmapCourse> courses, List<PrerequisiteGroup> groups,
 			List<PlannedCourse> saved, Map<Integer, List<String>> placements,
-			Map<Integer, TranscriptCourse> catalog, Map<List<Integer>, String> risks) {
+			Map<Integer, TranscriptCourse> catalog, Map<Integer, String> risks) {
 		return schedule(courses, groups, saved, placements, catalog, risks, sessions());
 	}
 
 	private List<String> schedule(List<RoadmapCourse> courses, List<PrerequisiteGroup> groups, List<PlannedCourse> saved,
-			Map<Integer, List<String>> placements, Map<Integer, TranscriptCourse> catalog, Map<List<Integer>, String> risks,
+			Map<Integer, List<String>> placements, Map<Integer, TranscriptCourse> catalog, Map<Integer, String> risks,
 			List<SessionInfo> sessions) {
 		GeneratedPlan plan = checkedPlan(courses, sessions, saved, groups, placements, catalog, risks);
 		List<String> results = new ArrayList<>();
@@ -555,7 +555,7 @@ class PlanGeneratorTest {
 
 	private GeneratedPlan checkedPlan(List<RoadmapCourse> courses, List<SessionInfo> sessions, List<PlannedCourse> saved,
 			List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements, Map<Integer, TranscriptCourse> catalog,
-			Map<List<Integer>, String> risks) {
+			Map<Integer, String> risks) {
 		GeneratedPlan plan = PlanGenerator.mapCourses(courses, sessions, saved, groups, placements, catalog, risks);
 		assertEquals(List.of(), checkPlan(plan, courses, sessions, saved, groups, placements));
 		BestPlacement best = bestPlacement(courses, sessions, saved, groups, placements, catalog);
@@ -959,7 +959,7 @@ class PlanGeneratorTest {
 		}
 		if (random.nextBoolean()) {
 			input.saved.add(savedCourse(104, input.sessions.get(termCount - 1)));
-			input.risks.put(List.of(7, 101), "High");
+			input.risks.put(101, "High");
 		}
 		return input;
 	}
@@ -989,7 +989,7 @@ class PlanGeneratorTest {
 		}
 		input.groups.add(extraGroup(7, 101, savedOption + 6));
 		input.placements.put(7, List.of("M-I"));
-		input.risks.put(List.of(7, 101), "High");
+		input.risks.put(101, "High");
 		return input;
 	}
 
@@ -1027,7 +1027,7 @@ class PlanGeneratorTest {
 		private final List<PlannedCourse> saved = new ArrayList<>();
 		private final List<PrerequisiteGroup> groups = new ArrayList<>();
 		private final Map<Integer, List<String>> placements = new HashMap<>();
-		private final Map<List<Integer>, String> risks = new HashMap<>();
+		private final Map<Integer, String> risks = new HashMap<>();
 		private final List<SessionInfo> sessions;
 		private final Map<Integer, TranscriptCourse> catalog;
 

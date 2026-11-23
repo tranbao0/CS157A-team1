@@ -59,7 +59,7 @@ public class PlanGenerator {
 
 	static GeneratedPlan mapCourses(List<RoadmapCourse> courses, List<SessionInfo> sessions,
 			List<PlannedCourse> saved, List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements,
-			Map<Integer, TranscriptCourse> catalog, Map<List<Integer>, String> risks) {
+			Map<Integer, TranscriptCourse> catalog, Map<Integer, String> risks) {
 		GeneratedPlan plan = new GeneratedPlan();
 		List<RoadmapCourse> pending = findMissing(courses);
 		pending.sort(new RoadmapOrder());
@@ -248,15 +248,15 @@ public class PlanGenerator {
 	}
 
 	private static boolean isBetter(Placement run, List<RoadmapCourse> chosen, Placement best,
-			List<RoadmapCourse> kept, Map<List<Integer>, String> risks) {
+			List<RoadmapCourse> kept, Map<Integer, String> risks) {
 		if (run.remaining() != best.remaining()) {
 			return run.remaining() < best.remaining();
 		}
 		if (chosen.size() != kept.size()) {
 			return chosen.size() < kept.size();
 		}
-		int risk = highestRisk(run, chosen, risks);
-		int bestRisk = highestRisk(best, kept, risks);
+		int risk = highestRisk(chosen, risks);
+		int bestRisk = highestRisk(kept, risks);
 		if (risk != bestRisk) {
 			return risk < bestRisk;
 		}
@@ -270,15 +270,11 @@ public class PlanGenerator {
 		return false;
 	}
 
-	private static int highestRisk(Placement run, List<RoadmapCourse> chosen, Map<List<Integer>, String> risks) {
+	private static int highestRisk(List<RoadmapCourse> chosen, Map<Integer, String> risks) {
 		int highest = 0;
-		for (PlannedCourse course : run.planned) {
-			for (RoadmapCourse option : chosen) {
-				if (course.getCourseId() == option.getCourseId()) {
-					String risk = risks.get(List.of(course.getTermId(), course.getCourseId()));
-					highest = Math.max(highest, riskOrder(risk));
-				}
-			}
+		for (RoadmapCourse course : chosen) {
+			String risk = risks.get(course.getCourseId());
+			highest = Math.max(highest, riskOrder(risk));
 		}
 		return highest;
 	}

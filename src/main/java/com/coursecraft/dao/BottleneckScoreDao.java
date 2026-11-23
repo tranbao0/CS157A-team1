@@ -5,7 +5,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 // SQL for bottleneck_scores table lives here, read only, scoring itself belongs to FR 5
@@ -29,17 +28,18 @@ public class BottleneckScoreDao {
 			}
 		}
 	}
-	public Map<List<Integer>, String> findNewestRisks(Connection connection) throws SQLException {
-		String sql = "SELECT term_id, course_id, risk_level FROM ("
-				+ "SELECT term_id, course_id, risk_level, ROW_NUMBER() OVER (PARTITION BY term_id, course_id "
-				+ "ORDER BY computed_at DESC, score_id DESC) AS rank_in_term FROM bottleneck_scores"
-				+ ") ranked WHERE rank_in_term = 1";
-		Map<List<Integer>, String> risks = new HashMap<>();
+	public Map<Integer, String> findNewestRisks(Connection connection) throws SQLException {
+		String sql = "SELECT course_id, risk_level FROM ("
+				+ "SELECT b.course_id, b.risk_level, ROW_NUMBER() OVER (PARTITION BY b.course_id "
+				+ "ORDER BY b.computed_at DESC, "
+				+ "(t.year * 10 + FIELD(t.season, 'Winter', 'Spring', 'Summer', 'Fall')) DESC, "
+				+ "b.score_id DESC) AS risk_rank FROM bottleneck_scores b JOIN terms t ON t.term_id = b.term_id"
+				+ ") ranked WHERE risk_rank = 1";
+		Map<Integer, String> risks = new HashMap<>();
 		try (PreparedStatement statement = connection.prepareStatement(sql);
 				ResultSet rs = statement.executeQuery()) {
 			while (rs.next()) {
-				List<Integer> key = List.of(rs.getInt("term_id"), rs.getInt("course_id"));
-				risks.put(key, rs.getString("risk_level"));
+				risks.put(rs.getInt("course_id"), rs.getString("risk_level"));
 			}
 		}
 		return risks;
