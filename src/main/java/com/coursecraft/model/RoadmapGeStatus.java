@@ -32,7 +32,7 @@ public class RoadmapGeStatus {
 		return fulfilledByCode != null;
 	}
 
-	// false for areas like 5C that have no standalone courses in the catalog
+	// false when no course in courses table has this GE area
 	public boolean isHasCourses() {
 		return hasCourses;
 	}

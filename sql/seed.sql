@@ -137,7 +137,32 @@ INSERT INTO courses (course_id, subject, course_number, title, units, descriptio
   (61, 'COMM', '174',  'Intercultural Comm and Structural Inequalities', 3.0, NULL, 'UD4'),
   (62, 'KIN',  '2A',   'Beginning Swimming',                             1.0, NULL, NULL),
   (63, 'KIN',  '2B',   'Intermediate Swimming',                          1.0, NULL, NULL),
-  (64, 'CS',   '155',  'Introduction to the Design and Analysis of Algorithms', 3.0, 'Dynamic programming, greedy methods, NP-completeness and other algorithm design topics.', NULL);
+  (64, 'CS',   '155',  'Introduction to the Design and Analysis of Algorithms', 3.0, 'Dynamic programming, greedy methods, NP-completeness and other algorithm design topics.', NULL),
+  -- rows below give every GE area at least three courses, titles, units and areas come from
+  -- GE course lists in SJSU 2025-2026 catalog. Area 1A lists only ENGL 1A and ENGL 1AS.
+  -- A course in two areas (e.g. PHYS 50 is 5A and 5C) keeps the main one, see courses table.
+  (65, 'ENGL', '1AS',  'First-Year Writing: Stretch English II',         3.0, NULL, '1A'),
+  (66, 'ENGL', '2',    'Critical Thinking and Writing',                  3.0, NULL, '1B'),
+  (67, 'COMM', '41',   'Critical Decision Making',                       3.0, NULL, '1B'),
+  (68, 'COMM', '40',   'Argumentation and Advocacy',                     3.0, NULL, '1C'),
+  (69, 'CCS',  '74',   'Public Address',                                 3.0, NULL, '1C'),
+  (70, 'ARTH', '15',   'Intro to Visual Culture',                        3.0, NULL, '3A'),
+  (71, 'RTVF', '10',   'The Art of Film',                                3.0, NULL, '3A'),
+  (72, 'PHIL', '61',   'Moral Issues',                                   3.0, NULL, '3B'),
+  (73, 'PSYC', '1',    'Introduction to Psychology',                     3.0, NULL, '4'),
+  (74, 'SOCI', '1',    'Introduction to Sociology',                      3.0, NULL, '4'),
+  (75, 'ASTR', '10',   'Descriptive Astronomy',                          3.0, NULL, '5A'),
+  (76, 'METR', '10',   'Weather and Climate',                            3.0, NULL, '5A'),
+  (77, 'ANTH', '12',   'Introduction to Human Evolution',                3.0, NULL, '5B'),
+  -- 5C only labs, 1 unit each. 4-unit 5A or 5B lab courses also meet 5C, see RoadmapDao.
+  (78, 'ASTR', '11L',  'Introductory Astronomy Lab',                     1.0, NULL, '5C'),
+  (79, 'CHEM', '5',    'Dinner Party Chemistry',                         1.0, NULL, '5C'),
+  (80, 'GEOL', '4L',   'Earth Systems Lab',                              1.0, NULL, '5C'),
+  (81, 'CCS',  '1',    'Introduction to Chicana and Chicano Studies',    3.0, NULL, '6'),
+  (82, 'NAIS', '1',    'Intro to Native American and Indigenous Studies', 3.0, NULL, '6'),
+  (83, 'METR', '112',  'Global Climate Changes',                         3.0, NULL, 'UD2/5'),
+  (84, 'CMPE', '198',  'Technology and Civilization',                    3.0, NULL, 'UD3'),
+  (85, 'PHIL', '186',  'Professional and Business Ethics',               3.0, NULL, 'UD4');
 
 -- Session 6 = Spring 2026, 7 = Summer 2026 S1, 9 = Fall 2026,
 -- 10 = Winter 2027, 11 = Spring 2027.
