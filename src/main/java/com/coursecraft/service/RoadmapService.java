@@ -44,30 +44,43 @@ public class RoadmapService {
 				if (course.isPassed()) {
 					doneCourses++;
 				}
-				RoadmapTerm bucket = byTerm.computeIfAbsent(course.getSuggestedTerm(), RoadmapTerm::new);
-				bucket.addCourse(course);
+				int termNum = course.getSuggestedTerm();
+				if (!byTerm.containsKey(termNum)) {
+					byTerm.put(termNum, new RoadmapTerm(termNum));
+				}
+				byTerm.get(termNum).addCourse(course);
 			}
 
 			List<ElectiveGroupRow> groupRows = dao.findElectiveGroupsForStudent(connection, studentId);
 			List<GroupTakenCourse> takenRows = dao.findTakenElectivesForStudent(connection, studentId);
 			Map<Integer, List<RoadmapCourse>> coursesByGroup = new HashMap<>();
 			for (GroupTakenCourse item : takenRows) {
-				coursesByGroup.computeIfAbsent(item.groupId, k -> new ArrayList<>()).add(item.course);
+				if (!coursesByGroup.containsKey(item.groupId)) {
+					coursesByGroup.put(item.groupId, new ArrayList<>());
+				}
+				coursesByGroup.get(item.groupId).add(item.course);
 			}
 
 			List<ElectiveGroupStatus> electiveGroups = new ArrayList<>();
 			Map<Integer, Queue<RoadmapCourse>> slotFillQueues = new HashMap<>();
 			for (ElectiveGroupRow row : groupRows) {
-				List<RoadmapCourse> matched = coursesByGroup.getOrDefault(row.groupId, List.of());
+				List<RoadmapCourse> matched = coursesByGroup.get(row.groupId);
+				if (matched == null) {
+					matched = new ArrayList<>();
+				}
 				double doneUnits = 0;
+				int doneGroupCourses = 0;
 				for (RoadmapCourse rc : matched) {
-					try {
-						doneUnits += Double.parseDouble(rc.getUnits());
-					} catch (NumberFormatException ignored) {
+					if (rc.isPassed()) {
+						doneGroupCourses++;
+						try {
+							doneUnits += Double.parseDouble(rc.getUnits());
+						} catch (NumberFormatException ignored) {
+						}
 					}
 				}
 				electiveGroups.add(new ElectiveGroupStatus(
-						row.groupId, row.name, row.minUnits, row.minCourses, doneUnits, matched.size()));
+						row.groupId, row.name, row.minUnits, row.minCourses, doneUnits, doneGroupCourses));
 				slotFillQueues.put(row.groupId, new LinkedList<>(matched));
 			}
 
@@ -76,7 +89,10 @@ public class RoadmapService {
 				RoadmapCourse filled = (queue != null && !queue.isEmpty()) ? queue.poll() : null;
 				RoadmapElectiveSlot resolved = new RoadmapElectiveSlot(
 						slot.slotId, slot.groupId, slot.groupName, slot.suggestedTerm, slot.units, filled);
-				byTerm.computeIfAbsent(slot.suggestedTerm, RoadmapTerm::new).addElectiveSlot(resolved);
+				if (!byTerm.containsKey(slot.suggestedTerm)) {
+					byTerm.put(slot.suggestedTerm, new RoadmapTerm(slot.suggestedTerm));
+				}
+				byTerm.get(slot.suggestedTerm).addElectiveSlot(resolved);
 			}
 
 			List<RoadmapGeStatus> allGe = dao.findGeAreasForStudent(connection, studentId);

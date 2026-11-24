@@ -271,7 +271,6 @@ INSERT INTO requires_course (roadmap_id, course_id, suggested_term_position, req
   (2, 9,  6, 'Major'),
   (2, 34, 6, 'Support'),
   (2, 5,  6, 'Major'),
-  (2, 36, 6, 'Support'),
   (2, 11, 7, 'Major'),
   (2, 12, 7, 'Major'),
   (2, 13, 7, 'Major'),
@@ -350,15 +349,20 @@ INSERT INTO requires_ge_area (roadmap_id, ge_area_code) VALUES
 INSERT INTO elective_groups (group_id, roadmap_id, name, min_units, min_courses) VALUES
   (1, 2, 'Major Electives', 17.0, NULL),
   (2, 2, 'Math/Stats Elective', NULL, 1),
-  (3, 4, 'Technical Electives', NULL, 2);
+  (3, 4, 'Technical Electives', NULL, 2),
+  (4, 1, 'Major Electives', 17.0, NULL),
+  (5, 1, 'Math/Stats Elective', NULL, 1);
 
 INSERT INTO elective_group_courses (group_id, course_id) VALUES
-  -- CS 2025: 17-unit Major Electives pool
-  (1, 17), (1, 29), (1, 30), (1, 55), (1, 56), (1, 57), (1, 58), (1, 64),
-  -- CS 2025: subset rule (at least 1 of MATH 32 or MATH 161A; courses also count toward group 1)
-  (2, 17), (2, 29),
-  -- SE 2025: 2 Technical Electives
-  (3, 55), (3, 57);
+  -- CS 2025: 17-unit Major Electives pool (includes MATH 142)
+  (1, 17), (1, 29), (1, 30), (1, 36), (1, 55), (1, 56), (1, 57), (1, 58), (1, 64),
+  -- CS 2025: subset rule (at least 1 of MATH 32, MATH 142, MATH 161A; also counts toward group 1)
+  (2, 17), (2, 29), (2, 36),
+  -- SE 2025: 2 Technical Electives (CS 156, CS 174, CS 155)
+  (3, 55), (3, 58), (3, 64),
+  -- CS 2024: 17-unit Major Electives pool + Math/Stats subset
+  (4, 17), (4, 29), (4, 30), (4, 36), (4, 55), (4, 56), (4, 57), (4, 58), (4, 64),
+  (5, 17), (5, 29), (5, 36);
 
 INSERT INTO elective_slots (slot_id, group_id, suggested_term_position, units) VALUES
   -- CS 2025 Major Electives slots (3 + 3 + 3 + 3 + 3 + 2 = 17.0 units)
@@ -370,7 +374,14 @@ INSERT INTO elective_slots (slot_id, group_id, suggested_term_position, units) V
   (6, 1, 8, 2.0),
   -- SE 2025 Technical Electives slots (two 3-unit slots in Term 8)
   (7, 3, 8, 3.0),
-  (8, 3, 8, 3.0);
+  (8, 3, 8, 3.0),
+  -- CS 2024 Major Electives slots (3 + 3 + 3 + 3 + 3 + 2 = 17.0 units)
+  (9,  4, 4, 3.0),
+  (10, 4, 5, 3.0),
+  (11, 4, 6, 3.0),
+  (12, 4, 7, 3.0),
+  (13, 4, 8, 3.0),
+  (14, 4, 8, 2.0);
 
 -- SJSU gives each new student one math and one writing category, both use same four levels.
 INSERT INTO placement_categories (code, kind, name) VALUES
