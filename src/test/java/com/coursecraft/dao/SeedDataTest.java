@@ -74,9 +74,11 @@ class SeedDataTest {
 
 	// transcript GE rows, roadmap GE status, and plan GE picks need courses in every area.
 	// SJSU lists only two Area 1A courses (ENGL 1A, ENGL 1AS), every other area needs three.
+	// Engineering capstone courses count for UD3 and UD4 only as a sequence, so they are not counted.
 	@Test
 	void everyGeAreaHasEnoughCourses() throws IOException {
 		String seed = Files.readString(Path.of("sql", "seed.sql"));
+		Set<String> capstones = Set.of("CMPE 195A", "CMPE 195B", "ENGR 195A", "ENGR 195B");
 
 		Map<String, Integer> counts = new TreeMap<>();
 		Matcher areas = Pattern.compile("^\\s*\\('([^']+)',\\s*'[^']+'\\)", Pattern.MULTILINE)
@@ -86,19 +88,24 @@ class SeedDataTest {
 		}
 		assertFalse(counts.isEmpty(), "no GE areas found in seed.sql");
 
-		// last value of each courses row is ge_area_code, NULL or 'code'
-		Matcher courses = Pattern.compile("^\\s*\\(\\d+,.*,\\s*(?:NULL|'([^']+)')\\)[,;]", Pattern.MULTILINE)
+		// courses row starts (id, 'subject', 'number', and ends with ge_area_code, NULL or 'code'
+		Matcher courses = Pattern.compile(
+				"^\\s*\\(\\d+,\\s*'([^']+)',\\s*'([^']+)',.*,\\s*(?:NULL|'([^']+)')\\)[,;]", Pattern.MULTILINE)
 				.matcher(insertBlock(seed, "courses"));
 		while (courses.find()) {
-			String area = courses.group(1);
-			if (area != null) {
+			String code = courses.group(1) + " " + courses.group(2);
+			String area = courses.group(3);
+			if (area != null && !capstones.contains(code)) {
 				assertTrue(counts.containsKey(area), "course has unknown GE area: " + area);
-				counts.merge(area, 1, Integer::sum);
+				counts.put(area, counts.get(area) + 1);
 			}
 		}
 
 		for (Map.Entry<String, Integer> entry : counts.entrySet()) {
-			int needed = entry.getKey().equals("1A") ? 2 : 3;
+			int needed = 3;
+			if (entry.getKey().equals("1A")) {
+				needed = 2;
+			}
 			assertTrue(entry.getValue() >= needed,
 					"GE area " + entry.getKey() + " has " + entry.getValue() + " courses, needs " + needed);
 		}

@@ -162,7 +162,11 @@ INSERT INTO courses (course_id, subject, course_number, title, units, descriptio
   (82, 'NAIS', '1',    'Intro to Native American and Indigenous Studies', 3.0, NULL, '6'),
   (83, 'METR', '112',  'Global Climate Changes',                         3.0, NULL, 'UD2/5'),
   (84, 'CMPE', '198',  'Technology and Civilization',                    3.0, NULL, 'UD3'),
-  (85, 'PHIL', '186',  'Professional and Business Ethics',               3.0, NULL, 'UD4');
+  (85, 'PHIL', '186',  'Professional and Business Ethics',               3.0, NULL, 'UD4'),
+  -- CMPE 195A/B and ENGR 195A/B count for UD3 and UD4 only as engineering capstone sequence,
+  -- so UD3 and UD4 each get third course that counts alone
+  (86, 'ANTH', '115',  'The Emerging Global Culture',                    3.0, NULL, 'UD3'),
+  (87, 'SOCI', '162',  'Race and Ethnic Relations',                      3.0, NULL, 'UD4');
 
 -- Session 6 = Spring 2026, 7 = Summer 2026 S1, 9 = Fall 2026,
 -- 10 = Winter 2027, 11 = Spring 2027.
@@ -207,7 +211,31 @@ VALUES
   (32, 12, 11, 23210, '01', 'In Person', 'LEC', 'Active'),
   (33, 8,  11, 23120, '01', 'In Person', 'LEC', 'Active'),
   -- Winter 2027
-  (34, 23, 10, 90010, '01', 'Online',    'LEC', 'Active');
+  (34, 23, 10, 90010, '01', 'Online',    'LEC', 'Active'),
+  -- Spring 2027 GE sections, one per GE course 65 to 87, so catalog search and + Plan find them
+  (35, 65, 11, 23301, '01', 'In Person', 'LEC', 'Active'),
+  (36, 66, 11, 23302, '01', 'In Person', 'LEC', 'Active'),
+  (37, 67, 11, 23303, '01', 'In Person', 'LEC', 'Active'),
+  (38, 68, 11, 23304, '01', 'In Person', 'LEC', 'Active'),
+  (39, 69, 11, 23305, '01', 'In Person', 'LEC', 'Active'),
+  (40, 70, 11, 23306, '01', 'In Person', 'LEC', 'Active'),
+  (41, 71, 11, 23307, '01', 'In Person', 'LEC', 'Active'),
+  (42, 72, 11, 23308, '01', 'In Person', 'LEC', 'Active'),
+  (43, 73, 11, 23309, '01', 'In Person', 'LEC', 'Active'),
+  (44, 74, 11, 23310, '01', 'In Person', 'LEC', 'Active'),
+  (45, 75, 11, 23311, '01', 'In Person', 'LEC', 'Active'),
+  (46, 76, 11, 23312, '01', 'In Person', 'LEC', 'Active'),
+  (47, 77, 11, 23313, '01', 'In Person', 'LEC', 'Active'),
+  (48, 78, 11, 23314, '01', 'In Person', 'LAB', 'Active'),
+  (49, 79, 11, 23315, '01', 'In Person', 'LAB', 'Active'),
+  (50, 80, 11, 23316, '01', 'In Person', 'LAB', 'Active'),
+  (51, 81, 11, 23317, '01', 'In Person', 'LEC', 'Active'),
+  (52, 82, 11, 23318, '01', 'In Person', 'LEC', 'Active'),
+  (53, 83, 11, 23319, '01', 'In Person', 'LEC', 'Active'),
+  (54, 84, 11, 23320, '01', 'In Person', 'LEC', 'Active'),
+  (55, 85, 11, 23321, '01', 'In Person', 'LEC', 'Active'),
+  (56, 86, 11, 23322, '01', 'In Person', 'LEC', 'Active'),
+  (57, 87, 11, 23323, '01', 'In Person', 'LEC', 'Active');
 
 -- open_seats = seat_capacity - enrolled_count. Waitlist only when full.
 INSERT INTO enrollment_snapshots
@@ -249,7 +277,31 @@ VALUES
   (26, '2026-01-20 08:00:00', 40, 40,  0, 12),
   (27, '2026-01-20 08:00:00', 45, 45,  0,  4),
   -- Spring 2027, before registration opens
-  (30, '2026-09-28 08:00:00', 40,  0, 40,  0);
+  (30, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  -- Spring 2027 GE sections, labs hold 24
+  (35, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (36, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (37, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (38, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (39, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (40, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (41, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (42, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (43, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (44, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (45, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (46, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (47, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (48, '2026-09-28 08:00:00', 24,  0, 24,  0),
+  (49, '2026-09-28 08:00:00', 24,  0, 24,  0),
+  (50, '2026-09-28 08:00:00', 24,  0, 24,  0),
+  (51, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (52, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (53, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (54, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (55, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (56, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (57, '2026-09-28 08:00:00', 40,  0, 40,  0);
 
 INSERT INTO majors (major_id, code, name, department) VALUES
   (1,  'CS-BS',   'Computer Science, BS',     'Computer Science'),
