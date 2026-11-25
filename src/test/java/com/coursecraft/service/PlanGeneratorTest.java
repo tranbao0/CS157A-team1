@@ -809,6 +809,111 @@ class PlanGeneratorTest {
 	}
 
 	@Test
+	void movesHighRiskCourseOneTermEarlier() {
+		GeneratedPlan plan = checkedPlan(List.of(required(1, 1), required(2, 2)), sessions(), List.of(), List.of(),
+				Map.of(), Map.of(), Map.of(2, "High"));
+		assertEquals(1, plan.getTerms().size());
+		assertEquals(2, plan.getTerms().get(0).getEntries().size());
+	}
+
+	@Test
+	void keepsHighRiskCourseInFirstTermOrAfterItsPrerequisite() {
+		assertEquals(List.of("7:1"), schedule(List.of(required(1, 1)), List.of(), List.of(), Map.of(), Map.of(),
+				Map.of(1, "High")));
+		assertEquals(List.of("7:1", "9:2"), schedule(List.of(required(1, 1), required(2, 2)), List.of(group(2, 1)),
+				List.of(), Map.of(), Map.of(), Map.of(2, "High")));
+	}
+
+	@Test
+	void movesHighRiskCourseOnlyOneTerm() {
+		assertEquals(List.of("7:1", "9:2"), schedule(List.of(required(1, 1), required(2, 3)), List.of(), List.of(),
+				Map.of(), Map.of(), Map.of(2, "High")));
+	}
+
+	@Test
+	void keepsHighRiskCourseWhenSavedCoursesFillTheTermBefore() {
+		assertEquals(List.of("9:1"), schedule(List.of(required(1, 1)), List.of(), savedLoads(17), Map.of(), Map.of(),
+				Map.of(1, "High")));
+	}
+
+	@Test
+	void movesHighRiskCourseIntoTermAnotherHighRiskCourseLeaves() {
+		List<RoadmapCourse> courses = List.of(unitCourse(1, 1, 10), unitCourse(2, 2, 9), unitCourse(3, 2, 10),
+				unitCourse(4, 3, 9));
+		assertEquals(List.of("7:1", "7:2", "9:3", "9:4"), schedule(courses, List.of(), List.of(), Map.of(), Map.of(),
+				Map.of(2, "High", 4, "High")));
+	}
+
+	@Test
+	void givesLastUnitsOfTermBeforeToFirstHighRiskCourseByCourseCode() {
+		List<RoadmapCourse> courses = List.of(unitCourse(1, 1, 10), unitCourse(2, 2, 5), unitCourse(3, 2, 5));
+		assertEquals(List.of("7:1", "7:2", "9:3"), schedule(courses, List.of(), List.of(), Map.of(), Map.of(),
+				Map.of(2, "High", 3, "High")));
+	}
+
+	@Test
+	void movesHighRiskSuggestionAfterItsPrerequisiteMoves() {
+		assertEquals(List.of("7:1", "7:2", "9:10*", "12:3"), schedule(
+				List.of(required(1, 1), required(2, 2), required(3, 4)), List.of(group(3, 10), group(10, 2)),
+				List.of(), Map.of(), catalog(), Map.of(2, "High", 10, "High"), sessions(4)));
+	}
+
+	@Test
+	void keepsMediumLowAndUnscoredCoursesInTheirTerms() {
+		assertEquals(List.of("7:1", "9:2", "9:3", "9:4"), schedule(
+				List.of(required(1, 1), required(2, 2), required(3, 2), required(4, 2)), List.of(), List.of(),
+				Map.of(), Map.of(), Map.of(2, "Medium", 3, "Low")));
+	}
+
+	@Test
+	void keepsSavedHighRiskCourseThatFillsTheTermBeforeTheNewHighRiskCourse() {
+		SessionInfo second = sessions().get(1);
+		List<PlannedCourse> saved = List.of(new PlannedCourse(0, 5, "CS 5", "", 18, second.getTermId(),
+				second.getTermLabel(), second.getSeason(), second.getTermOrder(), null));
+		assertEquals(List.of("7:1", "11:2"), schedule(List.of(unitCourse(1, 1, 1), required(2, 3)), List.of(), saved,
+				Map.of(), Map.of(), Map.of(5, "High", 2, "High")));
+	}
+
+	@Test
+	void keepsUnplacedReasonsFromBeforeTheMove() {
+		PrerequisiteGroup outside = new PrerequisiteGroup(4, 3);
+		outside.addOption(50, "CS 50");
+		List<RoadmapCourse> courses = List.of(required(1, 1), required(2, 3), required(3, 3));
+		assertEquals(List.of("7:1", "9:2", "3:Needs CS 2 first."), schedule(courses, List.of(group(3, 2)), List.of(),
+				Map.of(), Map.of(), Map.of(2, "High")));
+		assertEquals(List.of("7:1", "9:2", "3:Needs CS 2 and CS 50 first."), schedule(courses,
+				List.of(group(3, 2), outside), List.of(), Map.of(), Map.of(), Map.of(2, "High")));
+	}
+
+	@Test
+	void keepsHighRiskCourseWhenMovingItWouldLeaveSuggestionWithoutUse() {
+		// CS 1 would become a second earlier option of CS 2's group, so Suggested CS 10 would have no use.
+		assertEquals(List.of("7:3", "7:10*", "11:1", "11:2"), schedule(
+				List.of(required(1, 3), required(2, 3), required(3, 1)), List.of(group(2, 1, 10)), List.of(),
+				Map.of(), catalog(), Map.of(1, "High")));
+	}
+
+	@Test
+	void movesHighRiskCourseOnASecondPassWhenItsNeighbourMovesFirst() {
+		// CS 1 stays while it would be a second earlier option for CS 2; CS 2 moves, then CS 1 follows.
+		assertEquals(List.of("7:3", "7:10*", "9:1", "9:2"), schedule(
+				List.of(required(1, 3), required(2, 3), required(3, 1)), List.of(group(2, 1, 10)), List.of(),
+				Map.of(), catalog(), Map.of(1, "High", 2, "High")));
+	}
+
+	@Test
+	void keepsDependentOfMovedCourseInItsTerm() {
+		assertEquals(List.of("7:1", "7:2", "11:3"), schedule(
+				List.of(required(1, 1), required(2, 2), required(3, 3)), List.of(group(3, 2)), List.of(), Map.of(),
+				Map.of(), Map.of(2, "High")));
+	}
+
+	private RoadmapCourse unitCourse(int id, int position, int units) {
+		return new RoadmapCourse(id, "CS", String.valueOf(id), "Course " + id, String.valueOf(units),
+				position, "Major", false, null);
+	}
+
+	@Test
 	void movesCourseWhenSavedCoursesLeaveTooFewUnits() {
 		assertEquals(List.of("9:1"), capSchedule(List.of(withUnits(1, 4)), savedLoads(16), List.of()));
 	}
@@ -927,6 +1032,9 @@ class PlanGeneratorTest {
 			}
 			input.courses.add(course(id, position, type, passed.contains(id), savedTerm));
 			options.add(id);
+			if (random.nextInt(3) == 0) {
+				input.risks.put(id, "High");
+			}
 		}
 		for (int id = 100; id < 105; id++) {
 			options.add(id);
@@ -999,6 +1107,9 @@ class PlanGeneratorTest {
 		int courses = 3 + random.nextInt(4);
 		for (int id = 1; id <= courses; id++) {
 			input.courses.add(withUnits(id, 1 + random.nextInt(5)));
+			if (random.nextBoolean()) {
+				input.risks.put(id, "High");
+			}
 		}
 		int[] loads = new int[terms];
 		for (int i = 0; i < terms; i++) {

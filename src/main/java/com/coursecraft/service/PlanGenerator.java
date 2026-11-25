@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -92,6 +93,9 @@ public class PlanGenerator {
 				}
 			}
 		}
+		// Unplaced reasons describe the plan before the move.
+		List<PlannedCourse> beforeMove = new ArrayList<>(result.planned);
+		moveHighRiskEarlier(result, sessions, saved.size(), kept, groups, placements, risks);
 		int lastOrder = 0;
 		if (!sessions.isEmpty()) {
 			lastOrder = sessions.get(sessions.size() - 1).getTermOrder();
@@ -99,7 +103,7 @@ public class PlanGenerator {
 		PrerequisiteCheck check = new PrerequisiteCheck();
 		for (RoadmapCourse course : result.pending) {
 			addUnplaced(plan, course, earliest, sessions,
-					check.findMissing(course.getCourseId(), lastOrder, groups, result.planned, placements));
+					check.findMissing(course.getCourseId(), lastOrder, groups, beforeMove, placements));
 		}
 		Comparator<ProposedEntry> displayOrder = new ProposedEntryOrder();
 		for (Map.Entry<Integer, List<ProposedEntry>> group : result.entries.entrySet()) {
@@ -115,6 +119,73 @@ public class PlanGenerator {
 			plan.getTerms().add(term);
 		}
 		return plan;
+	}
+
+	private static void moveHighRiskEarlier(Placement result, List<SessionInfo> sessions, int savedCount,
+			List<RoadmapCourse> kept, List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements,
+			Map<Integer, String> risks) {
+		Set<Integer> moved = new HashSet<>();
+		boolean changed = true;
+		while (changed) {
+			changed = false;
+			// Earliest term first, then course code.
+			List<ProposedEntry> order = new ArrayList<>();
+			for (List<ProposedEntry> term : result.entries.values()) {
+				List<ProposedEntry> sorted = new ArrayList<>(term);
+				sorted.sort(new ProposedEntryOrder());
+				order.addAll(sorted);
+			}
+			for (ProposedEntry entry : order) {
+				int id = entry.getCourseId();
+				if (riskOrder(risks.get(id)) == 2 && !moved.contains(id)
+						&& moveEarlier(entry, result, sessions, savedCount, kept, groups, placements)) {
+					moved.add(id);
+					changed = true;
+				}
+			}
+		}
+	}
+
+	private static boolean moveEarlier(ProposedEntry entry, Placement result, List<SessionInfo> sessions,
+			int savedCount, List<RoadmapCourse> kept, List<PrerequisiteGroup> groups,
+			Map<Integer, List<String>> placements) {
+		int from = 0;
+		for (Map.Entry<Integer, List<ProposedEntry>> term : result.entries.entrySet()) {
+			if (term.getValue().contains(entry)) {
+				from = term.getKey();
+			}
+		}
+		if (from == 0) {
+			return false;
+		}
+		SessionInfo earlier = sessions.get(from - 1);
+		int at = savedCount;
+		while (result.planned.get(at).getCourseId() != entry.getCourseId()) {
+			at++;
+		}
+		PlannedCourse course = result.planned.get(at);
+		// The course's own row stays out of the check so it cannot meet its own group.
+		List<PlannedCourse> others = new ArrayList<>(result.planned);
+		others.remove(at);
+		if (!hasRoom(course.getUnits(), earlier, others) || !new PrerequisiteCheck()
+				.findMissing(course.getCourseId(), earlier.getTermOrder(), groups, others, placements).isEmpty()) {
+			return false;
+		}
+		PlannedCourse moved = atSession(course.getCourseId(), course.getCode(), course.getTitle(),
+				String.valueOf(course.getUnits()), earlier);
+		List<PlannedCourse> trial = new ArrayList<>(result.planned);
+		trial.set(at, moved);
+		// A move must leave every Suggested course with a use.
+		if (!hasUseForEach(trial, kept, savedCount, groups, placements)) {
+			return false;
+		}
+		result.planned.set(at, moved);
+		result.entries.get(from).remove(entry);
+		if (result.entries.get(from).isEmpty()) {
+			result.entries.remove(from);
+		}
+		addProposal(result.entries, from - 1, sessions, moved, entry.isSuggested());
+		return true;
 	}
 
 	private static void placeRoadmap(List<RoadmapCourse> pending, int earliest, List<SessionInfo> sessions,
@@ -207,13 +278,15 @@ public class PlanGenerator {
 
 	static boolean isLegal(Placement run, List<RoadmapCourse> chosen, int savedCount,
 			List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements) {
-		if (!run.valid) {
-			return false;
-		}
-		List<PlannedCourse> proposed = run.planned.subList(savedCount, run.planned.size());
+		return run.valid && hasUseForEach(run.planned, chosen, savedCount, groups, placements);
+	}
+
+	private static boolean hasUseForEach(List<PlannedCourse> planned, List<RoadmapCourse> chosen, int savedCount,
+			List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements) {
+		List<PlannedCourse> proposed = planned.subList(savedCount, planned.size());
 		for (PlannedCourse course : proposed) {
 			for (RoadmapCourse option : chosen) {
-				if (course.getCourseId() == option.getCourseId() && !hasUse(course, proposed, run.planned, groups, placements)) {
+				if (course.getCourseId() == option.getCourseId() && !hasUse(course, proposed, planned, groups, placements)) {
 					return false;
 				}
 			}
@@ -387,7 +460,11 @@ public class PlanGenerator {
 	}
 
 	private static boolean hasRoom(RoadmapCourse course, SessionInfo term, List<PlannedCourse> planned) {
-		double units = Double.parseDouble(course.getUnits());
+		return hasRoom(Double.parseDouble(course.getUnits()), term, planned);
+	}
+
+	private static boolean hasRoom(double courseUnits, SessionInfo term, List<PlannedCourse> planned) {
+		double units = courseUnits;
 		for (PlannedCourse entry : planned) {
 			if (entry.getTermId() == term.getTermId()) {
 				units += entry.getUnits();
