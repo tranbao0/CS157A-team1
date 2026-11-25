@@ -137,7 +137,36 @@ INSERT INTO courses (course_id, subject, course_number, title, units, descriptio
   (61, 'COMM', '174',  'Intercultural Comm and Structural Inequalities', 3.0, NULL, 'UD4'),
   (62, 'KIN',  '2A',   'Beginning Swimming',                             1.0, NULL, NULL),
   (63, 'KIN',  '2B',   'Intermediate Swimming',                          1.0, NULL, NULL),
-  (64, 'CS',   '155',  'Introduction to the Design and Analysis of Algorithms', 3.0, 'Dynamic programming, greedy methods, NP-completeness and other algorithm design topics.', NULL);
+  (64, 'CS',   '155',  'Introduction to the Design and Analysis of Algorithms', 3.0, 'Dynamic programming, greedy methods, NP-completeness and other algorithm design topics.', NULL),
+  -- rows below give every GE area at least three courses, titles, units and areas come from
+  -- GE course lists in SJSU 2025-2026 catalog. Area 1A lists only ENGL 1A and ENGL 1AS.
+  -- A course in two areas (e.g. PHYS 50 is 5A and 5C) keeps the main one, see courses table.
+  (65, 'ENGL', '1AS',  'First-Year Writing: Stretch English II',         3.0, NULL, '1A'),
+  (66, 'ENGL', '2',    'Critical Thinking and Writing',                  3.0, NULL, '1B'),
+  (67, 'COMM', '41',   'Critical Decision Making',                       3.0, NULL, '1B'),
+  (68, 'COMM', '40',   'Argumentation and Advocacy',                     3.0, NULL, '1C'),
+  (69, 'CCS',  '74',   'Public Address',                                 3.0, NULL, '1C'),
+  (70, 'ARTH', '15',   'Intro to Visual Culture',                        3.0, NULL, '3A'),
+  (71, 'RTVF', '10',   'The Art of Film',                                3.0, NULL, '3A'),
+  (72, 'PHIL', '61',   'Moral Issues',                                   3.0, NULL, '3B'),
+  (73, 'PSYC', '1',    'Introduction to Psychology',                     3.0, NULL, '4'),
+  (74, 'SOCI', '1',    'Introduction to Sociology',                      3.0, NULL, '4'),
+  (75, 'ASTR', '10',   'Descriptive Astronomy',                          3.0, NULL, '5A'),
+  (76, 'METR', '10',   'Weather and Climate',                            3.0, NULL, '5A'),
+  (77, 'ANTH', '12',   'Introduction to Human Evolution',                3.0, NULL, '5B'),
+  -- 5C only labs, 1 unit each. 4-unit 5A or 5B lab courses also meet 5C, see RoadmapDao.
+  (78, 'ASTR', '11L',  'Introductory Astronomy Lab',                     1.0, NULL, '5C'),
+  (79, 'CHEM', '5',    'Dinner Party Chemistry',                         1.0, NULL, '5C'),
+  (80, 'GEOL', '4L',   'Earth Systems Lab',                              1.0, NULL, '5C'),
+  (81, 'CCS',  '1',    'Introduction to Chicana and Chicano Studies',    3.0, NULL, '6'),
+  (82, 'NAIS', '1',    'Intro to Native American and Indigenous Studies', 3.0, NULL, '6'),
+  (83, 'METR', '112',  'Global Climate Changes',                         3.0, NULL, 'UD2/5'),
+  (84, 'CMPE', '198',  'Technology and Civilization',                    3.0, NULL, 'UD3'),
+  (85, 'PHIL', '186',  'Professional and Business Ethics',               3.0, NULL, 'UD4'),
+  -- CMPE 195A/B and ENGR 195A/B count for UD3 and UD4 only as engineering capstone sequence,
+  -- so UD3 and UD4 each get third course that counts alone
+  (86, 'ANTH', '115',  'The Emerging Global Culture',                    3.0, NULL, 'UD3'),
+  (87, 'SOCI', '162',  'Race and Ethnic Relations',                      3.0, NULL, 'UD4');
 
 -- Session 6 = Spring 2026, 7 = Summer 2026 S1, 9 = Fall 2026,
 -- 10 = Winter 2027, 11 = Spring 2027.
@@ -182,7 +211,31 @@ VALUES
   (32, 12, 11, 23210, '01', 'In Person', 'LEC', 'Active'),
   (33, 8,  11, 23120, '01', 'In Person', 'LEC', 'Active'),
   -- Winter 2027
-  (34, 23, 10, 90010, '01', 'Online',    'LEC', 'Active');
+  (34, 23, 10, 90010, '01', 'Online',    'LEC', 'Active'),
+  -- Spring 2027 GE sections, one per GE course 65 to 87, so catalog search and + Plan find them
+  (35, 65, 11, 23301, '01', 'In Person', 'LEC', 'Active'),
+  (36, 66, 11, 23302, '01', 'In Person', 'LEC', 'Active'),
+  (37, 67, 11, 23303, '01', 'In Person', 'LEC', 'Active'),
+  (38, 68, 11, 23304, '01', 'In Person', 'LEC', 'Active'),
+  (39, 69, 11, 23305, '01', 'In Person', 'LEC', 'Active'),
+  (40, 70, 11, 23306, '01', 'In Person', 'LEC', 'Active'),
+  (41, 71, 11, 23307, '01', 'In Person', 'LEC', 'Active'),
+  (42, 72, 11, 23308, '01', 'In Person', 'LEC', 'Active'),
+  (43, 73, 11, 23309, '01', 'In Person', 'LEC', 'Active'),
+  (44, 74, 11, 23310, '01', 'In Person', 'LEC', 'Active'),
+  (45, 75, 11, 23311, '01', 'In Person', 'LEC', 'Active'),
+  (46, 76, 11, 23312, '01', 'In Person', 'LEC', 'Active'),
+  (47, 77, 11, 23313, '01', 'In Person', 'LEC', 'Active'),
+  (48, 78, 11, 23314, '01', 'In Person', 'LAB', 'Active'),
+  (49, 79, 11, 23315, '01', 'In Person', 'LAB', 'Active'),
+  (50, 80, 11, 23316, '01', 'In Person', 'LAB', 'Active'),
+  (51, 81, 11, 23317, '01', 'In Person', 'LEC', 'Active'),
+  (52, 82, 11, 23318, '01', 'In Person', 'LEC', 'Active'),
+  (53, 83, 11, 23319, '01', 'In Person', 'LEC', 'Active'),
+  (54, 84, 11, 23320, '01', 'In Person', 'LEC', 'Active'),
+  (55, 85, 11, 23321, '01', 'In Person', 'LEC', 'Active'),
+  (56, 86, 11, 23322, '01', 'In Person', 'LEC', 'Active'),
+  (57, 87, 11, 23323, '01', 'In Person', 'LEC', 'Active');
 
 -- open_seats = seat_capacity - enrolled_count. Waitlist only when full.
 INSERT INTO enrollment_snapshots
@@ -224,7 +277,31 @@ VALUES
   (26, '2026-01-20 08:00:00', 40, 40,  0, 12),
   (27, '2026-01-20 08:00:00', 45, 45,  0,  4),
   -- Spring 2027, before registration opens
-  (30, '2026-09-28 08:00:00', 40,  0, 40,  0);
+  (30, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  -- Spring 2027 GE sections, labs hold 24
+  (35, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (36, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (37, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (38, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (39, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (40, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (41, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (42, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (43, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (44, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (45, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (46, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (47, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (48, '2026-09-28 08:00:00', 24,  0, 24,  0),
+  (49, '2026-09-28 08:00:00', 24,  0, 24,  0),
+  (50, '2026-09-28 08:00:00', 24,  0, 24,  0),
+  (51, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (52, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (53, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (54, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (55, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (56, '2026-09-28 08:00:00', 40,  0, 40,  0),
+  (57, '2026-09-28 08:00:00', 40,  0, 40,  0);
 
 INSERT INTO majors (major_id, code, name, department) VALUES
   (1,  'CS-BS',   'Computer Science, BS',     'Computer Science'),
@@ -418,7 +495,7 @@ INSERT INTO prerequisite_groups (group_id, course_id, catalog_year) VALUES
   (21, 21, 2025),  -- PHYS 51: PHYS 50
   (22, 21, 2025),  -- PHYS 51: MATH 31
   (24, 30, 2025),  -- CS 158A: CS 146
-  (25, 5,  2025),  -- CS 100W: PHIL 57 or ENGL 1B (GE 1B or second writing course)
+  (25, 5,  2025),  -- CS 100W: PHIL 57, ENGL 2 or COMM 41 (GE 1B), or ENGL 1B (second writing course)
   (26, 29, 2025),  -- MATH 161A: MATH 31
   (27, 11, 2024),  -- CS 157A, 2024 catalog: CS 146 only
   -- rows below follow 2025-2026 catalog rules for CS and SE roadmap courses
@@ -431,7 +508,7 @@ INSERT INTO prerequisite_groups (group_id, course_id, catalog_year) VALUES
   (34, 33, 2025),  -- CS 147: CS 47 or CMPE 102
   (35, 36, 2025),  -- MATH 142: MATH 31
   (36, 36, 2025),  -- MATH 142: MATH 42
-  (37, 37, 2025),  -- ENGL 1B: ENGL 1A
+  (37, 37, 2025),  -- ENGL 1B: ENGL 1A or ENGL 1AS
   (38, 39, 2025),  -- CMPE 131: CS 46B (SE major rule)
   (39, 40, 2025),  -- CMPE 102: CS 46B
   (40, 41, 2025),  -- CMPE 120: CS 46B
@@ -457,10 +534,10 @@ INSERT INTO prerequisite_groups (group_id, course_id, catalog_year) VALUES
   (59, 1,  2025),  -- CS 46A: M-I, M-II or M-III (MATH 1 not in sample data)
   (60, 15, 2025),  -- MATH 30: MATH 19, or M-I to M-III with PPA 70+, or M-IV with PPA 80+
   (61, 19, 2025),  -- MATH 42: MATH 19, or M-I to M-III with PPA 70+, or M-IV with PPA 80+
-  (62, 20, 2025),  -- PHYS 50: ENGL 1A, or W-I, W-II or W-III
-  (63, 35, 2025),  -- BIOL 30: ENGL 1A, or W-I or W-II
+  (62, 20, 2025),  -- PHYS 50: ENGL 1A or ENGL 1AS, or W-I, W-II or W-III
+  (63, 35, 2025),  -- BIOL 30: ENGL 1A or ENGL 1AS, or W-I or W-II
   (64, 35, 2025),  -- BIOL 30: GE Area 2 math course, or M-I or M-II
-  (65, 38, 2025);  -- ENGR 10: ENGL 1A, or W-I or W-II
+  (65, 38, 2025);  -- ENGR 10: ENGL 1A or ENGL 1AS, or W-I or W-II
 
 INSERT INTO counts_towards (group_id, course_id) VALUES
   (1, 1),
@@ -485,7 +562,7 @@ INSERT INTO counts_towards (group_id, course_id) VALUES
   (21, 20),
   (22, 16),
   (24, 6),
-  (25, 24), (25, 37),
+  (25, 24), (25, 37), (25, 66), (25, 67),
   (26, 16),
   (27, 6),
   (28, 19),
@@ -497,7 +574,7 @@ INSERT INTO counts_towards (group_id, course_id) VALUES
   (34, 3), (34, 40),
   (35, 16),
   (36, 19),
-  (37, 22),
+  (37, 22), (37, 65),
   (38, 2),
   (39, 2),
   (40, 2),
@@ -521,10 +598,10 @@ INSERT INTO counts_towards (group_id, course_id) VALUES
   (58, 6),
   (60, 14),
   (61, 14),
-  (62, 22),
-  (63, 22),
+  (62, 22), (62, 65),
+  (63, 22), (63, 65),
   (64, 14), (64, 15), (64, 16), (64, 17),
-  (65, 22);
+  (65, 22), (65, 65);
 
 -- PPA cutoffs for MATH 30 and MATH 42 come from SJSU Math department table, CS 46B cutoff comes from 2025-2026 catalog.
 INSERT INTO group_accepts_category (group_id, category_code, min_ppa_score) VALUES
