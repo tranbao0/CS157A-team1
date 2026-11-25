@@ -495,7 +495,7 @@ INSERT INTO prerequisite_groups (group_id, course_id, catalog_year) VALUES
   (21, 21, 2025),  -- PHYS 51: PHYS 50
   (22, 21, 2025),  -- PHYS 51: MATH 31
   (24, 30, 2025),  -- CS 158A: CS 146
-  (25, 5,  2025),  -- CS 100W: PHIL 57 or ENGL 1B (GE 1B or second writing course)
+  (25, 5,  2025),  -- CS 100W: PHIL 57, ENGL 2 or COMM 41 (GE 1B), or ENGL 1B (second writing course)
   (26, 29, 2025),  -- MATH 161A: MATH 31
   (27, 11, 2024),  -- CS 157A, 2024 catalog: CS 146 only
   -- rows below follow 2025-2026 catalog rules for CS and SE roadmap courses
@@ -508,7 +508,7 @@ INSERT INTO prerequisite_groups (group_id, course_id, catalog_year) VALUES
   (34, 33, 2025),  -- CS 147: CS 47 or CMPE 102
   (35, 36, 2025),  -- MATH 142: MATH 31
   (36, 36, 2025),  -- MATH 142: MATH 42
-  (37, 37, 2025),  -- ENGL 1B: ENGL 1A
+  (37, 37, 2025),  -- ENGL 1B: ENGL 1A or ENGL 1AS
   (38, 39, 2025),  -- CMPE 131: CS 46B (SE major rule)
   (39, 40, 2025),  -- CMPE 102: CS 46B
   (40, 41, 2025),  -- CMPE 120: CS 46B
@@ -534,10 +534,10 @@ INSERT INTO prerequisite_groups (group_id, course_id, catalog_year) VALUES
   (59, 1,  2025),  -- CS 46A: M-I, M-II or M-III (MATH 1 not in sample data)
   (60, 15, 2025),  -- MATH 30: MATH 19, or M-I to M-III with PPA 70+, or M-IV with PPA 80+
   (61, 19, 2025),  -- MATH 42: MATH 19, or M-I to M-III with PPA 70+, or M-IV with PPA 80+
-  (62, 20, 2025),  -- PHYS 50: ENGL 1A, or W-I, W-II or W-III
-  (63, 35, 2025),  -- BIOL 30: ENGL 1A, or W-I or W-II
+  (62, 20, 2025),  -- PHYS 50: ENGL 1A or ENGL 1AS, or W-I, W-II or W-III
+  (63, 35, 2025),  -- BIOL 30: ENGL 1A or ENGL 1AS, or W-I or W-II
   (64, 35, 2025),  -- BIOL 30: GE Area 2 math course, or M-I or M-II
-  (65, 38, 2025);  -- ENGR 10: ENGL 1A, or W-I or W-II
+  (65, 38, 2025);  -- ENGR 10: ENGL 1A or ENGL 1AS, or W-I or W-II
 
 INSERT INTO counts_towards (group_id, course_id) VALUES
   (1, 1),
@@ -562,7 +562,7 @@ INSERT INTO counts_towards (group_id, course_id) VALUES
   (21, 20),
   (22, 16),
   (24, 6),
-  (25, 24), (25, 37),
+  (25, 24), (25, 37), (25, 66), (25, 67),
   (26, 16),
   (27, 6),
   (28, 19),
@@ -574,7 +574,7 @@ INSERT INTO counts_towards (group_id, course_id) VALUES
   (34, 3), (34, 40),
   (35, 16),
   (36, 19),
-  (37, 22),
+  (37, 22), (37, 65),
   (38, 2),
   (39, 2),
   (40, 2),
@@ -598,10 +598,10 @@ INSERT INTO counts_towards (group_id, course_id) VALUES
   (58, 6),
   (60, 14),
   (61, 14),
-  (62, 22),
-  (63, 22),
+  (62, 22), (62, 65),
+  (63, 22), (63, 65),
   (64, 14), (64, 15), (64, 16), (64, 17),
-  (65, 22);
+  (65, 22), (65, 65);
 
 -- PPA cutoffs for MATH 30 and MATH 42 come from SJSU Math department table, CS 46B cutoff comes from 2025-2026 catalog.
 INSERT INTO group_accepts_category (group_id, category_code, min_ppa_score) VALUES
