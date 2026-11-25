@@ -17,7 +17,9 @@ public class GeRuleDao {
 	public UpperDivisionGeRule load(Connection connection, int studentId) throws SQLException {
 		Map<Integer, String> courseAreas = new HashMap<>();
 		Map<Integer, Double> courseUnits = new HashMap<>();
-		String coursesSql = "SELECT course_id, ge_area_code, units FROM courses";
+		Set<Integer> otherCourseIds = new HashSet<>();
+		String coursesSql = "SELECT course_id, CONCAT(subject, ' ', course_number) AS code, ge_area_code, units "
+				+ "FROM courses";
 		try (PreparedStatement statement = connection.prepareStatement(coursesSql);
 				ResultSet rs = statement.executeQuery()) {
 			while (rs.next()) {
@@ -27,6 +29,9 @@ public class GeRuleDao {
 				if (area != null) {
 					courseAreas.put(courseId, area);
 				}
+				if (UpperDivisionGeRule.OTHER_COURSES.contains(rs.getString("code"))) {
+					otherCourseIds.add(courseId);
+				}
 			}
 		}
 
@@ -34,7 +39,7 @@ public class GeRuleDao {
 		Set<String> placementAreas = new HashSet<>(new PlacementDao().findGeAreasMet(connection, studentId).keySet());
 
 		return new UpperDivisionGeRule(courseAreas, courseUnits, passedIds, placementAreas,
-				findCoreAreas(connection, studentId));
+				findCoreAreas(connection, studentId), otherCourseIds);
 	}
 
 	/*

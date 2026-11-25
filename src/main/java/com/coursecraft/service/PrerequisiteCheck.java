@@ -118,6 +118,7 @@ public class PrerequisiteCheck {
 	public void markPetitionDependents(Connection connection, int studentId, int catalogYear,
 			List<PlannedCourse> planned) throws SQLException {
 		List<PrerequisiteGroup> groups = new PrerequisiteDao().findOpenGroups(connection, studentId, catalogYear);
+		UpperDivisionGeRule udRule = new GeRuleDao().load(connection, studentId);
 
 		// course ID -> petition terms it depends on, LinkedHashSet keeps them in term order
 		Map<Integer, Set<String>> petitionLabels = new HashMap<>();
@@ -141,7 +142,7 @@ public class PrerequisiteCheck {
 				PlannedCourse earlier = toWalk.remove(0);
 				for (PlannedCourse later : planned) {
 					if (later.getTermOrder() > earlier.getTermOrder()
-							&& needs(groups, later.getCourseId(), earlier.getCourseId())) {
+							&& needs(groups, udRule, planned, later, earlier.getCourseId())) {
 						int laterId = later.getCourseId();
 						if (!petitionLabels.containsKey(laterId)) {
 							petitionLabels.put(laterId, new LinkedHashSet<>());
@@ -218,13 +219,17 @@ public class PrerequisiteCheck {
 		return false;
 	}
 
-	// tells if later course has open group that earlier course counts towards
-	private boolean needs(List<PrerequisiteGroup> groups, int laterCourseId, int earlierCourseId) {
+	/*
+	 * Tells if later course needs earlier course: later course has open group earlier course counts towards,
+	 * or later course is under UD GE rule and loses core GE area or upper division standing without earlier course.
+	 */
+	private boolean needs(List<PrerequisiteGroup> groups, UpperDivisionGeRule udRule, List<PlannedCourse> planned,
+			PlannedCourse later, int earlierCourseId) {
 		for (PrerequisiteGroup group : groups) {
-			if (group.getCourseId() == laterCourseId && group.hasOption(earlierCourseId)) {
+			if (group.getCourseId() == later.getCourseId() && group.hasOption(earlierCourseId)) {
 				return true;
 			}
 		}
-		return false;
+		return udRule.isBrokenByRemoving(later.getCourseId(), later.getTermOrder(), planned, earlierCourseId);
 	}
 }

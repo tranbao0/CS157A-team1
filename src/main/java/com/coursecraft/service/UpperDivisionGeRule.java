@@ -15,10 +15,14 @@ import com.coursecraft.model.PlannedCourse;
  * Area is met by passed or earlier planned course in that area, or by placement (W-I -> 1A, M-I -> 2).
  * 5C is also met by 4-unit 5A or 5B lab course, same rule as RoadmapDao GE audit.
  * prerequisite_groups cannot hold this rule, so PrerequisiteCheck and PlanAvailability ask this class too.
+ * Some courses with no UD GE area have same catalog rule, OTHER_COURSES lists them.
  */
 public class UpperDivisionGeRule {
 
 	public static final double STANDING_UNITS = 60.0;
+
+	// non UD GE courses whose catalog prerequisite also says completion of core GE and upper division standing
+	public static final Set<String> OTHER_COURSES = Set.of("CS 100W");
 
 	// course ID -> GE area code, only courses that have one
 	private final Map<Integer, String> courseAreas;
@@ -28,18 +32,24 @@ public class UpperDivisionGeRule {
 	private final Set<String> placementAreas;
 	// TreeSet sorts area codes, so message lists 1A, 1B ... 6 in order
 	private final Set<String> coreAreas;
+	// IDs of OTHER_COURSES found in courses table
+	private final Set<Integer> otherCourseIds;
 
 	public UpperDivisionGeRule(Map<Integer, String> courseAreas, Map<Integer, Double> courseUnits,
-			Set<Integer> passedIds, Set<String> placementAreas, Set<String> coreAreas) {
+			Set<Integer> passedIds, Set<String> placementAreas, Set<String> coreAreas, Set<Integer> otherCourseIds) {
 		this.courseAreas = courseAreas;
 		this.courseUnits = courseUnits;
 		this.passedIds = passedIds;
 		this.placementAreas = placementAreas;
 		this.coreAreas = new TreeSet<>(coreAreas);
+		this.otherCourseIds = otherCourseIds;
 	}
 
-	// tells if course is UD GE course, its area code starts with UD
+	// tells if rule covers course: UD GE course (area code starts with UD) or one of OTHER_COURSES
 	public boolean appliesTo(int courseId) {
+		if (otherCourseIds.contains(courseId)) {
+			return true;
+		}
 		String area = courseAreas.get(courseId);
 		return area != null && area.startsWith("UD");
 	}

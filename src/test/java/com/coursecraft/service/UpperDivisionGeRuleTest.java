@@ -13,10 +13,12 @@ import org.junit.jupiter.api.Test;
 
 import com.coursecraft.model.PlannedCourse;
 
-// no database, rule gets made-up courses: 100 is UD GE course, 1-5 are core GE courses, 9 is 57-unit filler
+// no database, rule gets made-up courses: 100 is UD GE course, 1-5 are core GE courses, 9 is 57-unit filler,
+// 50 has no GE area but is on rule's other course list, like CS 100W
 class UpperDivisionGeRuleTest {
 
 	private static final int UD_COURSE = 100;
+	private static final int OTHER_COURSE = 50;
 
 	private final Map<Integer, String> areas = new HashMap<>();
 	private final Map<Integer, Double> units = new HashMap<>();
@@ -29,6 +31,7 @@ class UpperDivisionGeRuleTest {
 		course(4, "5A", 3);
 		course(5, "5C", 1);
 		course(9, null, 57);
+		course(OTHER_COURSE, null, 3);
 	}
 
 	private void course(int id, String area, double courseUnits) {
@@ -39,7 +42,7 @@ class UpperDivisionGeRuleTest {
 	}
 
 	private UpperDivisionGeRule rule(Set<Integer> passed, Set<String> placements, Set<String> core) {
-		return new UpperDivisionGeRule(areas, units, passed, placements, core);
+		return new UpperDivisionGeRule(areas, units, passed, placements, core, Set.of(OTHER_COURSE));
 	}
 
 	private PlannedCourse planned(int courseId, int termOrder) {
@@ -52,6 +55,19 @@ class UpperDivisionGeRuleTest {
 		UpperDivisionGeRule rule = rule(Set.of(), Set.of(), Set.of("1A"));
 		assertFalse(rule.appliesTo(1));
 		assertEquals(List.of(), rule.findMissing(1, 20272, List.of(), 0));
+	}
+
+	@Test
+	void otherCourseWithoutGeAreaIsCheckedToo() {
+		UpperDivisionGeRule rule = rule(Set.of(1), Set.of(), Set.of("1A", "2"));
+		assertTrue(rule.appliesTo(OTHER_COURSE));
+		assertEquals(List.of("upper division standing (60 units passed or planned before this term, 3 so far)",
+				"core GE Area 2"), rule.findMissing(OTHER_COURSE, 20272, List.of(), 0));
+	}
+
+	@Test
+	void csHundredWIsOnOtherCourseList() {
+		assertTrue(UpperDivisionGeRule.OTHER_COURSES.contains("CS 100W"));
 	}
 
 	@Test
