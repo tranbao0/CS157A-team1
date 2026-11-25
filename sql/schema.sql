@@ -152,9 +152,11 @@ CREATE TABLE students (
   roadmap_id            INT,
   expected_grad_term_id INT,
   ppa_score             INT,
+  is_admin              TINYINT NOT NULL DEFAULT 0,
   PRIMARY KEY (student_id),
   UNIQUE (email),
   CHECK (ppa_score BETWEEN 0 AND 100),
+  CHECK (is_admin IN (0, 1)),
   FOREIGN KEY (roadmap_id)            REFERENCES roadmaps (roadmap_id),
   FOREIGN KEY (expected_grad_term_id) REFERENCES terms (term_id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;

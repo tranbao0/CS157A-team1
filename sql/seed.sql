@@ -369,22 +369,23 @@ INSERT INTO placement_categories (code, kind, name) VALUES
   ('W-IV',  'Writing', 'Ready for supported GE writing, Early Start strongly recommended');
 
 -- bcrypt hashes (cost 10) of password123, each with its own salt.
-INSERT INTO students (student_id, email, password_hash, roadmap_id, expected_grad_term_id, ppa_score) VALUES
-  (1,  'jordan.lee@example.com',     '$2a$10$h9lsr0tAogrc2FQFM4ApEOE2aMJxVa9FUhzKQ.SQ1turxU/vxGi7i', 2,    12, NULL),
-  (2,  'maya.patel@example.com',     '$2a$10$bMEZsfPBfRq7g2.OubnhPOtw6dv/GLijIlYb5Zj.k.xbT6DYHXkfK', 2,    11, NULL),
-  (3,  'sam.nguyen@example.com',     '$2a$10$YFoFhHE1yPESvHd7g0RtmeTwMG0V5/cCNxJ69LzRmRLt1mmLtIW36', NULL, 12, 50),
-  (4,  'alex.garcia@example.com',    '$2a$10$0Z.qbnHOz4MvnxcVp7rp/eVwjm6S7PFcHtMDsgEQ6wOFSDu5ac.oy', 4,    12, NULL),
-  (5,  'riley.chen@example.com',     '$2a$10$mlXmg8IPNECkKIK/kRWKoOXNEKSj6slGrSQCuHq4rNp/buvXEsG8.', 6,    NULL, NULL),
-  (6,  'taylor.kim@example.com',     '$2a$10$s9C4bYccbn1ZqxXOPAXL9uSYYICFvSV9dm5gUvuIT/pmhISgPsvk2', 2,    9, NULL),
-  (7,  'casey.brown@example.com',    '$2a$10$jC2oj37vr/yMStOyH6EmNexEAv9Q.A.uVfRFgdSpE00QL7N77q7dW', 7,    11, NULL),
-  (8,  'morgan.davis@example.com',   '$2a$10$sd06pWppkeFkilr/mmZUZuBl5bTK5gsd8kCpFjy5llzl9EhBkdrly', 9,    12, NULL),
-  (9,  'jamie.wilson@example.com',   '$2a$10$7kFpX5lYE76LpnE7RtngAe7l.GbI83SnxwegIRlqhwckXJHLryDKu', 2,    12, NULL),
-  (10, 'drew.martinez@example.com',  '$2a$10$NtvoQdP/tObQkeYs.bEw0u68y1lwVwPA2XvGlDcbarQ6M/0eKI2X2', 1,    9, NULL),
-  (11, 'avery.lopez@example.com',    '$2a$10$PYZnMF.6gv./lzXgS4kMpOO2l9Ng42/hgFbENpzwHhfxoPITrMYUq', 3,    12, NULL),
-  (12, 'quinn.harris@example.com',   '$2a$10$.rsb7EMjdTL5wqByCRvRTOUqYMZP.PRdySQSkw4/fkfOzfi1ziM8e', 10,   11, NULL),
+INSERT INTO students (student_id, email, password_hash, roadmap_id, expected_grad_term_id, ppa_score, is_admin) VALUES
+  (1,  'jordan.lee@example.com',     '$2a$10$h9lsr0tAogrc2FQFM4ApEOE2aMJxVa9FUhzKQ.SQ1turxU/vxGi7i', 2,    12, NULL, DEFAULT),
+  (2,  'maya.patel@example.com',     '$2a$10$bMEZsfPBfRq7g2.OubnhPOtw6dv/GLijIlYb5Zj.k.xbT6DYHXkfK', 2,    11, NULL, DEFAULT),
+  (3,  'sam.nguyen@example.com',     '$2a$10$YFoFhHE1yPESvHd7g0RtmeTwMG0V5/cCNxJ69LzRmRLt1mmLtIW36', NULL, 12, 50, DEFAULT),
+  (4,  'alex.garcia@example.com',    '$2a$10$0Z.qbnHOz4MvnxcVp7rp/eVwjm6S7PFcHtMDsgEQ6wOFSDu5ac.oy', 4,    12, NULL, DEFAULT),
+  (5,  'riley.chen@example.com',     '$2a$10$mlXmg8IPNECkKIK/kRWKoOXNEKSj6slGrSQCuHq4rNp/buvXEsG8.', 6,    NULL, NULL, DEFAULT),
+  (6,  'taylor.kim@example.com',     '$2a$10$s9C4bYccbn1ZqxXOPAXL9uSYYICFvSV9dm5gUvuIT/pmhISgPsvk2', 2,    9, NULL, DEFAULT),
+  (7,  'casey.brown@example.com',    '$2a$10$jC2oj37vr/yMStOyH6EmNexEAv9Q.A.uVfRFgdSpE00QL7N77q7dW', 7,    11, NULL, DEFAULT),
+  (8,  'morgan.davis@example.com',   '$2a$10$sd06pWppkeFkilr/mmZUZuBl5bTK5gsd8kCpFjy5llzl9EhBkdrly', 9,    12, NULL, DEFAULT),
+  (9,  'jamie.wilson@example.com',   '$2a$10$7kFpX5lYE76LpnE7RtngAe7l.GbI83SnxwegIRlqhwckXJHLryDKu', 2,    12, NULL, DEFAULT),
+  (10, 'drew.martinez@example.com',  '$2a$10$NtvoQdP/tObQkeYs.bEw0u68y1lwVwPA2XvGlDcbarQ6M/0eKI2X2', 1,    9, NULL, DEFAULT),
+  (11, 'avery.lopez@example.com',    '$2a$10$PYZnMF.6gv./lzXgS4kMpOO2l9Ng42/hgFbENpzwHhfxoPITrMYUq', 3,    12, NULL, DEFAULT),
+  (12, 'quinn.harris@example.com',   '$2a$10$.rsb7EMjdTL5wqByCRvRTOUqYMZP.PRdySQSkw4/fkfOzfi1ziM8e', 10,   11, NULL, DEFAULT),
   -- demo freshmen have full 4-year plans (Fall 2026 to Spring 2030), see plan_entries
-  (13, 'cs.roadmap@example.com',     '$2a$10$/9nStATbvuVAWddGy9tF8uoCs/6amPY47XAD8so8nDZ5W93SSCpH6', 2,    16, 85),
-  (14, 'se.roadmap@example.com',     '$2a$10$wozJrwLJBU2rTPU78RZtj.u2lW84oVgLwZa/yIjRymO0AngkSImMa', 4,    16, 90);
+  (13, 'cs.roadmap@example.com',     '$2a$10$/9nStATbvuVAWddGy9tF8uoCs/6amPY47XAD8so8nDZ5W93SSCpH6', 2,    16, 85, DEFAULT),
+  (14, 'se.roadmap@example.com',     '$2a$10$wozJrwLJBU2rTPU78RZtj.u2lW84oVgLwZa/yIjRymO0AngkSImMa', 4,    16, 90, DEFAULT),
+  (15, 'admin@example.com',          '$2a$10$v9fa5N.4o/f6sruvICbqGe6BYof/nOFfv7I7a8/lfgAM8AEbCK48i', NULL, NULL, NULL, 1);
 
 -- Demo freshmen got placement from high school record. Sam placed low and took MATH 19 first.
 -- Other sample students have no placement on file yet.
