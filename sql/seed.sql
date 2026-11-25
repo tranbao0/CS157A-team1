@@ -508,7 +508,7 @@ INSERT INTO prerequisite_groups (group_id, course_id, catalog_year) VALUES
   (34, 33, 2025),  -- CS 147: CS 47 or CMPE 102
   (35, 36, 2025),  -- MATH 142: MATH 31
   (36, 36, 2025),  -- MATH 142: MATH 42
-  (37, 37, 2025),  -- ENGL 1B: ENGL 1A or ENGL 1AS
+  (37, 37, 2025),  -- ENGL 1B: ENGL 1A or ENGL 1AS, or W-I
   (38, 39, 2025),  -- CMPE 131: CS 46B (SE major rule)
   (39, 40, 2025),  -- CMPE 102: CS 46B
   (40, 41, 2025),  -- CMPE 120: CS 46B
@@ -537,7 +537,11 @@ INSERT INTO prerequisite_groups (group_id, course_id, catalog_year) VALUES
   (62, 20, 2025),  -- PHYS 50: ENGL 1A or ENGL 1AS, or W-I, W-II or W-III
   (63, 35, 2025),  -- BIOL 30: ENGL 1A or ENGL 1AS, or W-I or W-II
   (64, 35, 2025),  -- BIOL 30: GE Area 2 math course, or M-I or M-II
-  (65, 38, 2025);  -- ENGR 10: ENGL 1A or ENGL 1AS, or W-I or W-II
+  (65, 38, 2025),  -- ENGR 10: ENGL 1A or ENGL 1AS, or W-I or W-II
+  -- Area 1B courses need Area 1A first: ENGL 1A or ENGL 1AS, or W-I (Area 1A already met)
+  (66, 24, 2025),  -- PHIL 57
+  (67, 66, 2025),  -- ENGL 2
+  (68, 67, 2025);  -- COMM 41
 
 INSERT INTO counts_towards (group_id, course_id) VALUES
   (1, 1),
@@ -601,7 +605,10 @@ INSERT INTO counts_towards (group_id, course_id) VALUES
   (62, 22), (62, 65),
   (63, 22), (63, 65),
   (64, 14), (64, 15), (64, 16), (64, 17),
-  (65, 22), (65, 65);
+  (65, 22), (65, 65),
+  (66, 22), (66, 65),
+  (67, 22), (67, 65),
+  (68, 22), (68, 65);
 
 -- PPA cutoffs for MATH 30 and MATH 42 come from SJSU Math department table, CS 46B cutoff comes from 2025-2026 catalog.
 INSERT INTO group_accepts_category (group_id, category_code, min_ppa_score) VALUES
@@ -612,7 +619,10 @@ INSERT INTO group_accepts_category (group_id, category_code, min_ppa_score) VALU
   (62, 'W-I',   NULL), (62, 'W-II',  NULL), (62, 'W-III', NULL),
   (63, 'W-I',   NULL), (63, 'W-II',  NULL),
   (64, 'M-I',   NULL), (64, 'M-II',  NULL),
-  (65, 'W-I',   NULL), (65, 'W-II',  NULL);
+  (65, 'W-I',   NULL), (65, 'W-II',  NULL),
+  -- W-I means Area 1A is met, so it also opens ENGL 1B and Area 1B courses
+  (37, 'W-I',   NULL),
+  (66, 'W-I',   NULL), (67, 'W-I',   NULL), (68, 'W-I',   NULL);
 
 -- Fall 2026 courses show as 1 (in progress).
 INSERT INTO completed (student_id, course_id, taken_and_passed) VALUES
