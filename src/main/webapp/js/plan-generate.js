@@ -5,7 +5,16 @@
   var status = document.getElementById('plan-preview-status');
   var results = document.getElementById('plan-terms');
   var restoreNodes = [];
+  // page can show at /plan and /plan/remove, so every target is an absolute url from the page
+  var saveUrl = form.dataset.saveUrl;
+  var planUrl = form.dataset.planUrl;
+  var loginUrl = form.dataset.loginUrl + '?next=' + encodeURIComponent('/plan');
   var button = form.querySelector('button');
+  var actions = document.getElementById('plan-preview-actions');
+  var saveButton = document.getElementById('plan-save');
+  var cancelButton = document.getElementById('plan-cancel');
+  // proposals the preview shows, each has courseId, sessionId and suggested
+  var proposals = [];
 
   function element(tag, className, text) {
     var node = document.createElement(tag);
@@ -38,6 +47,8 @@
       restore();
     });
     restoreNodes = [];
+    proposals = [];
+    actions.hidden = true;
     window.CourseCraftWarnings.sync();
   }
 
@@ -174,6 +185,9 @@
   function showPreview(data) {
     for (var i = 0; i < data.terms.length; i++) {
       showTerm(data.terms[i]);
+      for (var j = 0; j < data.terms[i].entries.length; j++) {
+        proposals.push(data.terms[i].entries[j]);
+      }
     }
     if (data.terms.length > 0) {
       updateTermLinks();
@@ -184,8 +198,68 @@
     if (data.terms.length === 0 && data.unplaced.length === 0) {
       status.textContent = 'No courses to add yet.';
     }
+    // Cancel shows for any preview, Save only when there is something to save
+    actions.hidden = data.terms.length === 0 && data.unplaced.length === 0;
+    saveButton.hidden = proposals.length === 0;
     window.CourseCraftWarnings.sync();
   }
+
+  // buttons stay off while save runs, so double click sends one request
+  function setBusy(busy) {
+    saveButton.disabled = busy;
+    cancelButton.disabled = busy;
+    button.disabled = busy;
+    if (busy) {
+      results.setAttribute('aria-busy', 'true');
+    } else {
+      results.removeAttribute('aria-busy');
+    }
+  }
+
+  function savePlan() {
+    // one entry per shown proposal, as courseId:sessionId:suggested
+    var body = new URLSearchParams();
+    for (var i = 0; i < proposals.length; i++) {
+      var item = proposals[i];
+      body.append('entry', item.courseId + ':' + item.sessionId + ':' + (item.suggested ? 'true' : 'false'));
+    }
+    setBusy(true);
+    status.textContent = '';
+    fetch(saveUrl, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json' },
+      body: body
+    }).then(function (response) {
+      if (response.status === 401) {
+        window.location.href = loginUrl;
+        return;
+      }
+      if (response.ok) {
+        // plan page shows saved courses as normal rows with Remove buttons
+        window.location.href = planUrl;
+        return;
+      }
+      if (response.status === 409) {
+        // plan changed since preview, so old list is no good
+        return response.json().then(function (data) {
+          undoPreview();
+          status.textContent = data.message;
+          setBusy(false);
+        });
+      }
+      throw new Error('Could not save plan.');
+    }).catch(function () {
+      status.textContent = 'Could not save plan. Try again.';
+      setBusy(false);
+    });
+  }
+
+  saveButton.addEventListener('click', savePlan);
+
+  cancelButton.addEventListener('click', function () {
+    undoPreview();
+    status.textContent = '';
+  });
 
   form.addEventListener('submit', function (event) {
     event.preventDefault();
@@ -198,7 +272,7 @@
       headers: { 'Accept': 'application/json' }
     }).then(function (response) {
       if (response.status === 401) {
-        window.location.href = 'login?next=' + encodeURIComponent('/plan');
+        window.location.href = loginUrl;
         return;
       }
       if (!response.ok) {
