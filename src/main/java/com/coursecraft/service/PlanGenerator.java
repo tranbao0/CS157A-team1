@@ -37,25 +37,29 @@ public class PlanGenerator {
 
 	public GeneratedPlan preview(int studentId) throws SQLException {
 		try (Connection connection = Db.getConnection()) {
-			List<RoadmapCourse> courses = new RoadmapDao().findCoursesForStudent(connection, studentId);
-			List<SessionInfo> sessions = new SessionDao().findUnstartedRegularTerms(connection);
-			PrerequisiteDao prerequisites = new PrerequisiteDao();
-			int year = PrerequisiteDao.yearOrNewest(new StudentDao().findCatalogYear(connection, studentId));
-			Map<Integer, TranscriptCourse> catalog = new HashMap<>();
-			for (TranscriptCourse course : new CourseDao().findForTranscript(connection, studentId)) {
-				catalog.put(course.getCourseId(), course);
-			}
-			GeneratedPlan plan = mapCourses(courses, sessions, new PlanEntryDao().findForStudent(connection, studentId),
-					prerequisites.findOpenGroups(connection, studentId, year), prerequisites.findPlacementOptions(connection),
-					catalog, new BottleneckScoreDao().findNewestRisks(connection));
-			Integer gradTermId = new StudentDao().findProfile(connection, studentId).getGradTermId();
-			for (ProposedTerm term : plan.getTerms()) {
-				if (gradTermId != null && gradTermId == term.getTermId()) {
-					term.markGradTerm();
-				}
-			}
-			return plan;
+			return preview(connection, studentId);
 		}
+	}
+
+	public GeneratedPlan preview(Connection connection, int studentId) throws SQLException {
+		List<RoadmapCourse> courses = new RoadmapDao().findCoursesForStudent(connection, studentId);
+		List<SessionInfo> sessions = new SessionDao().findUnstartedRegularTerms(connection);
+		PrerequisiteDao prerequisites = new PrerequisiteDao();
+		int year = PrerequisiteDao.yearOrNewest(new StudentDao().findCatalogYear(connection, studentId));
+		Map<Integer, TranscriptCourse> catalog = new HashMap<>();
+		for (TranscriptCourse course : new CourseDao().findForTranscript(connection, studentId)) {
+			catalog.put(course.getCourseId(), course);
+		}
+		GeneratedPlan plan = mapCourses(courses, sessions, new PlanEntryDao().findForStudent(connection, studentId),
+				prerequisites.findOpenGroups(connection, studentId, year), prerequisites.findPlacementOptions(connection),
+				catalog, new BottleneckScoreDao().findNewestRisks(connection));
+		Integer gradTermId = new StudentDao().findProfile(connection, studentId).getGradTermId();
+		for (ProposedTerm term : plan.getTerms()) {
+			if (gradTermId != null && gradTermId == term.getTermId()) {
+				term.markGradTerm();
+			}
+		}
+		return plan;
 	}
 
 	static GeneratedPlan mapCourses(List<RoadmapCourse> courses, List<SessionInfo> sessions,

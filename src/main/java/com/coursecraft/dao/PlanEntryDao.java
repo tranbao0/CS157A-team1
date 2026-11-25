@@ -133,4 +133,19 @@ public class PlanEntryDao {
 			statement.executeUpdate();
 		}
 	}
+
+	// adds one generated course to student's plan, suggested marks a course Generate added for a prerequisite
+	public void addGenerated(Connection connection, int studentId, int courseId, int sessionId, boolean suggested)
+			throws SQLException {
+		String sql = "INSERT INTO plan_entries (student_id, course_id, session_id, added_at, suggested) "
+				+ "VALUES (?, ?, ?, NOW(), ?)";
+
+		try (PreparedStatement statement = connection.prepareStatement(sql)) {
+			statement.setInt(1, studentId);
+			statement.setInt(2, courseId);
+			statement.setInt(3, sessionId);
+			statement.setBoolean(4, suggested);
+			statement.executeUpdate();
+		}
+	}
 }
