@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import com.coursecraft.dao.GeRuleDao;
 import com.coursecraft.dao.PlanEntryDao;
 import com.coursecraft.dao.PrerequisiteDao;
 import com.coursecraft.model.PlannedCourse;
@@ -33,10 +34,14 @@ public class PrerequisiteCheck {
 	public List<String> findMissing(Connection connection, int studentId, int courseId, int targetTermOrder,
 			int catalogYear) throws SQLException {
 		PrerequisiteDao prerequisiteDao = new PrerequisiteDao();
-		return findMissing(courseId, targetTermOrder,
+		List<PlannedCourse> planned = new PlanEntryDao().findForStudent(connection, studentId);
+		List<String> missing = findMissing(courseId, targetTermOrder,
 				prerequisiteDao.findOpenGroupsForCourse(connection, studentId, courseId, catalogYear),
-				new PlanEntryDao().findForStudent(connection, studentId),
-				prerequisiteDao.findPlacementOptions(connection));
+				planned, prerequisiteDao.findPlacementOptions(connection));
+		// UD GE courses also need core GE and upper division standing, which groups cannot hold
+		UpperDivisionGeRule udRule = new GeRuleDao().load(connection, studentId);
+		missing.addAll(udRule.findMissing(courseId, targetTermOrder, planned, 0));
+		return missing;
 	}
 
 	// The read model and write validation use the same group and term evaluation.
@@ -70,6 +75,7 @@ public class PrerequisiteCheck {
 	 * Lists later planned courses that would lose prerequisite if removed course left plan, in course number order.
 	 * Later course counts only when removed course sits in earlier term (so it really meets group)
 	 * and no other option of that group is planned before later course's term.
+	 * Later UD GE course also counts when removed course gave it core GE area or units for upper division standing.
 	 */
 	public List<String> findDependents(Connection connection, int studentId, int removedCourseId, int catalogYear)
 			throws SQLException {
@@ -89,6 +95,15 @@ public class PrerequisiteCheck {
 				}
 			}
 		}
+
+		UpperDivisionGeRule udRule = new GeRuleDao().load(connection, studentId);
+		for (PlannedCourse later : planned) {
+			if (udRule.appliesTo(later.getCourseId())
+					&& isPlannedBefore(planned, removedCourseId, later.getTermOrder())
+					&& udRule.isBrokenByRemoving(later.getCourseId(), later.getTermOrder(), planned, removedCourseId)) {
+				codes.add(later.getCode());
+			}
+		}
 		return new ArrayList<>(codes);
 	}
 
@@ -103,6 +118,7 @@ public class PrerequisiteCheck {
 	public void markPetitionDependents(Connection connection, int studentId, int catalogYear,
 			List<PlannedCourse> planned) throws SQLException {
 		List<PrerequisiteGroup> groups = new PrerequisiteDao().findOpenGroups(connection, studentId, catalogYear);
+		UpperDivisionGeRule udRule = new GeRuleDao().load(connection, studentId);
 
 		// course ID -> petition terms it depends on, LinkedHashSet keeps them in term order
 		Map<Integer, Set<String>> petitionLabels = new HashMap<>();
@@ -126,7 +142,7 @@ public class PrerequisiteCheck {
 				PlannedCourse earlier = toWalk.remove(0);
 				for (PlannedCourse later : planned) {
 					if (later.getTermOrder() > earlier.getTermOrder()
-							&& needs(groups, later.getCourseId(), earlier.getCourseId())) {
+							&& needs(groups, udRule, planned, later, earlier.getCourseId())) {
 						int laterId = later.getCourseId();
 						if (!petitionLabels.containsKey(laterId)) {
 							petitionLabels.put(laterId, new LinkedHashSet<>());
@@ -203,13 +219,17 @@ public class PrerequisiteCheck {
 		return false;
 	}
 
-	// tells if later course has open group that earlier course counts towards
-	private boolean needs(List<PrerequisiteGroup> groups, int laterCourseId, int earlierCourseId) {
+	/*
+	 * Tells if later course needs earlier course: later course has open group earlier course counts towards,
+	 * or later course is under UD GE rule and loses core GE area or upper division standing without earlier course.
+	 */
+	private boolean needs(List<PrerequisiteGroup> groups, UpperDivisionGeRule udRule, List<PlannedCourse> planned,
+			PlannedCourse later, int earlierCourseId) {
 		for (PrerequisiteGroup group : groups) {
-			if (group.getCourseId() == laterCourseId && group.hasOption(earlierCourseId)) {
+			if (group.getCourseId() == later.getCourseId() && group.hasOption(earlierCourseId)) {
 				return true;
 			}
 		}
-		return false;
+		return udRule.isBrokenByRemoving(later.getCourseId(), later.getTermOrder(), planned, earlierCourseId);
 	}
 }
