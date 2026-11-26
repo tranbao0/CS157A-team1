@@ -91,8 +91,7 @@ public class PlanService {
 		List<String> missing = new PrerequisiteCheck().findMissing(connection, studentId, courseId,
 				session.getTermOrder(), catalogYear);
 		if (!missing.isEmpty()) {
-			// String.join puts ", and " between groups: "CS 146, and MATH 42 or MATH 42X"
-			String message = course.getCode() + " needs " + String.join(", and ", missing) + " first.";
+			String message = course.getCode() + " needs " + PrerequisiteCheck.joinMissing(missing) + " first.";
 
 			// hint fits what can meet missing groups: course options, placement options, or both
 			boolean courseOption = false;
@@ -205,7 +204,8 @@ public class PlanService {
 			for (PlannedCourse course : courses) {
 				// rows come sorted by term, so new term starts when term_id changes
 				if (current == null || current.getTermId() != course.getTermId()) {
-					current = new PlanTerm(course.getTermId(), course.getTermLabel(), course.getSeason());
+					current = new PlanTerm(course.getTermId(), course.getTermLabel(), course.getSeason(),
+							course.getTermOrder());
 					terms.add(current);
 				}
 				current.addCourse(course);
@@ -221,6 +221,10 @@ public class PlanService {
 			}
 			return terms;
 		}
+	}
+
+	public static String unitWarningKey(int studentId, int termId, String status) {
+		return studentId + "-" + termId + "-" + status;
 	}
 
 	/*
@@ -243,7 +247,7 @@ public class PlanService {
 			if ("petition".equals(status)) {
 				kind = "petition";
 			}
-			term.addWarning(new PlanWarning(studentId + "-" + term.getTermId() + "-" + status, kind, title,
+			term.addWarning(new PlanWarning(unitWarningKey(studentId, term.getTermId(), status), kind, title,
 					UnitRules.warningText(status, term.getUnits(), dependentCount)));
 		}
 

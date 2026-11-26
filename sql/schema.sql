@@ -220,6 +220,7 @@ CREATE TABLE plan_entries (
   course_id     INT      NOT NULL,
   session_id    INT      NOT NULL,
   added_at      DATETIME NOT NULL,
+  suggested     BOOLEAN NOT NULL DEFAULT FALSE,
   PRIMARY KEY (plan_entry_id),
   FOREIGN KEY (student_id) REFERENCES students (student_id),
   FOREIGN KEY (course_id)  REFERENCES courses (course_id),

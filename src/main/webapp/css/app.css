@@ -2011,3 +2011,10 @@ details.rm-term:not(.is-done) > summary .tx-group__count { color: var(--ink-3); 
 .saved-course .btn { min-height: 2.75rem; }
 
 .plan-page .tx-list { margin-top: .5rem; }
+
+#plan-preview { margin-top: 1rem; }
+#plan-preview-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-bottom: .75rem; }
+
+#plan-terms .plan-preview-term { margin: 1.5rem 0 2rem; }
+#plan-terms .tx-label { overflow-wrap: anywhere; }
+#plan-terms .plan-preview-new { flex-shrink: 0; padding: .25rem .625rem; border-radius: var(--r-md); background: var(--sjsu-tint); color: var(--ink); font-size: .8125rem; font-weight: 600; }

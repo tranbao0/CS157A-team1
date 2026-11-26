@@ -10,6 +10,7 @@
     <%@ include file="/WEB-INF/jspf/head.jspf" %>
     <script src="${pageContext.request.contextPath}/js/header.js" defer></script>
     <script src="${pageContext.request.contextPath}/js/plan-summary.js" defer></script>
+    <script src="${pageContext.request.contextPath}/js/plan-generate.js" defer></script>
 </head>
 <body>
 <c:set var="context" value="${pageContext.request.contextPath}"/>
@@ -20,14 +21,25 @@
     <div class="progress-head"><h1>My plan</h1><a class="btn btn--primary" href="${context}/catalog.jsp">Plan a course</a></div>
     <p class="tx-group__note plan-intro">Your saved courses, grouped by the term you plan to take them.</p>
     <p class="tx-group__note">See the courses you still need on <a href="${context}/transcript#tx-audit-title">My transcript</a>.</p>
+    <form id="plan-generate" method="post" action="${context}/plan/generate" data-save-url="${context}/plan/generate/save" data-plan-url="${context}/plan" data-login-url="${context}/login">
+        <button class="btn btn--primary" type="submit">Generate plan</button>
+    </form>
+    <div id="plan-preview">
+        <div id="plan-preview-actions" hidden>
+            <button class="btn btn--primary" type="button" id="plan-save">Save plan</button>
+            <button class="btn btn--ghost" type="button" id="plan-cancel">Cancel</button>
+        </div>
+        <p id="plan-preview-status" class="tx-group__note" role="status" aria-live="polite"></p>
+    </div>
     <c:if test="${not empty planMessage}"><div class="banner banner--ok" role="status"><c:out value="${planMessage}"/></div></c:if>
     <c:if test="${not empty planError}"><div class="banner banner--error" role="alert"><c:out value="${planError}"/></div></c:if>
+    <div id="plan-terms" aria-live="polite" data-course-url="${context}/course.jsp">
     <c:choose>
         <c:when test="${empty planTerms}"><p class="tx-empty">No courses planned yet. Choose a term in the catalog, then use + Plan to add a course.</p></c:when>
         <c:otherwise>
             <nav class="plan-term-links" aria-label="Saved plan terms"><c:forEach var="term" items="${planTerms}"><a class="chip" href="#plan-term-${term.termId}"><c:out value="${term.label}"/></a></c:forEach></nav>
             <c:forEach var="term" items="${planTerms}">
-                <section class="saved-term" id="plan-term-${term.termId}" aria-labelledby="plan-title-${term.termId}" data-plan-term="${term.termId}">
+                <section class="saved-term" id="plan-term-${term.termId}" aria-labelledby="plan-title-${term.termId}" data-plan-term="${term.termId}" data-term-order="${term.termOrder}">
                     <div class="tx-section__head"><h2 class="tx-section__title" id="plan-title-${term.termId}"><c:out value="${term.label}"/></h2><span class="tx-group__count"><c:out value="${term.unitsText}"/> units<c:if test="${term.gradTerm}"> · Expected graduation</c:if></span></div>
                     <c:forEach var="warning" items="${term.warnings}">
                         <details class="plan-warn plan-warn--<c:out value='${warning.kind}'/>" data-warn-key="<c:out value='${warning.key}'/>" open><summary class="plan-warn__summary"><span class="plan-warn__title"><c:out value="${warning.title}"/></span><span class="plan-warn__toggle"><span class="plan-warn__hide">Minimize</span><span class="plan-warn__show">Show</span></span></summary><p class="plan-warn__text"><c:out value="${warning.text}"/></p></details>
@@ -44,6 +56,7 @@
             </c:forEach>
         </c:otherwise>
     </c:choose>
+    </div>
 </main>
 <%@ include file="/WEB-INF/jspf/footer.jspf" %>
 </body>

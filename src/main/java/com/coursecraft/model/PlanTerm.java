@@ -9,6 +9,7 @@ import com.coursecraft.service.UnitRules;
 public class PlanTerm {
 
 	private final int termId;
+	private final int termOrder;
 	private final String label;
 	private final String season;
 	private final List<PlannedCourse> courses = new ArrayList<>();
@@ -16,8 +17,9 @@ public class PlanTerm {
 	private double units;
 	private boolean gradTerm;
 
-	public PlanTerm(int termId, String label, String season) {
+	public PlanTerm(int termId, String label, String season, int termOrder) {
 		this.termId = termId;
+		this.termOrder = termOrder;
 		this.label = label;
 		this.season = season;
 	}
@@ -43,6 +45,10 @@ public class PlanTerm {
 
 	public int getTermId() {
 		return termId;
+	}
+
+	public int getTermOrder() {
+		return termOrder;
 	}
 
 	public String getLabel() {

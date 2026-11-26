@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 // SQL for bottleneck_scores table lives here, read only, scoring itself belongs to FR 5
 public class BottleneckScoreDao {
@@ -25,5 +27,21 @@ public class BottleneckScoreDao {
 				return rs.getString("risk_level");
 			}
 		}
+	}
+	public Map<Integer, String> findNewestRisks(Connection connection) throws SQLException {
+		String sql = "SELECT course_id, risk_level FROM ("
+				+ "SELECT b.course_id, b.risk_level, ROW_NUMBER() OVER (PARTITION BY b.course_id "
+				+ "ORDER BY b.computed_at DESC, "
+				+ "(t.year * 10 + FIELD(t.season, 'Winter', 'Spring', 'Summer', 'Fall')) DESC, "
+				+ "b.score_id DESC) AS risk_rank FROM bottleneck_scores b JOIN terms t ON t.term_id = b.term_id"
+				+ ") ranked WHERE risk_rank = 1";
+		Map<Integer, String> risks = new HashMap<>();
+		try (PreparedStatement statement = connection.prepareStatement(sql);
+				ResultSet rs = statement.executeQuery()) {
+			while (rs.next()) {
+				risks.put(rs.getInt("course_id"), rs.getString("risk_level"));
+			}
+		}
+		return risks;
 	}
 }
