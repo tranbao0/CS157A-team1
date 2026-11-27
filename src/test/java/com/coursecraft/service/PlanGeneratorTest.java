@@ -26,6 +26,9 @@ import com.coursecraft.model.UnplacedCourse;
 
 class PlanGeneratorTest {
 
+	private static final UpperDivisionGeRule NO_UD_GE_RULE = new UpperDivisionGeRule(
+			Map.of(), Map.of(), Set.of(), Set.of(), Set.of(), Set.of());
+
 	@Test
 	void mapsMissingRequiredCoursesFromEarliestPosition() {
 		List<RoadmapCourse> courses = List.of(
@@ -265,7 +268,7 @@ class PlanGeneratorTest {
 		List<PrerequisiteGroup> groups = List.of(group(1, 2), group(3, 4));
 		List<RoadmapCourse> chosen = List.of(required(2, 1), required(3, 1));
 		PlanGenerator.Placement trial = new PlanGenerator.Placement(courses, 1, sessions(), List.of(),
-				groups, Map.of(), chosen);
+				groups, Map.of(), NO_UD_GE_RULE, chosen);
 		assertEquals(0, trial.remaining());
 		assertFalse(PlanGenerator.isLegal(trial, chosen, 0, groups, Map.of()));
 	}
@@ -556,7 +559,8 @@ class PlanGeneratorTest {
 	private GeneratedPlan checkedPlan(List<RoadmapCourse> courses, List<SessionInfo> sessions, List<PlannedCourse> saved,
 			List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements, Map<Integer, TranscriptCourse> catalog,
 			Map<Integer, String> risks) {
-		GeneratedPlan plan = PlanGenerator.mapCourses(courses, sessions, saved, groups, placements, catalog, risks);
+		GeneratedPlan plan = PlanGenerator.mapCourses(courses, sessions, saved, groups, placements,
+				NO_UD_GE_RULE, catalog, risks);
 		assertEquals(List.of(), checkPlan(plan, courses, sessions, saved, groups, placements));
 		BestPlacement best = bestPlacement(courses, sessions, saved, groups, placements, catalog);
 		int placed = 0;
@@ -617,7 +621,7 @@ class PlanGeneratorTest {
 			boolean changed;
 			do {
 				PlanGenerator.Placement run = new PlanGenerator.Placement(pending, earliest, sessions, prior,
-						groups, placements, kept);
+						groups, placements, NO_UD_GE_RULE, kept);
 				List<PlannedCourse> replayed = replayedProposals(run, prior.size());
 				changed = false;
 				for (RoadmapCourse option : new ArrayList<>(kept)) {
@@ -794,7 +798,7 @@ class PlanGeneratorTest {
 				return;
 			}
 			PlanGenerator.Placement run = new PlanGenerator.Placement(pending, earliest, sessions, saved,
-					groups, placements, chosen);
+					groups, placements, NO_UD_GE_RULE, chosen);
 			List<PlannedCourse> proposed = replayedProposals(run, saved.size());
 			if (!validProposals(proposed, saved, groups, placements)) {
 				return;
