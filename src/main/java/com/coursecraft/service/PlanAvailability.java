@@ -10,6 +10,7 @@ import java.util.Set;
 
 import com.coursecraft.dao.PlanEntryDao;
 import com.coursecraft.dao.CompletedDao;
+import com.coursecraft.dao.GeRuleDao;
 import com.coursecraft.dao.SessionDao;
 import com.coursecraft.dao.PrerequisiteDao;
 import com.coursecraft.dao.StudentDao;
@@ -23,6 +24,7 @@ public class PlanAvailability {
     private List<PrerequisiteGroup> groups = List.of();
     private List<PlannedCourse> planned = List.of();
     private Map<Integer, List<String>> placements = Map.of();
+    private UpperDivisionGeRule udRule;
     private final Set<Integer> completed = new HashSet<>();
     private final Set<Integer> inPlan = new HashSet<>();
     private final Map<Integer, Integer> sessionTerms = new HashMap<>();
@@ -60,6 +62,7 @@ public class PlanAvailability {
         }
         completed.addAll(new CompletedDao().findPassedIds(connection, studentId));
         sessionTerms.putAll(new SessionDao().findOpenTermOrders(connection));
+        udRule = new GeRuleDao().load(connection, studentId);
     }
 
     public boolean hasStudent() {
@@ -86,6 +89,8 @@ public class PlanAvailability {
         if (!reasons.containsKey(key)) {
             List<String> missing = new PrerequisiteCheck().findMissing(courseId, sessionTerms.get(sessionId),
                     groups, planned, placements);
+            // same UD GE rule plan add checks, so + Plan is off whenever add would refuse
+            missing.addAll(udRule.findMissing(courseId, sessionTerms.get(sessionId), planned, 0));
             String reason = "";
             if (!missing.isEmpty()) {
                 reason = "Needs " + PrerequisiteCheck.joinMissing(missing) + " first.";

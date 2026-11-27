@@ -15,6 +15,7 @@ import java.util.TreeMap;
 
 import com.coursecraft.dao.BottleneckScoreDao;
 import com.coursecraft.dao.CourseDao;
+import com.coursecraft.dao.GeRuleDao;
 import com.coursecraft.dao.PlanEntryDao;
 import com.coursecraft.dao.PrerequisiteDao;
 import com.coursecraft.dao.RoadmapDao;
@@ -50,9 +51,10 @@ public class PlanGenerator {
 		for (TranscriptCourse course : new CourseDao().findForTranscript(connection, studentId)) {
 			catalog.put(course.getCourseId(), course);
 		}
+		UpperDivisionGeRule udRule = new GeRuleDao().load(connection, studentId);
 		GeneratedPlan plan = mapCourses(courses, sessions, new PlanEntryDao().findForStudent(connection, studentId),
 				prerequisites.findOpenGroups(connection, studentId, year), prerequisites.findPlacementOptions(connection),
-				catalog, new BottleneckScoreDao().findNewestRisks(connection));
+				udRule, catalog, new BottleneckScoreDao().findNewestRisks(connection));
 		Integer gradTermId = new StudentDao().findProfile(connection, studentId).getGradTermId();
 		for (ProposedTerm term : plan.getTerms()) {
 			if (gradTermId != null && gradTermId == term.getTermId()) {
@@ -64,7 +66,7 @@ public class PlanGenerator {
 
 	static GeneratedPlan mapCourses(List<RoadmapCourse> courses, List<SessionInfo> sessions,
 			List<PlannedCourse> saved, List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements,
-			Map<Integer, TranscriptCourse> catalog, Map<Integer, String> risks) {
+			UpperDivisionGeRule udRule, Map<Integer, TranscriptCourse> catalog, Map<Integer, String> risks) {
 		GeneratedPlan plan = new GeneratedPlan();
 		List<RoadmapCourse> pending = findMissing(courses);
 		pending.sort(new RoadmapOrder());
@@ -74,7 +76,7 @@ public class PlanGenerator {
 			double units = savedUnits.getOrDefault(course.getTermId(), 0.0);
 			savedUnits.put(course.getTermId(), units + course.getUnits());
 		}
-		Placement result = new Placement(pending, earliest, sessions, saved, groups, placements, List.of());
+		Placement result = new Placement(pending, earliest, sessions, saved, groups, placements, udRule, List.of());
 		List<RoadmapCourse> roots = new ArrayList<>();
 		for (RoadmapCourse course : pending) {
 			int position = course.getSuggestedTerm();
@@ -89,7 +91,7 @@ public class PlanGenerator {
 				if (chosen.isEmpty()) {
 					continue;
 				}
-				Placement run = new Placement(pending, earliest, sessions, saved, groups, placements, chosen);
+				Placement run = new Placement(pending, earliest, sessions, saved, groups, placements, udRule, chosen);
 				if (isLegal(run, chosen, saved.size(), groups, placements)
 						&& isBetter(run, chosen, result, kept, risks)) {
 					result = run;
@@ -99,15 +101,14 @@ public class PlanGenerator {
 		}
 		// Unplaced reasons describe the plan before the move.
 		List<PlannedCourse> beforeMove = new ArrayList<>(result.planned);
-		moveHighRiskEarlier(result, sessions, saved.size(), kept, groups, placements, risks);
+		moveHighRiskEarlier(result, sessions, saved.size(), kept, groups, placements, udRule, risks);
 		int lastOrder = 0;
 		if (!sessions.isEmpty()) {
 			lastOrder = sessions.get(sessions.size() - 1).getTermOrder();
 		}
-		PrerequisiteCheck check = new PrerequisiteCheck();
 		for (RoadmapCourse course : result.pending) {
 			addUnplaced(plan, course, earliest, sessions,
-					check.findMissing(course.getCourseId(), lastOrder, groups, beforeMove, placements));
+					missingPrerequisites(course.getCourseId(), lastOrder, groups, beforeMove, placements, udRule));
 		}
 		Comparator<ProposedEntry> displayOrder = new ProposedEntryOrder();
 		for (Map.Entry<Integer, List<ProposedEntry>> group : result.entries.entrySet()) {
@@ -127,7 +128,7 @@ public class PlanGenerator {
 
 	private static void moveHighRiskEarlier(Placement result, List<SessionInfo> sessions, int savedCount,
 			List<RoadmapCourse> kept, List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements,
-			Map<Integer, String> risks) {
+			UpperDivisionGeRule udRule, Map<Integer, String> risks) {
 		Set<Integer> moved = new HashSet<>();
 		boolean changed = true;
 		while (changed) {
@@ -142,7 +143,7 @@ public class PlanGenerator {
 			for (ProposedEntry entry : order) {
 				int id = entry.getCourseId();
 				if (riskOrder(risks.get(id)) == 2 && !moved.contains(id)
-						&& moveEarlier(entry, result, sessions, savedCount, kept, groups, placements)) {
+						&& moveEarlier(entry, result, sessions, savedCount, kept, groups, placements, udRule)) {
 					moved.add(id);
 					changed = true;
 				}
@@ -152,7 +153,7 @@ public class PlanGenerator {
 
 	private static boolean moveEarlier(ProposedEntry entry, Placement result, List<SessionInfo> sessions,
 			int savedCount, List<RoadmapCourse> kept, List<PrerequisiteGroup> groups,
-			Map<Integer, List<String>> placements) {
+			Map<Integer, List<String>> placements, UpperDivisionGeRule udRule) {
 		int from = 0;
 		for (Map.Entry<Integer, List<ProposedEntry>> term : result.entries.entrySet()) {
 			if (term.getValue().contains(entry)) {
@@ -171,8 +172,9 @@ public class PlanGenerator {
 		// The course's own row stays out of the check so it cannot meet its own group.
 		List<PlannedCourse> others = new ArrayList<>(result.planned);
 		others.remove(at);
-		if (!hasRoom(course.getUnits(), earlier, others) || !new PrerequisiteCheck()
-				.findMissing(course.getCourseId(), earlier.getTermOrder(), groups, others, placements).isEmpty()) {
+		if (!hasRoom(course.getUnits(), earlier, others)
+				|| !missingPrerequisites(course.getCourseId(), earlier.getTermOrder(), groups, others, placements,
+						udRule).isEmpty()) {
 			return false;
 		}
 		PlannedCourse moved = atSession(course.getCourseId(), course.getCode(), course.getTitle(),
@@ -194,12 +196,12 @@ public class PlanGenerator {
 
 	private static void placeRoadmap(List<RoadmapCourse> pending, int earliest, List<SessionInfo> sessions,
 			List<PlannedCourse> planned, List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements,
-			Map<Integer, List<ProposedEntry>> entriesByTerm, List<RoadmapCourse> chosen) {
+			UpperDivisionGeRule udRule, Map<Integer, List<ProposedEntry>> entriesByTerm, List<RoadmapCourse> chosen) {
 		while (!pending.isEmpty()) {
 			RoadmapCourse next = null;
 			int index = sessions.size();
 			for (RoadmapCourse course : pending) {
-				int target = findTerm(course, earliest, sessions, planned, groups, placements);
+				int target = findTerm(course, earliest, sessions, planned, groups, placements, udRule);
 				if (target == sessions.size()) {
 					continue;
 				}
@@ -374,13 +376,13 @@ public class PlanGenerator {
 
 		Placement(List<RoadmapCourse> courses, int earliest, List<SessionInfo> sessions,
 				List<PlannedCourse> saved, List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements,
-				List<RoadmapCourse> chosen) {
+				UpperDivisionGeRule udRule, List<RoadmapCourse> chosen) {
 			pending = new ArrayList<>(courses);
 			pending.addAll(chosen);
 			pending.sort(new RoadmapOrder());
 			planned = new ArrayList<>(saved);
-			placeRoadmap(pending, earliest, sessions, planned, groups, placements, entries, chosen);
-			valid = Collections.disjoint(pending, chosen) && prerequisitesMet(saved.size(), groups, placements);
+			placeRoadmap(pending, earliest, sessions, planned, groups, placements, udRule, entries, chosen);
+			valid = Collections.disjoint(pending, chosen) && prerequisitesMet(saved.size(), groups, placements, udRule);
 			pending.removeAll(chosen);
 		}
 
@@ -392,12 +394,12 @@ public class PlanGenerator {
 			return List.copyOf(planned);
 		}
 
-		private boolean prerequisitesMet(int first, List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements) {
-			PrerequisiteCheck check = new PrerequisiteCheck();
+		private boolean prerequisitesMet(int first, List<PrerequisiteGroup> groups,
+				Map<Integer, List<String>> placements, UpperDivisionGeRule udRule) {
 			for (int i = first; i < planned.size(); i++) {
 				PlannedCourse course = planned.get(i);
-				List<String> missing = check.findMissing(course.getCourseId(), course.getTermOrder(), groups, planned,
-						placements);
+				List<String> missing = missingPrerequisites(course.getCourseId(), course.getTermOrder(), groups, planned,
+						placements, udRule);
 				if (!missing.isEmpty()) {
 					return false;
 				}
@@ -446,16 +448,24 @@ public class PlanGenerator {
 		return false;
 	}
 
+	private static List<String> missingPrerequisites(int courseId, int termOrder, List<PrerequisiteGroup> groups,
+			List<PlannedCourse> planned, Map<Integer, List<String>> placements, UpperDivisionGeRule udRule) {
+		List<String> missing = new PrerequisiteCheck().findMissing(courseId, termOrder, groups, planned, placements);
+		missing.addAll(udRule.findMissing(courseId, termOrder, planned, 0));
+		return missing;
+	}
+
 	private static int findTerm(RoadmapCourse course, int earliest, List<SessionInfo> sessions,
-			List<PlannedCourse> planned, List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements) {
+			List<PlannedCourse> planned, List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements,
+			UpperDivisionGeRule udRule) {
 		// JDBC reads NULL roadmap position as 0.
 		int position = course.getSuggestedTerm();
 		if (position > 0) {
-			PrerequisiteCheck check = new PrerequisiteCheck();
 			for (int index = Math.max(0, position - earliest); index < sessions.size(); index++) {
 				SessionInfo term = sessions.get(index);
 				if (hasRoom(course, term, planned)
-						&& check.findMissing(course.getCourseId(), term.getTermOrder(), groups, planned, placements).isEmpty()) {
+						&& missingPrerequisites(course.getCourseId(), term.getTermOrder(), groups, planned, placements,
+								udRule).isEmpty()) {
 					return index;
 				}
 			}
