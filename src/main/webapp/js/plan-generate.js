@@ -8,6 +8,7 @@
   // page can show at /plan and /plan/remove, so every target is an absolute url from the page
   var saveUrl = form.dataset.saveUrl;
   var planUrl = form.dataset.planUrl;
+  var statusKey = 'coursecraft.planStatus';
   var loginUrl = form.dataset.loginUrl + '?next=' + encodeURIComponent('/plan');
   var button = form.querySelector('button');
   var actions = document.getElementById('plan-preview-actions');
@@ -15,6 +16,16 @@
   var cancelButton = document.getElementById('plan-cancel');
   // proposals the preview shows, each has courseId, sessionId and suggested
   var proposals = [];
+
+  try {
+    var savedMessage = window.sessionStorage.getItem(statusKey);
+    if (savedMessage) {
+      window.sessionStorage.removeItem(statusKey);
+      status.textContent = savedMessage;
+    }
+  } catch (error) {
+    // browser can block session storage
+  }
 
   function element(tag, className, text) {
     var node = document.createElement(tag);
@@ -240,11 +251,13 @@
         return;
       }
       if (response.status === 409) {
-        // plan changed since preview, so old list is no good
         return response.json().then(function (data) {
-          undoPreview();
-          status.textContent = data.message;
-          setBusy(false);
+          try {
+            window.sessionStorage.setItem(statusKey, data.message);
+          } catch (error) {
+            // still load the current plan if storage is blocked
+          }
+          window.location.href = planUrl;
         });
       }
       throw new Error('Could not save plan.');
