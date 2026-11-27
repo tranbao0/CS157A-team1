@@ -313,8 +313,17 @@
 
 			<dt>Prerequisite(s)</dt>
 			<dd>
+<% // every UD GE course, and CS 100W, needs core GE and upper division standing, see UpperDivisionGeRule
+   boolean udGe = (course.get("ge_area_code") != null && course.get("ge_area_code").startsWith("UD"))
+       || com.coursecraft.service.UpperDivisionGeRule.OTHER_COURSES.contains(
+              course.get("subject") + " " + course.get("course_number"));
+   if (udGe) { %>
+				Completion of core GE and upper division standing (60 units)<% if (!groups.isEmpty()) { %>, <em>and</em> <% } %>
+<% } %>
 <% if (groups.isEmpty()) { %>
+<%   if (!udGe) { %>
 				None
+<%   } %>
 <% } else { %>
 <%
 // group with no option at all prints nothing, shownGroups keeps "and" only between groups that print
