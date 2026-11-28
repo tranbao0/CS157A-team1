@@ -16,6 +16,6 @@
     <div class="tx-label tx-label--static">
         <a class="course-link progress-course-link" href="${context}/course.jsp?id=${course.courseId}"><span class="tx-code"><c:out value="${course.code}"/></span><span class="tx-title"><c:out value="${course.title}"/></span></a>
         <span class="tx-meta"><c:out value="${course.units}"/> units<c:if test="${not empty meta}"> · <c:out value="${meta}"/><c:if test="${meta == 'Elective'}"> option</c:if></c:if><c:if test="${course.passed}"> · Completed</c:if><c:if test="${not course.passed and empty plannedTerm}"><span class="visually-hidden"> · Not planned</span></c:if></span>
-        <c:if test="${not empty plannedTerm}"><span class="rm-plan-meta">Planned for <c:out value="${plannedTerm}"/></span></c:if>
+        <c:if test="${not course.passed and not empty plannedTerm}"><span class="rm-plan-meta">Planned for <c:out value="${plannedTerm}"/></span></c:if>
     </div>
 </li>

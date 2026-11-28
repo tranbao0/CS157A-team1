@@ -331,7 +331,7 @@ INSERT INTO roadmaps (roadmap_id, major_id, catalog_year) VALUES
 
 INSERT INTO requires_course (roadmap_id, course_id, suggested_term_position, requirement_type) VALUES
   -- Computer Science, BS, 2025 (SJSU 2025-2026 roadmap, position 1 = first fall)
-  -- Elective rows come from approved lists, one of MATH 32, 142 or 161A is required
+  -- Required courses only; electives live in elective_groups / elective_slots
   (2, 1,  1, 'Major'),
   (2, 15, 1, 'Support'),
   (2, 19, 1, 'Support'),
@@ -343,36 +343,26 @@ INSERT INTO requires_course (roadmap_id, course_id, suggested_term_position, req
   (2, 33, 4, 'Major'),
   (2, 8,  4, 'Major'),
   (2, 18, 4, 'Support'),
-  (2, 58, 4, 'Elective'),
   (2, 7,  5, 'Major'),
   (2, 35, 5, 'Support'),
-  (2, 56, 5, 'Elective'),
   (2, 9,  6, 'Major'),
   (2, 34, 6, 'Support'),
   (2, 5,  6, 'Major'),
-  (2, 36, 6, 'Support'),
-  (2, 17, 6, 'Elective'),
-  (2, 29, 6, 'Elective'),
-  (2, 55, 6, 'Elective'),
   (2, 11, 7, 'Major'),
   (2, 12, 7, 'Major'),
   (2, 13, 7, 'Major'),
-  (2, 30, 7, 'Elective'),
   (2, 10, 8, 'Major'),
-  (2, 57, 8, 'Elective'),
-  (2, 64, 8, 'Elective'),
   -- Computer Science, BS, 2024
   (1, 1,  1, 'Major'),
   (1, 2,  2, 'Major'),
   (1, 6,  4, 'Major'),
   (1, 8,  4, 'Major'),
-  (1, 11, 7, 'Elective'),
   -- Computer Science, BS, 2026
   (3, 1,  1, 'Major'),
   (3, 2,  2, 'Major'),
   (3, 6,  4, 'Major'),
   -- Software Engineering, BS, 2025 (SJSU 2025-2026 roadmap)
-  -- Elective rows are technical upper division electives, two are required
+  -- Required courses only; technical electives live in elective_groups / elective_slots
   (4, 1,  1, 'Major'),
   (4, 38, 1, 'Major'),
   (4, 15, 1, 'Support'),
@@ -405,8 +395,6 @@ INSERT INTO requires_course (roadmap_id, course_id, suggested_term_position, req
   (4, 52, 8, 'Major'),
   (4, 53, 8, 'Major'),
   (4, 54, 8, 'Major'),
-  (4, 55, 8, 'Elective'),
-  (4, 57, 8, 'Elective'),
   -- Data Science, BS, 2025
   (6, 1,  1, 'Major'),
   (6, 15, 1, 'Support'),
@@ -433,6 +421,43 @@ INSERT INTO requires_ge_area (roadmap_id, ge_area_code) VALUES
   (4, '5B'), (4, '5C'), (4, '6'), (4, 'UD2/5'), (4, 'UD3'), (4, 'UD4'),
   (8, '1A'), (8, '1B'), (8, '1C'), (8, '5A'), (8, '5B'), (8, '5C'),
   (11, '1A'), (11, '1C'), (11, '2'), (11, '4');
+
+INSERT INTO elective_groups (group_id, roadmap_id, name, min_units, min_courses) VALUES
+  (1, 2, 'Major Electives', 17.0, NULL),
+  (2, 2, 'Math/Stats Elective', NULL, 1),
+  (3, 4, 'Technical Electives', NULL, 2),
+  (4, 1, 'Major Electives', 17.0, NULL),
+  (5, 1, 'Math/Stats Elective', NULL, 1);
+
+INSERT INTO elective_group_courses (group_id, course_id) VALUES
+  -- CS 2025: 17-unit Major Electives pool (includes MATH 142)
+  (1, 17), (1, 29), (1, 30), (1, 36), (1, 55), (1, 56), (1, 57), (1, 58), (1, 64),
+  -- CS 2025: subset rule (at least 1 of MATH 32, MATH 142, MATH 161A; also counts toward group 1)
+  (2, 17), (2, 29), (2, 36),
+  -- SE 2025: 2 Technical Electives (CS 156, CS 174, CS 155)
+  (3, 9), (3, 55), (3, 58), (3, 64),
+  -- CS 2024: 17-unit Major Electives pool + Math/Stats subset
+  (4, 11), (4, 17), (4, 29), (4, 30), (4, 36), (4, 55), (4, 56), (4, 57), (4, 58), (4, 64),
+  (5, 17), (5, 29), (5, 36);
+
+INSERT INTO elective_slots (slot_id, group_id, suggested_term_position, units) VALUES
+  -- CS 2025 Major Electives slots (3 + 3 + 3 + 3 + 3 + 2 = 17.0 units)
+  (1, 1, 4, 3.0),
+  (2, 1, 5, 3.0),
+  (3, 1, 6, 3.0),
+  (4, 1, 7, 3.0),
+  (5, 1, 8, 3.0),
+  (6, 1, 8, 2.0),
+  -- SE 2025 Technical Electives slots (two 3-unit slots in Term 8)
+  (7, 3, 8, 3.0),
+  (8, 3, 8, 3.0),
+  -- CS 2024 Major Electives slots (3 + 3 + 3 + 3 + 3 + 2 = 17.0 units)
+  (9,  4, 4, 3.0),
+  (10, 4, 5, 3.0),
+  (11, 4, 6, 3.0),
+  (12, 4, 7, 3.0),
+  (13, 4, 8, 3.0),
+  (14, 4, 8, 2.0);
 
 -- SJSU gives each new student one math and one writing category, both use same four levels.
 INSERT INTO placement_categories (code, kind, name) VALUES
@@ -756,7 +781,7 @@ INSERT INTO plan_entries (plan_entry_id, student_id, course_id, session_id, adde
   (92, 14, 53, 18, '2026-10-25 10:36:00'),
   (93, 14, 54, 18, '2026-10-25 10:37:00'),
   (94, 14, 55, 18, '2026-10-25 10:38:00'),
-  (95, 14, 57, 18, '2026-10-25 10:39:00'),
+  (95, 14, 58, 18, '2026-10-25 10:39:00'),
   -- CS 155 fills last 3 of 17 major elective units, so CS demo plan reaches 120 units
   (96, 13, 64, 18, '2026-10-25 09:39:00');
 

@@ -85,14 +85,10 @@
 			<c:out value="${audit.roadmap.label}"/>
         </p>
         <c:set var="plannedRequired" value="0"/>
-        <c:set var="plannedOptions" value="0"/>
         <c:forEach var="term" items="${audit.terms}">
             <c:forEach var="req" items="${term.courses}">
-                <c:if test="${not req.passed and not empty req.plannedTermLabel}">
-                    <c:choose>
-                        <c:when test="${req.requirementType == 'Elective'}"><c:set var="plannedOptions" value="${plannedOptions + 1}"/></c:when>
-                        <c:otherwise><c:set var="plannedRequired" value="${plannedRequired + 1}"/></c:otherwise>
-                    </c:choose>
+                <c:if test="${not req.passed and not empty req.plannedTermLabel and req.requirementType != 'Elective'}">
+                    <c:set var="plannedRequired" value="${plannedRequired + 1}"/>
                 </c:if>
             </c:forEach>
         </c:forEach>
@@ -105,9 +101,9 @@
                 </div>
             </div>
         </c:if>
-        <c:if test="${audit.totalElectives > 0}">
-            <p class="tx-group__note">${audit.doneElectives} of ${audit.totalElectives} elective options taken · ${plannedOptions} planned. Elective options are choices, not extra required courses.</p>
-        </c:if>
+        <c:forEach var="eg" items="${audit.electiveGroups}">
+            <p class="tx-group__note"><strong><c:out value="${eg.name}"/>:</strong> <c:out value="${eg.progressText}"/><c:if test="${eg.satisfied}"> &middot; Satisfied</c:if></p>
+        </c:forEach>
 
 		<c:choose>
 			<c:when test="${empty audit.terms}">
@@ -121,19 +117,40 @@
                     <c:forEach var="req" items="${term.courses}">
                         <c:if test="${req.passed}"><c:set var="termDone" value="${termDone + 1}"/></c:if>
                     </c:forEach>
+                    <c:forEach var="slot" items="${term.electiveSlots}">
+                        <c:if test="${slot.filled and slot.filledCourse.passed}"><c:set var="termDone" value="${termDone + 1}"/></c:if>
+                    </c:forEach>
+                    <c:set var="termTotal" value="${fn:length(term.courses) + fn:length(term.electiveSlots)}"/>
                     <c:set var="termLabel" value="${term.label}"/>
                     <c:if test="${term.termNumber > 0}">
                         <c:set var="yearNumber" value="${(term.termNumber + 1 - (term.termNumber + 1) % 2) / 2}"/>
                         <c:set var="termLabel">Year ${fn:substringBefore(yearNumber, '.')} · ${term.termNumber % 2 == 1 ? 'Fall' : 'Spring'}</c:set>
                     </c:if>
-                    <details class="tx-group rm-term ${termDone == fn:length(term.courses) ? 'is-done' : ''}" ${termDone == fn:length(term.courses) ? '' : 'open'}>
+                    <details class="tx-group rm-term ${termTotal > 0 and termDone == termTotal ? 'is-done' : ''}" ${termTotal > 0 and termDone == termTotal ? '' : 'open'}>
                         <summary class="tx-group__title">
                             <span><c:out value="${termLabel}"/></span>
-                            <span class="tx-group__count"><c:if test="${termDone == fn:length(term.courses)}">✓ All </c:if>${termDone}<c:if test="${termDone != fn:length(term.courses)}"> of ${fn:length(term.courses)}</c:if> completed · <c:out value="${term.unitsText}"/> required units</span>
+                            <span class="tx-group__count"><c:if test="${termTotal > 0 and termDone == termTotal}">✓ All </c:if>${termDone}<c:if test="${termDone != termTotal}"> of ${termTotal}</c:if> completed · <c:out value="${term.unitsText}"/> units</span>
                         </summary>
                         <ul class="tx-list">
                             <c:forEach var="req" items="${term.courses}">
                                 <cc:auditCourseRow course="${req}" meta="${req.requirementType}"/>
+                            </c:forEach>
+                            <c:forEach var="slot" items="${term.electiveSlots}">
+                                <c:choose>
+                                    <c:when test="${slot.filled}">
+                                        <cc:auditCourseRow course="${slot.filledCourse}" meta="${slot.groupName}"/>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <li class="tx-row rm-row">
+                                            <span class="rm-mark" aria-hidden="true"></span>
+                                            <div class="tx-label tx-label--static">
+                                                <span class="tx-code"><c:out value="${slot.groupName}"/></span>
+                                                <span class="tx-title">Open elective slot</span>
+                                                <span class="tx-meta"><c:out value="${slot.slotUnitsText}"/> units<span class="visually-hidden"> · Not planned</span></span>
+                                            </div>
+                                        </li>
+                                    </c:otherwise>
+                                </c:choose>
                             </c:forEach>
                         </ul>
                     </details>

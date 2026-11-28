@@ -111,7 +111,7 @@ CREATE TABLE roadmaps (
   FOREIGN KEY (major_id) REFERENCES majors (major_id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
--- One course a roadmap requires.
+-- One course every student on this roadmap must take.
 -- suggested_term_position: 1 = first term, 8 = last term.
 CREATE TABLE requires_course (
   roadmap_id              INT NOT NULL,
@@ -130,6 +130,39 @@ CREATE TABLE requires_ge_area (
   PRIMARY KEY (roadmap_id, ge_area_code),
   FOREIGN KEY (roadmap_id)   REFERENCES roadmaps (roadmap_id),
   FOREIGN KEY (ge_area_code) REFERENCES ge_areas (code)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+-- One elective rule for a roadmap, e.g. "Major Electives (17 units)".
+CREATE TABLE elective_groups (
+  group_id    INT,
+  roadmap_id  INT          NOT NULL,
+  name        VARCHAR(120) NOT NULL,
+  min_units   REAL,
+  min_courses INT,
+  PRIMARY KEY (group_id),
+  FOREIGN KEY (roadmap_id) REFERENCES roadmaps (roadmap_id),
+  CHECK (min_units IS NULL OR min_units > 0),
+  CHECK (min_courses IS NULL OR min_courses > 0)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+-- One course that counts toward an elective group. A course can belong to multiple groups.
+CREATE TABLE elective_group_courses (
+  group_id  INT NOT NULL,
+  course_id INT NOT NULL,
+  PRIMARY KEY (group_id, course_id),
+  FOREIGN KEY (group_id)  REFERENCES elective_groups (group_id),
+  FOREIGN KEY (course_id) REFERENCES courses (course_id)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+-- One suggested elective placeholder slot in a roadmap term.
+CREATE TABLE elective_slots (
+  slot_id                 INT,
+  group_id                INT  NOT NULL,
+  suggested_term_position INT  NOT NULL,
+  units                   REAL NOT NULL,
+  PRIMARY KEY (slot_id),
+  FOREIGN KEY (group_id) REFERENCES elective_groups (group_id),
+  CHECK (units > 0)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- One placement result SJSU gives new students, e.g. Math Enrollment Category M-II.
