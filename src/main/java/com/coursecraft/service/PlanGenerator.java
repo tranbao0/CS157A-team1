@@ -27,6 +27,7 @@ import com.coursecraft.model.PrerequisiteGroup;
 import com.coursecraft.model.ProposedEntry;
 import com.coursecraft.model.ProposedTerm;
 import com.coursecraft.model.RoadmapCourse;
+import com.coursecraft.model.RoadmapGeStatus;
 import com.coursecraft.model.SessionInfo;
 import com.coursecraft.model.TranscriptCourse;
 import com.coursecraft.model.UnplacedCourse;
@@ -43,7 +44,8 @@ public class PlanGenerator {
 	}
 
 	public GeneratedPlan preview(Connection connection, int studentId) throws SQLException {
-		List<RoadmapCourse> courses = new RoadmapDao().findCoursesForStudent(connection, studentId);
+		RoadmapDao roadmap = new RoadmapDao();
+		List<RoadmapCourse> courses = roadmap.findCoursesForStudent(connection, studentId);
 		List<SessionInfo> sessions = new SessionDao().findUnstartedRegularTerms(connection);
 		PrerequisiteDao prerequisites = new PrerequisiteDao();
 		int year = PrerequisiteDao.yearOrNewest(new StudentDao().findCatalogYear(connection, studentId));
@@ -54,7 +56,8 @@ public class PlanGenerator {
 		UpperDivisionGeRule udRule = new GeRuleDao().load(connection, studentId);
 		GeneratedPlan plan = mapCourses(courses, sessions, new PlanEntryDao().findForStudent(connection, studentId),
 				prerequisites.findOpenGroups(connection, studentId, year), prerequisites.findPlacementOptions(connection),
-				udRule, catalog, new BottleneckScoreDao().findNewestRisks(connection));
+				udRule, catalog, new BottleneckScoreDao().findNewestRisks(connection),
+				roadmap.findGeAreasForStudent(connection, studentId));
 		Integer gradTermId = new StudentDao().findProfile(connection, studentId).getGradTermId();
 		for (ProposedTerm term : plan.getTerms()) {
 			if (gradTermId != null && gradTermId == term.getTermId()) {
@@ -66,7 +69,8 @@ public class PlanGenerator {
 
 	static GeneratedPlan mapCourses(List<RoadmapCourse> courses, List<SessionInfo> sessions,
 			List<PlannedCourse> saved, List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements,
-			UpperDivisionGeRule udRule, Map<Integer, TranscriptCourse> catalog, Map<Integer, String> risks) {
+			UpperDivisionGeRule udRule, Map<Integer, TranscriptCourse> catalog, Map<Integer, String> risks,
+			List<RoadmapGeStatus> geAreas) {
 		GeneratedPlan plan = new GeneratedPlan();
 		List<RoadmapCourse> pending = findMissing(courses);
 		pending.sort(new RoadmapOrder());
@@ -99,17 +103,8 @@ public class PlanGenerator {
 				}
 			}
 		}
-		// Unplaced reasons describe the plan before the move.
-		List<PlannedCourse> beforeMove = new ArrayList<>(result.planned);
 		moveHighRiskEarlier(result, sessions, saved.size(), kept, groups, placements, udRule, risks);
-		int lastOrder = 0;
-		if (!sessions.isEmpty()) {
-			lastOrder = sessions.get(sessions.size() - 1).getTermOrder();
-		}
-		for (RoadmapCourse course : result.pending) {
-			addUnplaced(plan, course, earliest, sessions,
-					missingPrerequisites(course.getCourseId(), lastOrder, groups, beforeMove, placements, udRule));
-		}
+		finishPlacement(plan, result, earliest, geAreas, sessions, groups, placements, udRule, catalog, risks);
 		Comparator<ProposedEntry> displayOrder = new ProposedEntryOrder();
 		for (Map.Entry<Integer, List<ProposedEntry>> group : result.entries.entrySet()) {
 			SessionInfo session = sessions.get(group.getKey());
@@ -124,6 +119,129 @@ public class PlanGenerator {
 			plan.getTerms().add(term);
 		}
 		return plan;
+	}
+
+	private static void finishPlacement(GeneratedPlan plan, Placement result, int earliest,
+			List<RoadmapGeStatus> geAreas, List<SessionInfo> sessions, List<PrerequisiteGroup> groups,
+			Map<Integer, List<String>> placements, UpperDivisionGeRule udRule, Map<Integer, TranscriptCourse> catalog,
+			Map<Integer, String> risks) {
+		Set<String> covered = new HashSet<>();
+		for (PlannedCourse row : result.planned) {
+			coverGeAreas(covered, catalog.get(row.getCourseId()));
+		}
+		Set<Integer> roadmapIds = new HashSet<>();
+		Set<String> reserved = new HashSet<>();
+		for (RoadmapCourse course : result.pending) {
+			roadmapIds.add(course.getCourseId());
+			coverGeAreas(reserved, catalog.get(course.getCourseId()));
+		}
+		Map<String, List<TranscriptCourse>> optionsByArea = new TreeMap<>();
+		for (RoadmapGeStatus area : geAreas) {
+			String code = area.getCode();
+			if (!code.startsWith("UD") && !area.isFulfilled() && !covered.contains(code) && !reserved.contains(code)) {
+				optionsByArea.put(code, new ArrayList<>());
+			}
+		}
+		for (TranscriptCourse course : catalog.values()) {
+			if (course.getGeAreaCode() == null) {
+				continue;
+			}
+			List<TranscriptCourse> options = optionsByArea.get(course.getGeAreaCode());
+			if (options != null && !course.isPassed() && !roadmapIds.contains(course.getCourseId())) {
+				options.add(course);
+			}
+		}
+		GePickOrder order = new GePickOrder(risks);
+		for (List<TranscriptCourse> options : optionsByArea.values()) {
+			options.sort(order);
+		}
+		int previousSize;
+		do {
+			previousSize = result.planned.size();
+			pickOpenAreas(result, optionsByArea, covered, sessions, groups, placements, udRule);
+			int waitingCount;
+			do {
+				waitingCount = result.pending.size();
+				for (RoadmapCourse course : new ArrayList<>(result.pending)) {
+					int index = findTerm(course, earliest, sessions, result.planned, groups, placements, udRule);
+					if (index < sessions.size()) {
+						placeRoadmapCourse(course, index, result.pending, sessions, result.planned, result.entries, false);
+						coverGeAreas(covered, catalog.get(course.getCourseId()));
+					}
+				}
+			} while (result.pending.size() < waitingCount);
+		} while (result.planned.size() > previousSize);
+
+		for (RoadmapCourse course : result.pending) {
+			String reason = course.getCode() + " has no term available yet.";
+			if (course.getSuggestedTerm() <= 0) {
+				reason = "Roadmap gives " + course.getCode() + " no term.";
+			} else if (course.getSuggestedTerm() - earliest < sessions.size()) {
+				reason = finalUnplacedReason(course.getCourseId(), sessions.get(sessions.size() - 1),
+						groups, result.planned, placements, udRule);
+			}
+			plan.getUnplaced().add(new UnplacedCourse(course.getCourseId(), course.getCode(),
+					Double.parseDouble(course.getUnits()), reason));
+		}
+		for (Map.Entry<String, List<TranscriptCourse>> area : optionsByArea.entrySet()) {
+			if (covered.contains(area.getKey()) || area.getValue().isEmpty()) {
+				continue;
+			}
+			TranscriptCourse top = area.getValue().get(0);
+			String reason = top.getCode() + " has no term available yet.";
+			if (!sessions.isEmpty()) {
+				reason = finalUnplacedReason(top.getCourseId(), sessions.get(sessions.size() - 1),
+						groups, result.planned, placements, udRule);
+			}
+			plan.getUnplaced().add(new UnplacedCourse(top.getCourseId(), top.getCode(),
+					Double.parseDouble(top.getUnits()), reason));
+		}
+	}
+
+	private static void pickOpenAreas(Placement result, Map<String, List<TranscriptCourse>> optionsByArea,
+			Set<String> covered, List<SessionInfo> sessions, List<PrerequisiteGroup> groups,
+			Map<Integer, List<String>> placements, UpperDivisionGeRule udRule) {
+		for (Map.Entry<String, List<TranscriptCourse>> area : optionsByArea.entrySet()) {
+			if (covered.contains(area.getKey())) {
+				continue;
+			}
+			for (TranscriptCourse course : area.getValue()) {
+				int index = findTerm(course.getCourseId(), Double.parseDouble(course.getUnits()), 0,
+						sessions, result.planned, groups, placements, udRule);
+				if (index < sessions.size()) {
+					PlannedCourse row = atSession(course.getCourseId(), course.getCode(), course.getTitle(),
+							course.getUnits(), sessions.get(index));
+					result.planned.add(row);
+					addProposal(result.entries, index, sessions, row, true);
+					coverGeAreas(covered, course);
+					break;
+				}
+			}
+		}
+	}
+
+	private static String finalUnplacedReason(int courseId, SessionInfo lastTerm, List<PrerequisiteGroup> groups,
+			List<PlannedCourse> planned, Map<Integer, List<String>> placements, UpperDivisionGeRule udRule) {
+		List<String> missing = missingPrerequisites(courseId, Integer.MAX_VALUE, groups, planned, placements, udRule);
+		if (!missing.isEmpty()) {
+			return "Needs " + PrerequisiteCheck.joinMissing(missing) + " first.";
+		}
+		if (!missingPrerequisites(courseId, lastTerm.getTermOrder(), groups, planned, placements, udRule).isEmpty()) {
+			return "Prerequisites finish too late for the available terms.";
+		}
+		return "No room under " + UnitRules.format(UnitRules.NORMAL_LIMIT) + " units by "
+				+ lastTerm.getTermLabel() + ".";
+	}
+
+	private static void coverGeAreas(Set<String> covered, TranscriptCourse course) {
+		if (course == null || course.getGeAreaCode() == null) {
+			return;
+		}
+		String area = course.getGeAreaCode();
+		covered.add(area);
+		if (("5A".equals(area) || "5B".equals(area)) && Double.parseDouble(course.getUnits()) >= 4) {
+			covered.add("5C");
+		}
 	}
 
 	private static void moveHighRiskEarlier(Placement result, List<SessionInfo> sessions, int savedCount,
@@ -460,21 +578,25 @@ public class PlanGenerator {
 			UpperDivisionGeRule udRule) {
 		// JDBC reads NULL roadmap position as 0.
 		int position = course.getSuggestedTerm();
-		if (position > 0) {
-			for (int index = Math.max(0, position - earliest); index < sessions.size(); index++) {
-				SessionInfo term = sessions.get(index);
-				if (hasRoom(course, term, planned)
-						&& missingPrerequisites(course.getCourseId(), term.getTermOrder(), groups, planned, placements,
-								udRule).isEmpty()) {
-					return index;
-				}
+		if (position <= 0) {
+			return sessions.size();
+		}
+		return findTerm(course.getCourseId(), Double.parseDouble(course.getUnits()), Math.max(0, position - earliest),
+				sessions, planned, groups, placements, udRule);
+	}
+
+	private static int findTerm(int courseId, double units, int firstIndex, List<SessionInfo> sessions,
+			List<PlannedCourse> planned, List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements,
+			UpperDivisionGeRule udRule) {
+		for (int index = firstIndex; index < sessions.size(); index++) {
+			SessionInfo term = sessions.get(index);
+			if (hasRoom(units, term, planned)
+					&& missingPrerequisites(courseId, term.getTermOrder(), groups, planned, placements,
+							udRule).isEmpty()) {
+				return index;
 			}
 		}
 		return sessions.size();
-	}
-
-	private static boolean hasRoom(RoadmapCourse course, SessionInfo term, List<PlannedCourse> planned) {
-		return hasRoom(Double.parseDouble(course.getUnits()), term, planned);
 	}
 
 	private static boolean hasRoom(double courseUnits, SessionInfo term, List<PlannedCourse> planned) {
@@ -485,25 +607,6 @@ public class PlanGenerator {
 			}
 		}
 		return units <= UnitRules.NORMAL_LIMIT;
-	}
-
-	private static void addUnplaced(GeneratedPlan plan, RoadmapCourse course, int earliest,
-			List<SessionInfo> sessions, List<String> missing) {
-		String reason = course.getCode() + " has no term available yet.";
-		// JDBC reads NULL roadmap position as 0.
-		if (course.getSuggestedTerm() <= 0) {
-			reason = "Roadmap gives " + course.getCode() + " no term.";
-		} else if (course.getSuggestedTerm() - earliest < sessions.size()) {
-			if (missing.isEmpty()) {
-				SessionInfo lastTerm = sessions.get(sessions.size() - 1);
-				reason = "No room under " + UnitRules.format(UnitRules.NORMAL_LIMIT) + " units by "
-						+ lastTerm.getTermLabel() + ".";
-			} else {
-				reason = "Needs " + PrerequisiteCheck.joinMissing(missing) + " first.";
-			}
-		}
-		plan.getUnplaced().add(new UnplacedCourse(course.getCourseId(), course.getCode(),
-				Double.parseDouble(course.getUnits()), reason));
 	}
 
 	private static List<RoadmapCourse> findMissing(List<RoadmapCourse> courses) {
@@ -524,6 +627,25 @@ public class PlanGenerator {
 			int positionOrder = Integer.compare(first.getSuggestedTerm(), second.getSuggestedTerm());
 			if (positionOrder != 0) {
 				return positionOrder;
+			}
+			return codeOrder.compare(first.getCode(), second.getCode());
+		}
+	}
+
+	private static class GePickOrder implements Comparator<TranscriptCourse> {
+		private final CourseCodeOrder codeOrder = new CourseCodeOrder();
+		private final Map<Integer, String> risks;
+
+		GePickOrder(Map<Integer, String> risks) {
+			this.risks = risks;
+		}
+
+		@Override
+		public int compare(TranscriptCourse first, TranscriptCourse second) {
+			int risk = Integer.compare(riskOrder(risks.get(first.getCourseId())),
+					riskOrder(risks.get(second.getCourseId())));
+			if (risk != 0) {
+				return risk;
 			}
 			return codeOrder.compare(first.getCode(), second.getCode());
 		}
