@@ -280,7 +280,6 @@ INSERT INTO requires_course (roadmap_id, course_id, suggested_term_position, req
   (1, 2,  2, 'Major'),
   (1, 6,  4, 'Major'),
   (1, 8,  4, 'Major'),
-  (1, 11, 7, 'Elective'),
   -- Computer Science, BS, 2026
   (3, 1,  1, 'Major'),
   (3, 2,  2, 'Major'),
@@ -359,9 +358,9 @@ INSERT INTO elective_group_courses (group_id, course_id) VALUES
   -- CS 2025: subset rule (at least 1 of MATH 32, MATH 142, MATH 161A; also counts toward group 1)
   (2, 17), (2, 29), (2, 36),
   -- SE 2025: 2 Technical Electives (CS 156, CS 174, CS 155)
-  (3, 55), (3, 58), (3, 64),
+  (3, 9), (3, 55), (3, 58), (3, 64),
   -- CS 2024: 17-unit Major Electives pool + Math/Stats subset
-  (4, 17), (4, 29), (4, 30), (4, 36), (4, 55), (4, 56), (4, 57), (4, 58), (4, 64),
+  (4, 11), (4, 17), (4, 29), (4, 30), (4, 36), (4, 55), (4, 56), (4, 57), (4, 58), (4, 64),
   (5, 17), (5, 29), (5, 36);
 
 INSERT INTO elective_slots (slot_id, group_id, suggested_term_position, units) VALUES
@@ -695,7 +694,7 @@ INSERT INTO plan_entries (plan_entry_id, student_id, course_id, session_id, adde
   (92, 14, 53, 18, '2026-10-25 10:36:00'),
   (93, 14, 54, 18, '2026-10-25 10:37:00'),
   (94, 14, 55, 18, '2026-10-25 10:38:00'),
-  (95, 14, 57, 18, '2026-10-25 10:39:00'),
+  (95, 14, 58, 18, '2026-10-25 10:39:00'),
   -- CS 155 fills last 3 of 17 major elective units, so CS demo plan reaches 120 units
   (96, 13, 64, 18, '2026-10-25 09:39:00');
 
