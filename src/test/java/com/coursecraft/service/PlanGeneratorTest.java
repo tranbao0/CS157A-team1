@@ -2,6 +2,7 @@ package com.coursecraft.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,6 +21,7 @@ import com.coursecraft.model.PrerequisiteGroup;
 import com.coursecraft.model.ProposedEntry;
 import com.coursecraft.model.ProposedTerm;
 import com.coursecraft.model.RoadmapCourse;
+import com.coursecraft.model.RoadmapGeStatus;
 import com.coursecraft.model.SessionInfo;
 import com.coursecraft.model.TranscriptCourse;
 import com.coursecraft.model.UnplacedCourse;
@@ -28,6 +30,198 @@ class PlanGeneratorTest {
 
 	private static final UpperDivisionGeRule NO_UD_GE_RULE = new UpperDivisionGeRule(
 			Map.of(), Map.of(), Set.of(), Set.of(), Set.of(), Set.of());
+
+	@Test
+	void fillsTheFirstTermWithRoomAfterRoadmapPlacement() {
+		List<RoadmapCourse> roadmap = List.of(unitCourse(1, 1, 17), required(2, 2));
+		assertEquals(List.of("7:1", "9:2"), geSchedule(roadmap, List.of(), List.of(), Map.of(), Map.of(), List.of()));
+		assertEquals(List.of("7:1", "9:2", "9:10*"), geSchedule(roadmap, List.of(), List.of(),
+				Map.of(10, geCourse(10, "CS", "10", "1B", "3")), Map.of(), List.of(openArea("1B"))));
+	}
+
+	@Test
+	void skipsAreasCoveredByTranscriptPlacementsSavedOrProposedCourses() {
+		Map<Integer, TranscriptCourse> catalog = Map.of(
+				2, geCourse(2, "CS", "2", "5A", "4"),
+				3, geCourse(3, "CS", "3", "3A", "3"),
+				4, geCourse(4, "CS", "4", "3B", "3"),
+				10, geCourse(10, "CS", "10", "1A", "3"),
+				11, geCourse(11, "CS", "11", "4", "3"),
+				12, geCourse(12, "CS", "12", "5C", "1"),
+				13, geCourse(13, "CS", "13", "UD3", "3"));
+		List<RoadmapGeStatus> areas = List.of(new RoadmapGeStatus("1A", "", "Placement (W-I)", true),
+				new RoadmapGeStatus("4", "", "HIST 15", true), openArea("3A"), openArea("3B"),
+				openArea("5A"), openArea("5C"), openArea("UD3"), openArea("6"));
+		assertEquals(List.of("7:3", "7:4*", "9:1"),
+				geSchedule(List.of(required(1, 1), required(3, 1)), List.of(planned(2, 20264)),
+						List.of(group(1, 4)), catalog, Map.of(), areas));
+	}
+
+	@Test
+	void countsNewSciencePickWithLabForArea5C() {
+		assertEquals(List.of("7:10*"), geSchedule(List.of(), List.of(), List.of(),
+				Map.of(10, geCourse(10, "CS", "10", "5B", "4"), 11, geCourse(11, "CS", "11", "5C", "1")),
+				Map.of(), List.of(openArea("5C"), openArea("5B"))));
+	}
+
+	@Test
+	void ranksOptionsByRiskThenCourseCodeAndTriesTheNextOption() {
+		Map<Integer, TranscriptCourse> catalog = Map.of(
+				7, geCourse(7, "AA", "1", "1B", "3"),
+				8, geCourse(8, "COMM", "41", "1B", "3"),
+				9, geCourse(9, "COMM", "100", "1B", "3"),
+				10, geCourse(10, "ENGL", "1", "1B", "3"));
+		List<RoadmapGeStatus> areas = List.of(openArea("1B"));
+		Map<Integer, String> risks = Map.of(7, "High", 8, "Low");
+		assertEquals(List.of("7:8*"), geSchedule(List.of(), List.of(), List.of(), catalog, risks, areas));
+		assertEquals(List.of("7:9*"), geSchedule(List.of(), List.of(), List.of(group(8, 99)), catalog, risks, areas));
+		assertEquals(List.of("8:No room under 19 units by Fall 2027."),
+				geSchedule(List.of(), savedLoads(17, 17, 17), List.of(), catalog, risks, areas));
+	}
+
+	@Test
+	void picksArea1ABeforeArea1BAndChecksTermPrerequisites() {
+		Map<Integer, TranscriptCourse> catalog = Map.of(10, geCourse(10, "CS", "10", "1A", "3"),
+				11, geCourse(11, "CS", "11", "1B", "3"));
+		assertEquals(List.of("7:10*", "9:11*"), geSchedule(List.of(), List.of(), List.of(group(11, 10)),
+				catalog, Map.of(), List.of(openArea("1B"), openArea("1A"))));
+		assertEquals(List.of("11:Needs CS 10 first."), geSchedule(List.of(), List.of(), List.of(group(11, 10)),
+				catalog, Map.of(), List.of(openArea("1B"))));
+	}
+
+	@Test
+	void placesRoadmapCourseAfterCorePick() {
+		assertEquals(List.of("7:10*", "9:1"), geSchedule(List.of(required(1, 1)), List.of(),
+				List.of(writingGroup()), Map.of(10, geCourse(10, "CS", "10", "1A", "3")),
+				Map.of(), List.of(openArea("1A"))));
+	}
+
+	@Test
+	void reservesScienceAndLabAreasForWaitingRoadmapCourse() {
+		Map<Integer, TranscriptCourse> catalog = Map.of(1, geCourse(1, "CS", "1", "5A", "4"),
+				10, geCourse(10, "CS", "10", "1A", "3"), 11, geCourse(11, "AA", "11", "5A", "3"),
+				12, geCourse(12, "CS", "12", "5C", "1"));
+		assertEquals(List.of("7:10*", "9:1"), geSchedule(List.of(unitCourse(1, 1, 4)), List.of(),
+				List.of(writingGroup()), catalog, Map.of(),
+				List.of(openArea("1A"), openArea("5A"), openArea("5C"))));
+	}
+
+	@Test
+	void keepsAreaReservedWhenRoadmapCourseStillCannotBePlaced() {
+		Map<Integer, TranscriptCourse> catalog = Map.of(1, geCourse(1, "CS", "1", "3A", "3"),
+				10, geCourse(10, "CS", "10", "6", "3"), 11, geCourse(11, "CS", "11", "3A", "3"));
+		GeneratedPlan plan = checkedPlan(List.of(required(1, 1)), sessions(), savedLoads(16),
+				List.of(group(1, 99), group(11, 10)), Map.of(), catalog, Map.of(),
+				List.of(openArea("3A"), openArea("6")));
+		assertEquals(List.of("7:10*", "1:Needs CS 99 first."), describe(plan));
+	}
+
+	@Test
+	void keepsMathAndScienceAreasReservedWithoutPlacement() {
+		List<RoadmapCourse> roadmap = List.of(
+				new RoadmapCourse(30, "MATH", "30", "", "3", 1, "Major", false, null),
+				new RoadmapCourse(50, "PHYS", "50", "", "4", 1, "Major", false, null),
+				new RoadmapCourse(60, "BIOL", "30", "", "4", 1, "Major", false, null));
+		PrerequisiteGroup math = new PrerequisiteGroup(30, 30);
+		math.addOption(19, "MATH 19");
+		PrerequisiteGroup physics = new PrerequisiteGroup(50, 50);
+		physics.addOption(30, "MATH 30");
+		PrerequisiteGroup biology = new PrerequisiteGroup(60, 60);
+		biology.addOption(30, "MATH 30");
+		Map<Integer, TranscriptCourse> catalog = Map.of(
+				19, geCourse(19, "MATH", "19", "2", "3"),
+				30, geCourse(30, "MATH", "30", "2", "3"),
+				50, geCourse(50, "PHYS", "50", "5A", "4"),
+				60, geCourse(60, "BIOL", "30", "5B", "4"),
+				70, geCourse(70, "ASTR", "10", "5A", "3"),
+				71, geCourse(71, "ANTH", "12", "5B", "3"),
+				72, geCourse(72, "ASTR", "11L", "5C", "1"));
+		GeneratedPlan plan = PlanGenerator.mapCourses(roadmap, sessions(), List.of(), List.of(math, physics, biology),
+				Map.of(30, List.of("M-I (PPA 70+)")), NO_UD_GE_RULE, catalog, Map.of(),
+				List.of(openArea("2"), openArea("5A"), openArea("5B"), openArea("5C")));
+		assertEquals(List.of("60:Needs MATH 30 first.", "30:Needs MATH 19 or placement M-I (PPA 70+) first.",
+				"50:Needs MATH 30 first."), describe(plan));
+	}
+
+	@Test
+	void retriesEarlierRoadmapCourseBeforePickingAgain() {
+		Map<Integer, TranscriptCourse> catalog = Map.of(
+				2, geCourse(2, "CS", "2", "3A", "3"),
+				10, geCourse(10, "CS", "10", "1A", "3"),
+				11, geCourse(11, "CS", "11", "3A", "3"),
+				12, geCourse(12, "CS", "12", "4", "3"));
+		GeneratedPlan plan = PlanGenerator.mapCourses(List.of(required(2, 1), required(5, 1)), sessions(),
+				savedLoads(0, 0, 16), List.of(group(2, 5), group(5, 10), group(12, 5)),
+				Map.of(5, List.of("W-I")), NO_UD_GE_RULE, catalog, Map.of(),
+				List.of(openArea("1A"), openArea("3A"), openArea("4")));
+		assertEquals(List.of("7:10*", "9:5", "11:2", "12:No room under 19 units by Fall 2027."),
+				describe(plan));
+	}
+
+	@Test
+	void retriesUpperDivisionCourseAfterCorePicks() {
+		Map<Integer, TranscriptCourse> catalog = Map.of(10, geCourse(10, "CS", "10", "1A", "3"));
+		UpperDivisionGeRule rule = new UpperDivisionGeRule(Map.of(10, "1A"), Map.of(10, 3.0, 20, 57.0),
+				Set.of(20), Set.of(), Set.of("1A"), Set.of(1));
+		List<RoadmapCourse> roadmap = List.of(required(1, 1));
+		assertEquals(List.of("7:10*", "9:1"), describe(PlanGenerator.mapCourses(roadmap, sessions(), List.of(),
+				List.of(), Map.of(), rule, catalog, Map.of(), List.of(openArea("1A")))));
+		assertEquals(List.of("1:Needs upper division standing (60 units passed or planned before this term, "
+				+ "57 so far), and core GE Area 1A first."), describe(PlanGenerator.mapCourses(roadmap, sessions(),
+						List.of(), List.of(), Map.of(), rule, Map.of(), Map.of(), List.of(openArea("1A")))));
+	}
+
+	@Test
+	void explainsUnplacedCourseWithFinalPrerequisites() {
+		PrerequisiteGroup other = new PrerequisiteGroup(2, 1);
+		other.addOption(99, "CS 99");
+		assertEquals(List.of("7:10*", "1:Needs CS 99 first."),
+				geSchedule(List.of(required(1, 1)), List.of(), List.of(writingGroup(), other),
+						Map.of(10, geCourse(10, "CS", "10", "1A", "3")), Map.of(), List.of(openArea("1A"))));
+	}
+
+	@Test
+	void generatesNoMoreRowsAfterSavingCorePicksAndRoadmapCourses() {
+		List<RoadmapCourse> roadmap = List.of(required(1, 1));
+		List<PrerequisiteGroup> groups = List.of(writingGroup());
+		Map<Integer, TranscriptCourse> catalog = Map.of(10, geCourse(10, "CS", "10", "1A", "3"));
+		List<RoadmapGeStatus> areas = List.of(openArea("1A"));
+		GeneratedPlan first = PlanGenerator.mapCourses(roadmap, sessions(), List.of(), groups, Map.of(100, List.of("W-I")),
+				NO_UD_GE_RULE, catalog, Map.of(), areas);
+		List<PlannedCourse> saved = new ArrayList<>();
+		List<RoadmapCourse> remaining = new ArrayList<>(roadmap);
+		for (ProposedTerm term : first.getTerms()) {
+			for (ProposedEntry entry : term.getEntries()) {
+				saved.add(new PlannedCourse(0, entry.getCourseId(), entry.getCode(), entry.getTitle(),
+						entry.getUnits(), term.getTermId(), term.getLabel(), null, term.getTermOrder(), null));
+				if (entry.getCourseId() == 1) {
+					remaining.clear();
+				}
+			}
+		}
+		assertEquals(List.of(), geSchedule(remaining, saved, groups, catalog, Map.of(), areas));
+	}
+
+	private PrerequisiteGroup writingGroup() {
+		PrerequisiteGroup group = new PrerequisiteGroup(100, 1);
+		group.addOption(10, "CS 10");
+		return group;
+	}
+
+	private List<String> geSchedule(List<RoadmapCourse> courses, List<PlannedCourse> saved,
+			List<PrerequisiteGroup> groups, Map<Integer, TranscriptCourse> catalog, Map<Integer, String> risks,
+			List<RoadmapGeStatus> areas) {
+		return describe(PlanGenerator.mapCourses(courses, sessions(), saved, groups, Map.of(100, List.of("W-I")),
+				NO_UD_GE_RULE, catalog, risks, areas));
+	}
+
+	private RoadmapGeStatus openArea(String code) {
+		return new RoadmapGeStatus(code, "", null, true);
+	}
+
+	private TranscriptCourse geCourse(int id, String subject, String number, String area, String units) {
+		return new TranscriptCourse(id, subject, number, "", units, area, true, false, false);
+	}
 
 	@Test
 	void mapsMissingRequiredCoursesFromEarliestPosition() {
@@ -124,9 +318,9 @@ class PlanGeneratorTest {
 	}
 
 	@Test
-	void listsPrerequisiteThatFallsInLastTerm() {
-		assertEquals(List.of("1:Needs CS 2 first."), schedule(List.of(required(1, 1)),
-				List.of(group(1, 2)), List.of(planned(2, 20274)), Map.of()));
+	void explainsWhenPrerequisitesFinishInLastTerm() {
+		assertEquals(List.of("1:Prerequisites finish too late for the available terms."),
+				schedule(List.of(required(1, 1)), List.of(group(1, 2)), List.of(planned(2, 20274)), Map.of()));
 	}
 
 	@Test
@@ -539,7 +733,10 @@ class PlanGeneratorTest {
 	private List<String> schedule(List<RoadmapCourse> courses, List<PrerequisiteGroup> groups, List<PlannedCourse> saved,
 			Map<Integer, List<String>> placements, Map<Integer, TranscriptCourse> catalog, Map<Integer, String> risks,
 			List<SessionInfo> sessions) {
-		GeneratedPlan plan = checkedPlan(courses, sessions, saved, groups, placements, catalog, risks);
+		return describe(checkedPlan(courses, sessions, saved, groups, placements, catalog, risks));
+	}
+
+	private List<String> describe(GeneratedPlan plan) {
 		List<String> results = new ArrayList<>();
 		for (ProposedTerm term : plan.getTerms()) {
 			for (ProposedEntry entry : term.getEntries()) {
@@ -559,9 +756,23 @@ class PlanGeneratorTest {
 	private GeneratedPlan checkedPlan(List<RoadmapCourse> courses, List<SessionInfo> sessions, List<PlannedCourse> saved,
 			List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements, Map<Integer, TranscriptCourse> catalog,
 			Map<Integer, String> risks) {
+		return checkedPlan(courses, sessions, saved, groups, placements, catalog, risks, List.of());
+	}
+
+	private GeneratedPlan checkedPlan(List<RoadmapCourse> courses, List<SessionInfo> sessions, List<PlannedCourse> saved,
+			List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements, Map<Integer, TranscriptCourse> catalog,
+			Map<Integer, String> risks, List<RoadmapGeStatus> areas) {
 		GeneratedPlan plan = PlanGenerator.mapCourses(courses, sessions, saved, groups, placements,
-				NO_UD_GE_RULE, catalog, risks);
-		assertEquals(List.of(), checkPlan(plan, courses, sessions, saved, groups, placements));
+				NO_UD_GE_RULE, catalog, risks, areas);
+		Set<Integer> geOptions = new HashSet<>();
+		for (RoadmapGeStatus area : areas) {
+			for (TranscriptCourse course : catalog.values()) {
+				if (area.getCode().equals(course.getGeAreaCode())) {
+					geOptions.add(course.getCourseId());
+				}
+			}
+		}
+		assertEquals(List.of(), checkPlan(plan, courses, sessions, saved, groups, placements, geOptions));
 		BestPlacement best = bestPlacement(courses, sessions, saved, groups, placements, catalog);
 		int placed = 0;
 		for (ProposedTerm term : plan.getTerms()) {
@@ -575,13 +786,23 @@ class PlanGeneratorTest {
 			}
 		}
 		if (best.candidateCount() <= 12) {
-			assertEquals(best.roadmapCount(), placed);
+			if (risks.containsValue("High")) {
+				assertTrue(placed >= best.roadmapCount());
+			} else {
+				assertEquals(best.roadmapCount(), placed);
+			}
 		}
 		return plan;
 	}
 
 	static List<String> checkPlan(GeneratedPlan plan, List<RoadmapCourse> courses, List<SessionInfo> sessions,
 			List<PlannedCourse> saved, List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements) {
+		return checkPlan(plan, courses, sessions, saved, groups, placements, Set.of());
+	}
+
+	private static List<String> checkPlan(GeneratedPlan plan, List<RoadmapCourse> courses, List<SessionInfo> sessions,
+			List<PlannedCourse> saved, List<PrerequisiteGroup> groups, Map<Integer, List<String>> placements,
+			Set<Integer> geOptions) {
 		List<String> problems = new ArrayList<>();
 		List<PlannedCourse> proposed = new ArrayList<>();
 		List<RoadmapCourse> suggestions = new ArrayList<>();
@@ -589,7 +810,7 @@ class PlanGeneratorTest {
 			for (ProposedEntry entry : term.getEntries()) {
 				proposed.add(new PlannedCourse(0, entry.getCourseId(), entry.getCode(), entry.getTitle(),
 						entry.getUnits(), term.getTermId(), term.getLabel(), "", term.getTermOrder(), null));
-				if (entry.isSuggested()) {
+				if (entry.isSuggested() && !geOptions.contains(entry.getCourseId())) {
 					String[] code = entry.getCode().split(" ", 2);
 					suggestions.add(new RoadmapCourse(entry.getCourseId(), code[0], code[1], entry.getTitle(),
 							String.valueOf(entry.getUnits()), 1, "Suggested", false, null));
@@ -879,13 +1100,13 @@ class PlanGeneratorTest {
 	}
 
 	@Test
-	void keepsUnplacedReasonsFromBeforeTheMove() {
+	void retriesRoadmapAndUpdatesReasonsAfterHighRiskMove() {
 		PrerequisiteGroup outside = new PrerequisiteGroup(4, 3);
 		outside.addOption(50, "CS 50");
 		List<RoadmapCourse> courses = List.of(required(1, 1), required(2, 3), required(3, 3));
-		assertEquals(List.of("7:1", "9:2", "3:Needs CS 2 first."), schedule(courses, List.of(group(3, 2)), List.of(),
+		assertEquals(List.of("7:1", "9:2", "11:3"), schedule(courses, List.of(group(3, 2)), List.of(),
 				Map.of(), Map.of(), Map.of(2, "High")));
-		assertEquals(List.of("7:1", "9:2", "3:Needs CS 2 and CS 50 first."), schedule(courses,
+		assertEquals(List.of("7:1", "9:2", "3:Needs CS 50 first."), schedule(courses,
 				List.of(group(3, 2), outside), List.of(), Map.of(), Map.of(), Map.of(2, "High")));
 	}
 
